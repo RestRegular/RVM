@@ -1,173 +1,173 @@
-## RA���Թ淶
+## RA语言规范
 
 #### [@RestRegular](https://github.com/RestRegular) 2025/3/22 13:27:03
 
-### һ������
+### 一、引言
 
-#### 1.1 ������Ŀ��
+#### 1.1 背景与目标
 
-RA���ԣ�Rio Assembly Language����һ�������ָ��ʽ������ԣ�רΪ RVM��Rio Virtual Machine���������ơ�����ҪĿ����Ϊ RVM
-�ṩһ�ָ�Ч���������������ĵͼ����ԣ�����ʵ�� RVM ��ָ���RA���Ե���������Դ�ڴ�ͳ������ԣ������﷨�ṹ����������Ͻ������Ż����Ը��õ���Ӧ
-RVM �����л�����
+RA语言（Rio Assembly Language）是一种类汇编的指令式编程语言，专为 RVM（Rio Virtual Machine）虚拟机设计。其主要目标是为 RVM
+提供一种高效、灵活且易于理解的低级语言，用于实现 RVM 的指令集。RA语言的设计灵感来源于传统汇编语言，但在语法结构和语义规则上进行了优化，以更好地适应
+RVM 的运行环境。
 
-ͨ�� RA���ԣ������߿���ֱ�ӱ�д�ײ�ָ����� RVM ���ڴ�ռ��ջ�������Ӷ�ʵ�ָ����ܵ�Ӧ�ó��򿪷���ͬʱ��RA����ҲΪ�߼����Ա������ṩ���м��ʾ�㣬ʹ���������Կ���ͨ����������
-RA���룬���������� RVM �ϡ�
+通过 RA语言，开发者可以直接编写底层指令，控制 RVM 的内存空间和栈操作，从而实现高性能的应用程序开发。同时，RA语言也为高级语言编译器提供了中间表示层，使得其他语言可以通过编译生成
+RA代码，进而运行在 RVM 上。
 
-#### 1.2 ���ԭ��
+#### 1.2 设计原则
 
-RA���Ե������ѭ���º���ԭ��
+RA语言的设计遵循以下核心原则：
 
-- **�����** ���﷨�ṹ�����򵥣�����ѧϰ�ɱ���ͬʱ���ڱ������ͽ�������ʵ�֡�
-- **��Ч��** ��ָ�������� RVM ��Ӳ������㣬ȷ��ִ��Ч����󻯡�
-- **����չ��** ��֧��δ����ָ�����չ�������������ܶ����ƻ����д���ļ����ԡ�
-- **������** �������ǵͼ����ԣ������ʱ�ṩ��һ���ĳ����������綯̬����ϵͳ�ȣ��������������顣
+- **简洁性** ：语法结构尽量简单，降低学习成本，同时便于编译器和解释器的实现。
+- **高效性** ：指令集设计贴近 RVM 的硬件抽象层，确保执行效率最大化。
+- **可扩展性** ：支持未来对指令集的扩展，允许新增功能而不破坏现有代码的兼容性。
+- **易用性** ：尽管是低级语言，但设计时提供了一定的抽象能力（如动态类型系统等），提升开发体验。
 
-#### 1.3 Ӧ�ó���
+#### 1.3 应用场景
 
-RA�������������³�����
+RA语言适用于以下场景：
 
-- **�ײ㿪��** ��ֱ�ӱ�д RVM ��ԭ��ָ�����ʵ�ֲ���ϵͳ�ںˡ����������������Ҫ�����ܵ������
-- **���������** ����Ϊ�߼����ԣ��� Rio��Python��C �ȣ���������Ŀ�����ԣ����ɸ�Ч�� RVM ��ִ�д��롣
-- **��ѧ���о�** ��������ӽ�Ӳ�������ԣ�RA���Էǳ��ʺ����ڼ������ϵ�ṹ�ͱ���ԭ���Ľ�ѧ���о���
-- **Ƕ��ʽϵͳ** ������Դ���޵Ļ����У�RA���Կ�����Ϊһ��������������ѡ��
+- **底层开发** ：直接编写 RVM 的原生指令，用于实现操作系统内核、驱动程序或其他需要高性能的组件。
+- **编译器后端** ：作为高级语言（如 Rio、Python、C 等）编译器的目标语言，生成高效的 RVM 可执行代码。
+- **教学与研究** ：由于其接近硬件的特性，RA语言非常适合用于计算机体系结构和编译原理的教学与研究。
+- **嵌入式系统** ：在资源受限的环境中，RA语言可以作为一种轻量级的语言选择。
 
-#### 1.4 ���������ԵĶԱ�
+#### 1.4 与其他语言的对比
 
-RA���Ե���ƽ���˴�ͳ������Ե��ص㣬����֮��������²�ͬ��
+RA语言的设计借鉴了传统汇编语言的特点，但与之相比有以下不同：
 
-- **��ǿ���﷨�ṹ** ��RA����������ͳһ���﷨�ṹ������ָ��ı�д�����⡣
-- **�����ר��** ��RA����רΪ RVM ��ƣ������ָ��� RVM �ļܹ��߶�ƥ�䣬����ͳ�������ͨ���������Ӳ����
-- **��ƽ̨֧��** ������ RVM ��һ���������RA�����������п�ƽ̨���ԣ����迼�ǵײ�Ӳ�����졣
+- **更强的语法结构** ：RA语言引入了统一的语法结构，简化了指令的编写和理解。
+- **虚拟机专用** ：RA语言专为 RVM 设计，因此其指令集与 RVM 的架构高度匹配，而传统汇编语言通常针对物理硬件。
+- **跨平台支持** ：由于 RVM 是一个虚拟机，RA语言天生具有跨平台特性，无需考虑底层硬件差异。
 
-#### 1.5 �ĵ��ṹ
+#### 1.5 文档结构
 
-���ĵ�����ϸ���� RA���Ե������ʹ�÷�������Ҫ�����������ݣ�
+本文档将详细介绍 RA语言的设计与使用方法，主要包括以下内容：
 
-1. [x] **�ʷ��ṹ** ������ RA���ԵĴʷ����򣬰����ؼ��֡���ʶ����ע�ͺͷָ�����
-2. [x] **�﷨�ṹ** ������ RA���ԵĻ����﷨���򣬰���ָ���ʽ���������͡�
-3. [x] **�������** ������ÿ��ָ��ľ�����Ϊ������ RVM �ϵ�ִ�й��̡�
-4. [ ] **��׼��**���г� RA�������õı�׼�⺯��������;��
-5. [ ] **����ʱ**������ RA������ RVM �ϵ����л��ƣ������ڴ������ջ�����ȡ�
-6. [ ] **������** ������ RA����������ʱ���������Ĵ��󣬲��ṩ��Ӧ�Ĵ���������
-7. [ ] **������**������ RA������ RVM ֮��ļ����ԣ�����ָ����������͵ȡ�
-8. [ ] **ʾ������** ��ͨ��ʵ�ʰ���չʾ RA���Ե�ʹ�÷�����
+1. [x] **词法结构** ：描述 RA语言的词法规则，包括关键字、标识符、注释和分隔符。
+2. [x] **语法结构** ：描述 RA语言的基本语法规则，包括指令格式、数据类型。
+3. [x] **语义规则** ：解释每条指令的具体行为及其在 RVM 上的执行过程。
+4. [ ] **标准库**：列出 RA语言内置的标准库函数及其用途。
+5. [ ] **运行时**：介绍 RA语言在 RVM 上的运行机制，包括内存管理、栈操作等。
+6. [ ] **错误处理** ：描述 RA语言在运行时可能遇到的错误，并提供相应的处理方法。
+7. [ ] **兼容性**：介绍 RA语言与 RVM 之间的兼容性，包括指令集、数据类型等。
+8. [ ] **示例代码** ：通过实际案例展示 RA语言的使用方法。
 
-### �����ʷ��ṹ
+### 二、词法结构
 
-#### 2.1 �ַ���
+#### 2.1 字符集
 
-RA����֧�������ַ�����
+RA语言支持以下字符集：
 
-- **Ӣ����ĸ** ��`a-z`��`A-Z`
-- **����** ��`0-9`
-- **�����ַ�** ���������������������ַ���
-    - ע�ͷ���`;`������ע�ͷ���
-    - ���ӷ���`~`
-    - �ָ�����`:`��`,`
-    - �ַ�����ʾ����`"`
-    - �������ո��Ʊ��������з��ȿհ��ַ�
+- **英文字母** ：`a-z`和`A-Z`
+- **数字** ：`0-9`
+- **特殊字符** ：（包括但不限于以下字符）
+    - 注释符：`;`（单行注释符）
+    - 连接符：`~`
+    - 分隔符：`:`、`,`
+    - 字符串表示符：`"`
+    - 其他：空格、制表符、换行符等空白字符
 
-�������������������ַ��������򽫱���Ϊ�Ƿ��ַ���
+所有输入必须符合上述字符集，否则将被视为非法字符。
 
-#### 2.2 ��ʶ��
+#### 2.2 标识符
 
-��ʶ������������������ǩ��������ʵ�塣RA���Եı�ʶ���������£�
+标识符用于命名变量、标签、函数等实体。RA语言的标识符规则如下：
 
-- ��������ĸ��A-Z �� a-z�����»��ߣ�_����ͷ��
-- �����ַ���������ĸ�����ֻ��»��ߡ�
-- ��ʶ�����ִ�Сд��
-- ����û����ȷ���ƣ������鲻���� 32 ���ַ�����߿ɶ��ԡ�
+- 必须以字母（A-Z 或 a-z）或下划线（_）开头。
+- 后续字符可以是字母、数字或下划线。
+- 标识符区分大小写。
+- 长度没有明确限制，但建议不超过 32 个字符以提高可读性。
 
-**ʾ����**
-
-```ra
-valid_identifier    ; ���»�������ȫСд��ĸ�ı�ʶ��ͨ��������������
-_valid              ; ���»��߿�ͷ�����ı�ʶ��ͨ�������������ر���
-variable123         ; ��ʶ�����԰����������ֲ�ͬʵ��
-FunctionIdentifier  ; ��������ĸ��д�ı�ʶ��ͨ�������������� 
-VARIABLE            ; ȫ��д�ı�ʶ��ͨ��������������
-_123                ; ���Ƽ���ʵ�庬��ı�ʶ��
-_                   ; ��ȫ�»��߿�ͷ�ı�ʶ��ͨ���������������Եı���
-```
-
-**�Ƿ�ʾ����**
+**示例：**
 
 ```ra
-123variable  ; ���󣺲��������ֿ�ͷ
-@temp        ; ���󣺰����Ƿ��ַ�
+valid_identifier    ; 以下划线连接全小写字母的标识符通常用于命名变量
+_valid              ; 以下划线开头命名的标识符通常用于命名隐藏变量
+variable123         ; 标识符可以包含数字区分不同实体
+FunctionIdentifier  ; 单词首字母大写的标识符通常用于命名函数 
+VARIABLE            ; 全大写的标识符通常用于命名常量
+_123                ; 不推荐无实体含义的标识符
+_                   ; 以全下划线开头的标识符通常用于命名被忽略的变量
 ```
 
-#### 2.3 ָ�
+**非法示例：**
 
-RA���Ե�ָ���RIS���Ǳ����֣�ָ�� RVM �ܹ�ֱ��ִ�еĲ���������������ʶ����
+```ra
+123variable  ; 错误：不能以数字开头
+@temp        ; 错误：包含非法字符
+```
 
-RIS�ɷ�Ϊ���¼��ࣺ
+#### 2.3 指令集
 
-- **����ָ��** �����ض�ִ�в�����ָ�
-- **��־ָ��** ������Ϊ��־λ������ָ�
-- **��ʽָ��** ����ִ�в�����ָ�ͨ�����ڴ���ռλ��
+RA语言的指令集（RIS）是保留字，指代 RVM 能够直接执行的操作，不能用作标识符。
 
-������ RA���Ե�ָ�����
+RIS可分为以下几类：
+
+- **操作指令** ：有特定执行操作的指令。
+- **标志指令** ：可作为标志位参数的指令。
+- **虚式指令** ：无执行操作的指令，通常用于代码占位。
+
+以下是 RA语言的指令集表格：
 
 <table>
     <tr>
-        <th rowspan="2" colspan="2"> ���</th>
-        <th rowspan="2"> ָ��</th>
-        <th rowspan="2"> ����</th>
-        <th colspan="2"> ����</th>
-        <th rowspan="2"> ����ʾ��</th>
-        <th rowspan="2"> ��ע</th>
+        <th rowspan="2" colspan="2"> 类别</th>
+        <th rowspan="2"> 指令</th>
+        <th rowspan="2"> 描述</th>
+        <th colspan="2"> 参数</th>
+        <th rowspan="2"> 代码示例</th>
+        <th rowspan="2"> 备注</th>
     </tr>
     <tr>
-        <th> ����</th>
-        <th> ����</th>
+        <th> 数量</th>
+        <th> 描述</th>
     </tr>
     <tr>
-        <td rowspan="30"> ����ָ��</td>
-        <td rowspan="4"> �ڴ����</td>
+        <td rowspan="30"> 操作指令</td>
+        <td rowspan="4"> 内存操作</td>
         <td style="text-align: center;"><code>ALLOT</code></td>
-        <td> Ϊ���ݷ���ʵ���ڴ�ռ�</td>
+        <td> 为数据分配实体内存空间</td>
         <td style="text-align: center;"> [0, n]</td>
-        <td><code>ALLOT</code>ָ���������������ʵ���ڴ�ռ䲢�����Բ�������</td>
+        <td><code>ALLOT</code>指令会分配参数个数的实体内存空间并依次以参数命名</td>
         <td>
       <pre>
 ALLOT:a,b,c
 ALLOT:;
 </pre>
         </td>
-        <td> ��RA�����У�ʹ�ñ���ǰ����Ҫ��Ϊ������ڴ�ռ䣬������Ϊ���Զ������ڴ�ռ䣬��������ֶ������ڴ�</td>
+        <td> 在RA语言中，使用变量前都需要先为其分配内存空间，函数会为其自动分配内存空间，因此无需手动分配内存</td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>DELETE</code></td>
-        <td> �ͷ�ʵ���ڴ�ռ�</td>
+        <td> 释放实体内存空间</td>
         <td style="text-align: center;"> [0, n]</td>
-        <td><code>DELETE</code>ָ��������ͷŲ�����Ӧ��ʵ���ڴ�ռ䣬�ͷź󲻿ɱ�����</td>
+        <td><code>DELETE</code>指令会依次释放参数对应的实体内存空间，释放后不可被访问</td>
         <td>
       <pre>
 ALLOT:a,b,c
 DELETE:a,b,c</pre>
         </td>
-        <td> RA������Ȼ֧���ֶ��ͷ��ڴ棨��ʹ�� <code>DELETE</code> ָ�����RVM���Զ������ڴ棬��˲������ֶ��ͷ��ڴ�ռ䡣
+        <td> RA语言虽然支持手动释放内存（如使用 <code>DELETE</code> 指令），但RVM会自动管理内存，因此不建议手动释放内存空间。
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>PUT</code></td>
-        <td> ������д��ʵ���ڴ�ռ�</td>
+        <td> 将数据写入实体内存空间</td>
         <td style="text-align: center;"> 2</td>
-        <td> ��1Ϊ�����������ݣ���2Ϊ��д�������ʵ��</td>
+        <td> 参1为待操作的数据，参2为待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a,b
 PUT:10,a
 PUT:a,b</pre>
         </td>
-        <td style="text-align: center;" rowspan="2"> ֵ��ע����ǣ�<code>PUT</code> ָ���ǽ�ԭʼ���ݽ����ƶ�д�룬�����Ǵ��������ݸ��������贴����������ʹ�� <code>COPY</code> ָ�<code>PUT</code>�ڲ�����ֵ���ͣ�Numeric��������ʱ���ȼ���<code>COPY</code></td>
+        <td style="text-align: center;" rowspan="2"> 值得注意的是，<code>PUT</code> 指令是将原始数据进行移动写入，而不是创建新数据副本，如需创建副本，请使用 <code>COPY</code> 指令。<code>PUT</code>在操作数值类型（Numeric）的数据时，等价于<code>COPY</code></td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>COPY</code></td>
-        <td> ��ԭʼ���ݴ�����������������д��Ŀ��ʵ���ڴ�ռ�</td>
+        <td> 以原始数据创建副本，并将副本写入目标实体内存空间</td>
         <td style="text-align: center;"> 2</td>
-        <td> ��1Ϊ�����������ݣ���2Ϊ��д�������ʵ��</td>
+        <td> 参1为待操作的数据，参2为待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a, b
@@ -176,23 +176,23 @@ COPY:a, b</pre>
         </td>
     </tr>
     <tr>
-        <td rowspan="4"> �������</td>
+        <td rowspan="4"> 运算操作</td>
         <td style="text-align: center;"><code>ADD</code></td>
-        <td> �ӷ�����</td>
+        <td> 加法操作</td>
         <td style="text-align: center;"> 3</td>
-        <td> ��1����2Ϊ�����������ݣ���3Ϊ��д�������ʵ��</td>
+        <td> 参1、参2为待操作的数据，参3为待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a
 ADD:1,1,a</pre>
         </td>
-        <td rowspan="4"> ֻ��������ֵ���ͣ�Numeric��</td>
+        <td rowspan="4"> 只能用于数值类型（Numeric）</td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>OPP</code></td>
-        <td> ȡ������</td>
+        <td> 取反操作</td>
         <td style="text-align: center;"> 2</td>
-        <td> ��1Ϊ�����������ݣ���2Ϊ��д�������ʵ��</td>
+        <td> 参1为待操作的数据，参2为待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a
@@ -201,9 +201,9 @@ OPP:1,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>MUL</code></td>
-        <td> �˷�����</td>
+        <td> 乘法操作</td>
         <td style="text-align: center;"> 3</td>
-        <td> ��1����2Ϊ�����������ݣ���3Ϊ��д�������ʵ��</td>
+        <td> 参1、参2为待操作的数据，参3为待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a
@@ -212,9 +212,9 @@ MUL:2,5,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>DIV</code></td>
-        <td> ��������</td>
+        <td> 除法操作</td>
         <td style="text-align: center;"> 3</td>
-        <td> ��1����2Ϊ�����������ݣ���3Ϊ��д�������ʵ��</td>
+        <td> 参1、参2为待操作的数据，参3为待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a
@@ -222,96 +222,96 @@ DIV:10,2,a</pre>
         </td>
     </tr>
     <tr>
-        <td> ��Χ����</td>
+        <td> 范围操作</td>
         <td style="text-align: center;"><code>END</code></td>
-        <td> ��Ǿֲ������λ��</td>
+        <td> 标记局部域结束位置</td>
         <td style="text-align: center;"> [0, 1]</td>
-        <td> �����������ڱ�ǽ����ľֲ������ƣ���ʡ�ԣ���Ϊ����ߴ���ɶ��ԣ�������ʡ��</td>
+        <td> 参数可以用于标记结束的局部域名称，可省略，但为了提高代码可读性，不建议省略</td>
         <td>
       <pre>
 FUNC:Func
-  ... ; ������
+  ... ; 函数体
 END:Func</pre>
         </td>
-        <td><code>END</code>ָ�����ʶ�ֲ���Ľ���λ�ã�ͬʱ RVM
-            ������ִ�д�ָ��ʱ�Զ������ͷžֲ����з�����ڴ�ռ䣬���<code>END</code>���ڲ���ָ��
+        <td><code>END</code>指令不仅标识局部域的结束位置，同时 RVM
+            还会在执行此指令时自动清理释放局部域中分配的内存空间，因此<code>END</code>属于操作指令
         </td>
     </tr>
     <tr>
-        <td rowspan="5"> ��������</td>
+        <td rowspan="5"> 函数操作</td>
         <td style="text-align: center;"><code>FUNC</code></td>
-        <td> �޷���ֵ��������</td>
+        <td> 无返回值函数定义</td>
         <td style="text-align: center;"> [1, n]</td>
-        <td> ��1Ϊ����������2����nΪ��������</td>
+        <td> 参1为函数名，参2到参n为函数参数</td>
         <td>
       <pre>
 FUNC:NoneReturnFunc,a,b,c
-  ... ; ������
+  ... ; 函数体
 END:NoneReturnFunc</pre>
         </td>
         <td style="text-align: center;" rowspan="2"> /</td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>FUNI</code></td>
-        <td> �з���ֵ��������</td>
+        <td> 有返回值函数定义</td>
         <td style="text-align: center;"> [2, n]</td>
-        <td> ��1Ϊ����������2����nΪ��������</td>
+        <td> 参1为函数名，参2到参n为函数参数</td>
         <td>
       <pre>
 FUNI:HasReturnFunc,a,b,c
-  ... ; ������
+  ... ; 函数体
 END:HasReturnFunc</pre>
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>CALL</code></td>
-        <td> �޷���ֵ��������</td>
+        <td> 无返回值函数调用</td>
         <td style="text-align: center;"> [1, m]</td>
-        <td> ��1Ϊ����������2����mΪ����������m-1��<code>FUNC</code>ָ���ĺ��������������</td>
+        <td> 参1为函数名，参2到参m为函数参数，m-1与<code>FUNC</code>指令定义的函数参数个数相等</td>
         <td>
       <pre>
 FUNC:NoneReturnFunc,a,b,c
-  ... ; ������
+  ... ; 函数体
 END:NoneReturnFunc
 CALL:NoneReturnFunc,1,2,3</pre>
         </td>
-        <td> ֻ������<code>FUNC</code>ָ���ĺ���</td>
+        <td> 只能用于<code>FUNC</code>指令定义的函数</td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>IVOK</code></td>
-        <td> �з���ֵ��������</td>
+        <td> 有返回值函数调用</td>
         <td style="text-align: center;"> [2, m]</td>
-        <td> ��1Ϊ����������mΪ����ֵ����ʵ�壬��2����m-1Ϊ����������m-2��<code>FUNI</code>ָ���ĺ��������������</td>
+        <td> 参1为函数名，参m为返回值接收实体，参2到参m-1为函数参数，m-2与<code>FUNI</code>指令定义的函数参数个数相等</td>
         <td>
       <pre>
 FUNI:HasReturnFunc,a,b,c
-  ... ; ������
+  ... ; 函数体
 END:HasReturnFunc
 ALLOT:return_value
 IVOK:HasReturnFunc,1,2,3,return_value</pre>
         </td>
-        <td> ֻ������<code>FUNI</code>ָ���ĺ���</td>
+        <td> 只能用于<code>FUNI</code>指令定义的函数</td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>RET</code></td>
-        <td> ��������ֵ����</td>
+        <td> 函数返回值操作</td>
         <td style="text-align: center;"> 1</td>
-        <td> ����Ϊ�����ķ���ֵ</td>
+        <td> 参数为函数的返回值</td>
         <td>
       <pre>
 FUNI:HasReturnFunc,a,b,c
-  ... ; ������
+  ... ; 函数体
   RET:10
 END:HasReturnFunc</pre>
         </td>
-        <td> ֻ������<code>FUNI</code>ָ���ĺ���</td>
+        <td> 只能用于<code>FUNI</code>指令定义的函数</td>
     </tr>
     <tr>
-        <td> �Ƚϲ���</td>
+        <td> 比较操作</td>
         <td style="text-align: center;"><code>CMP</code></td>
-        <td> �Ƚ����ݹ�ϵ����</td>
+        <td> 比较数据关系操作</td>
         <td style="text-align: center;"> 3</td>
-        <td> ��1����2Ϊ���Ƚϵ����ݣ���3Ϊ��д�������ʵ��</td>
+        <td> 参1、参2为待比较的数据，参3为待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a,b,cmp
@@ -320,67 +320,67 @@ CMP:a,b,cmp</pre>
         <td style="text-align: center;"> /</td>
     </tr>
     <tr>
-        <td rowspan="6"> ���Ʋ���</td>
+        <td rowspan="6"> 控制操作</td>
         <td style="text-align: center;"><code>REPEAT</code></td>
-        <td> ѭ��ִ�д���ָ��</td>
+        <td> 循环执行次数指令</td>
         <td style="text-align: center;"> 1</td>
-        <td> ����Ϊѭ��ִ�еĴ���</td>
+        <td> 参数为循环执行的次数</td>
         <td>
       <pre>
 REPEAT:10
-  ... ; ѭ����
+  ... ; 循环体
 END:REPEAT</pre>
         </td>
         <td style="text-align: center;" rowspan="2"> /</td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>UNTIL</code></td>
-        <td> ѭ������ָ��ظ�ִ��ֱ����������</td>
+        <td> 循环条件指令，重复执行直到满足条件</td>
         <td style="text-align: center;"> 2</td>
-        <td> ��1Ϊѭ��������ͨ������<code>CMP</code>��ȡ�ıȽ������͵����ݣ���2Ϊ��ϵ��־����</td>
+        <td> 参1为循环条件，通常是由<code>CMP</code>获取的比较组类型的数据，参2为关系标志参数</td>
         <td>
       <pre>
 ALLOT:a,b,cmp
 CMP:a,b,cmp
 UNTIL:cmp,RE
-  ... ; ѭ����
+  ... ; 循环体
 END:UNTIL</pre>
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>EXIT</code></td>
-        <td> �˳��ֲ���ָ��</td>
+        <td> 退出局部域指令</td>
         <td style="text-align: center;"> [0, 1]</td>
-        <td> �����������ڱ���˳��ľֲ������ƣ���ʡ�ԣ���Ϊ����ߴ���ɶ��ԣ�������ʡ��</td>
+        <td> 参数可以用于标记退出的局部域名称，可省略，但为了提高代码可读性，不建议省略</td>
         <td>
       <pre>
 FUNC:Func
-  ... ; ������
+  ... ; 函数体
   EXIT:Func
 END:Func</pre>
         </td>
-        <td><code>EXIT</code>ָ������ھֲ����е�����λ��ʹ�ã��� RVM
-            ִ�д�ָ��ʱ�Ὣִ��������һ��Ŀ��ָ������Ϊ�þֲ����<code>END</code>ָ��
+        <td><code>EXIT</code>指令可以在局部域中的任意位置使用，当 RVM
+            执行此指令时会将执行器的下一个目标指令设置为该局部域的<code>END</code>指令
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>SET</code></td>
-        <td> ���ñ�ǩָ��</td>
+        <td> 设置标签指令</td>
         <td style="text-align: center;"> 1</td>
-        <td> ����Ϊ��ǩ��</td>
+        <td> 参数为标签名</td>
         <td>
       <pre>
 SET:label</pre>
         </td>
         <td>
-            ��Ҫע�����<code>SET</code>ָ�����õı�ǩ��������ʵ�壬������ñ�ǩ����Ҫִ��<code>ALLOT</code>�����ڴ�ռ�Ĳ�����ʵ���ϱ�ǩ�Ǿֲ�������ԣ������ڴ�ռ��ɾֲ������
+            需要注意的是<code>SET</code>指令设置的标签不是数据实体，因此设置标签不需要执行<code>ALLOT</code>分配内存空间的操作，实际上标签是局部域的属性，它的内存空间由局部域管理
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>JMP</code></td>
-        <td> ��������תָ��</td>
+        <td> 无条件跳转指令</td>
         <td style="text-align: center;"> 1</td>
-        <td> ����Ϊ��ǩ��</td>
+        <td> 参数为标签名</td>
         <td>
       <pre>
 JMP:label2
@@ -390,14 +390,14 @@ SET:label2
   JMP:label1
 SET:label3</pre>
         </td>
-        <td> ��Ϊ��ǩ�Ǿֲ�������ԣ���� RVM ������ʱ����ֲ���ʱ������ִ�б�ǩ�����ò��������<code>JMP</code>ָ������ھֲ��������λ����ת����ǰ�ֲ���ı�ǩ��Ŀǰ�޷�������ת��ToDo��Ҳ��δ����ʵ�ֿ�����ת��
+        <td> 因为标签是局部域的属性，因此 RVM 在运行时进入局部域时会首先执行标签的设置操作，因此<code>JMP</code>指令可以在局部域的任意位置跳转到当前局部域的标签，目前无法跨域跳转（ToDo：也许未来将实现跨域跳转）
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>JR</code></td>
-        <td> ������תָ��</td>
+        <td> 条件跳转指令</td>
         <td style="text-align: center;"> 3</td>
-        <td> ��1Ϊ���ݱȽ��飬ͨ����<code>CMP</code>��ȡ�Ƚ������͵����ݣ���2Ϊ��ϵ��־��������3Ϊ��ת��ǩ��</td>
+        <td> 参1为数据比较组，通常由<code>CMP</code>获取比较组类型的数据，参2为关系标志参数，参3为跳转标签名</td>
         <td>
       <pre>
 ALLOT:a,b,cmp
@@ -408,56 +408,56 @@ SET:label1
 SET:label2</pre>
         </td>
         <td>
-            <code>JR</code>ָ����<code>JMP</code>ָ�����ƣ�ֻ����ת����ǰ�ֲ���ı�ǩ��Ŀǰ�޷�������ת��ToDo��Ҳ��δ����ʵ�ֿ�����ת��
+            <code>JR</code>指令与<code>JMP</code>指令类似，只能跳转到当前局部域的标签，目前无法跨域跳转（ToDo：也许未来将实现跨域跳转）
         </td>
     </tr>
     <tr>
-        <td rowspan="2"> IO����</td>
+        <td rowspan="2"> IO操作</td>
         <td style="text-align: center;"><code>SOUT</code></td>
-        <td> ������ݵ���׼���</td>
+        <td> 输出数据到标准输出</td>
         <td style="text-align: center;"> [1, n]</td>
-        <td> ��1�����ģʽ��־ָ�����Ϊ�����������</td>
+        <td> 参1是输出模式标志指令，参数为待输出的数据</td>
         <td>
       <pre>
 SOUT:s-l,a,b,c</pre>
         </td>
         <td>
-            <a href="#io">���ģʽ��־ָ��</a>����<code>s-l</code>�������������<code>s-m</code>�����������
+            <a href="#io">输出模式标志指令</a>包括<code>s-l</code>（单行输出）、<code>s-m</code>（多行输出）
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>SIN</code></td>
-        <td> �������ݵ���׼����</td>
+        <td> 输入数据到标准输入</td>
         <td style="text-align: center;"> [1, n]</td>
-        <td> ��1������ģʽ��־ָ�����Ϊ�����������</td>
+        <td> 参1是输入模式标志指令，参数为待输入的数据</td>
         <td>
       <pre>
 SIN:s-l,a,b,c</pre>
         </td>
         <td>
-            <a href="#io">����ģʽ��־ָ��</a>����<code>s-l</code>���������룩��<code>s-m</code>���������룩
+            <a href="#io">输入模式标志指令</a>包括<code>s-l</code>（单行输入）、<code>s-m</code>（多行输入）
         </td>
     </tr>
     <tr>
-        <td rowspan="2"> ���ò���</td>
+        <td rowspan="2"> 引用操作</td>
         <td style="text-align: center;"><code>QOT</code></td>
-        <td> �������ݲ���</td>
+        <td> 引用数据操作</td>
         <td style="text-align: center;"> 2</td>
-        <td> ��1Ϊ�����õ����ݣ���2Ϊ��д�������ʵ�壬ע�⣺��������������������ʵ��</td>
+        <td> 参1为待引用的数据，参2为待写入的数据实体，注意：两个参数都必须是数据实体</td>
         <td>
       <pre>
 ALLOT:a,b
 QOT:a,b</pre>
         </td>
         <td>
-            <code>QOT</code>ָ��ֻ��������������ʵ�壬�����Զ���Ŀ������ʵ������͸���Ϊ�������ͣ���������Ŀ���ID�洢��Ŀ������ʵ����
+            <code>QOT</code>指令只能用于引用数据实体，它会自动将目标数据实体的类型更改为引用类型，并将引用目标的ID存储到目标数据实体中
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>QOT_VAL</code></td>
-        <td> �޸��������ݲ���</td>
+        <td> 修改引用数据操作</td>
         <td style="text-align: center;"> 2</td>
-        <td> ��1Ϊ���޸ĵ����ݣ���2Ϊ��д�������ʵ�壬ע�⣺��2�����ͱ���Ϊ��������</td>
+        <td> 参1为待修改的数据，参2为待写入的数据实体，注意：参2的类型必须为引用类型</td>
         <td>
       <pre>
 ALLOT:a,b
@@ -465,86 +465,86 @@ QOT:a,b
 QOT_VAL:10,b</pre>
         </td>
         <td>
-            <code>QOT_VAL</code>ָ��ֻ�������޸���������ʵ�壬���ὫĿ�����ݴ洢����������ʵ�����õ�����ʵ����
+            <code>QOT_VAL</code>指令只能用于修改引用数据实体，它会将目标数据存储到引用数据实体引用的数据实体中
         </td>
     </tr>
     <tr>
-        <td rowspan="2"> ���Ͳ���</td>
+        <td rowspan="2"> 类型操作</td>
         <td style="text-align: center;"><code>TP_SET</code></td>
-        <td> �޸�����ʵ�����Ͳ���</td>
+        <td> 修改数据实体类型操作</td>
         <td style="text-align: center;"> 2</td>
-        <td> ��1Ϊ���ͱ�־ָ���2Ϊ���޸ĵ�����ʵ��</td>
+        <td> 参1为类型标志指令，参2为待修改的数据实体</td>
         <td>
       <pre>
 ALLOT:a,b
 TP_SET:tp-int,a</pre>
         </td>
         <td>
-            <a href="#customType">���ͱ�־ָ��</a>����<code>tp-int</code>�����ͣ���<code>tp-float</code>�������ͣ���<code>tp-str</code>���ַ�������<code>tp-bool</code>�������ͣ���<code>tp-char</code>���ַ����ͣ���<code>tp-null</code>�������ͣ���<code>ALLOT</code>ָ����������ʵ������Ĭ��Ϊ<code>tp-null</code>
+            <a href="#customType">类型标志指令</a>包括<code>tp-int</code>（整型）、<code>tp-float</code>（浮点型）、<code>tp-str</code>（字符串）、<code>tp-bool</code>（布尔型）、<code>tp-char</code>（字符类型）、<code>tp-null</code>（空类型），<code>ALLOT</code>指令分配的数据实体类型默认为<code>tp-null</code>
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>TP_GET</code></td>
-        <td> ��ȡ����ʵ�����Ͳ���</td>
+        <td> 获取数据实体类型操作</td>
         <td style="text-align: center;"> 2</td>
-        <td> ��1Ϊ����ȡ������ʵ�壬��2Ϊ�������ݴ�д�������ʵ��</td>
+        <td> 参1为待获取的数据实体，参2为类型数据待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a,b
 TP_GET:a,b</pre>
         </td>
         <td>
-            <code>TP_GET</code>ָ����Ի�ȡ���ݺ�ʵ������ͣ����ὫĿ������ʵ������ʹ洢��Ŀ������ʵ����
+            <code>TP_GET</code>指令可以获取数据和实体的类型，它会将目标数据实体的类型存储到目标数据实体中
         </td>
     </tr>
     <tr>
-        <td rowspan="4"> ���������</td>
+        <td rowspan="4"> 作用域操作</td>
         <td style="text-align: center;"><code>SP_GET</code></td>
-        <td> ��ȡ������ID����</td>
+        <td> 获取作用域ID操作</td>
         <td style="text-align: center;"> 1</td>
-        <td> ����Ϊ���������ݴ�д�������ʵ��</td>
+        <td> 参数为作用域数据待写入的数据实体</td>
         <td>
       <pre>
 ALLOT:a
 SP_GET:a</pre>
         </td>
         <td>
-            <code>SP_GET</code>ָ����Ի�ȡ������ID�����Ὣ��ǰ�������ID�洢��Ŀ������ʵ����
+            <code>SP_GET</code>指令可以获取作用域ID，它会将当前作用域的ID存储到目标数据实体中
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>SP_SET</code></td>
-        <td> �޸ĵ�ǰ���������</td>
+        <td> 修改当前作用域操作</td>
         <td style="text-align: center;"> 1</td>
-        <td> ����Ϊ�洢������ID������ʵ��</td>
+        <td> 参数为存储作用域ID的数据实体</td>
         <td>
        <pre>
 ALLOT:a
 SP_SET:a</pre>
         </td>
         <td>
-            <code>SP_SET</code>ָ������޸ĵ�ǰ���������Ὣ��ǰ���������޸�Ϊָ��ID��������
+            <code>SP_SET</code>指令可以修改当前作用域，它会将当前的作用域修改为指定ID的作用域
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>SP_NEW</code></td>
-        <td> �½��ֲ����������</td>
+        <td> 新建局部作用域操作</td>
         <td style="text-align: center;"> 1</td>
-        <td> ����Ϊ����ʵ�壬���ڴ洢�½��������ID</td>
+        <td> 参数为数据实体，用于存储新建作用域的ID</td>
         <td>
        <pre>
 ALLOT:a
 SP_NEW:a</pre>
         </td>
         <td>
-            <code>SP_NEW</code>ָ������½��ֲ����������Ὣ�½��������ID�洢��Ŀ������ʵ����
+            <code>SP_NEW</code>指令可以新建局部作用域，它会将新建作用域的ID存储到目标数据实体中
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>SP_DEL</code></td>
-        <td> ɾ���ֲ����������</td>
+        <td> 删除局部作用域操作</td>
         <td style="text-align: center;"> 1</td>
-        <td> ����Ϊ�洢������ID������ʵ��</td>
+        <td> 参数为存储作用域ID的数据实体</td>
         <td>
        <pre>
 ALLOT:a
@@ -552,14 +552,14 @@ SP_GET:a
 SP_DEL:a</pre>
         </td>
         <td>
-            <code>SP_DEL</code>ָ�����ɾ���ֲ����������ὫĿ��ID��������ɾ�������Ƽ�ʹ�ô�ָ����������ɴ����ֲ���ָ����ľֲ����磺<code>FUNC</code>��<code>REPEAT</code>�ȣ�����Ϊ RVM ���Զ���������ָ����ľֲ���
+            <code>SP_DEL</code>指令可以删除局部作用域，它会将目标ID的作用域删除，不推荐使用此指令操作其他可创建局部域指令创建的局部域（如：<code>FUNC</code>、<code>REPEAT</code>等），因为 RVM 会自动清理其他指令创建的局部域
         </td>
     </tr>
     <tr>
-        <td rowspan="18"> ��־ָ��</td>
-        <td rowspan="4"> IO��־<a id="io"></a></td>
+        <td rowspan="18"> 标志指令</td>
+        <td rowspan="4"> IO标志<a id="io"></a></td>
         <td style="text-align: center;"><code>s-l</code></td>
-        <td> �������ģʽ</td>
+        <td> 单行输出模式</td>
         <td style="text-align: center;" rowspan="4"> 0</td>
         <td style="text-align: center;" rowspan="4"> /</td>
         <td>
@@ -567,46 +567,46 @@ SP_DEL:a</pre>
 SOUT:s-l,...</pre>
         </td>
         <td>
-            <code>s-l</code>��ʾ�������ģʽ�����������ʱ����������ݶ���ֱ����ǰ������ݽ���ƴ�����
+            <code>s-l</code>表示单行输出模式，即输出数据时，后面的数据都会直接与前面的数据进行拼接输出
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>s-m</code></td>
-        <td> �������ģʽ</td>
+        <td> 多行输出模式</td>
         <td>
         <pre>
 SOUT:s-m,...</pre>
         </td>
         <td>
-            <code>s-m</code> ��ʾ�������ģʽ�����������ʱ����������ݻ��Ի��з���ǰ������ݽ���ƴ�����
+            <code>s-m</code> 表示多行输出模式，即输出数据时，后面的数据会以换行符与前面的数据进行拼接输出
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>s-f</code></td>
-        <td> ˢ����������־</td>
+        <td> 刷新输出缓存标志</td>
         <td>
         <pre>
 SOUT:s-l,...,s-f,...</pre>
         </td>
         <td>
-            <code>s-f</code> ����������ˢ���������ı�־����RVM�У��������ȱ�����������棬������ﵽһ�������������նˡ�ʹ�� <code>s-f</code> ����ǿ�ƽ���ǰ�����е�������������������صȴ��������ء�
+            <code>s-f</code> 是用于立即刷新输出缓存的标志。在RVM中，数据首先被存入输出缓存，待缓存达到一定量后才输出到终端。使用 <code>s-f</code> 可以强制将当前缓存中的数据立刻输出，而不必等待缓存满载。
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>s-n</code></td>
-        <td> ���б�־</td>
+        <td> 换行标志</td>
         <td>
         <pre>
 SOUT:s-l,...,s-n,...</pre>
         </td>
         <td>
-            <code>s-n</code>��ʾ���б�־�����������ʱ���ڱ�־λ��������з�
+            <code>s-n</code>表示换行标志，即输出数据时，在标志位置输出换行符
         </td>
     </tr>
     <tr>
-        <td rowspan="6"> ���ͱ�־<a id="customType"></a></td>
+        <td rowspan="6"> 类型标志<a id="customType"></a></td>
         <td style="text-align: center;"><code>tp-int</code></td>
-        <td> ���ͱ�־</td>
+        <td> 整型标志</td>
         <td style="text-align: center;" rowspan="6"> 0</td>
         <td style="text-align: center;" rowspan="6"> /</td>
         <td>
@@ -615,12 +615,12 @@ ALLOT:a
 TP_SET:tp-int,a</pre>
         </td>
         <td rowspan="6">
-            ���ͱ�־��ʾ���Ӧ���������ͣ����ڲ��洢��ֵ�����Ӧ���͵�ID�ַ���������������������������ַ������ͣ�����ʹ��<code>TP_GET</code>�鿴������
+            类型标志表示其对应的数据类型，它内部存储的值是其对应类型的ID字符串，因此它本身的数据类型是字符串类型，可以使用<code>TP_GET</code>查看其类型
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>tp-float</code></td>
-        <td> �����ͱ�־</td>
+        <td> 浮点型标志</td>
         <td>
         <pre>
 ALLOT:a
@@ -629,7 +629,7 @@ TP_SET:tp-float,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>tp-str</code></td>
-        <td> �ַ�����־</td>
+        <td> 字符串标志</td>
         <td>
         <pre>
 ALLOT:a
@@ -638,7 +638,7 @@ TP_SET:tp-str,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>tp-bool</code></td>
-        <td> ������־</td>
+        <td> 布尔标志</td>
         <td>
         <pre>
 ALLOT:a
@@ -647,7 +647,7 @@ TP_SET:tp-bool,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>tp-null</code></td>
-        <td> ��ֵ��־</td>
+        <td> 空值标志</td>
         <td>
         <pre>
 ALLOT:a
@@ -656,7 +656,7 @@ TP_SET:tp-null,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>tp-char</code></td>
-        <td> �ַ���־</td>
+        <td> 字符标志</td>
         <td>
         <pre>
 ALLOT:a
@@ -664,9 +664,9 @@ TP_SET:tp-char,a</pre>
         </td>
     </tr>
     <tr>
-        <td rowspan="8"> ��ϵ��־<a id="relationship"></a> </td>
+        <td rowspan="8"> 关系标志<a id="relationship"></a> </td>
         <td style="text-align: center;"><code>RL</code></td>
-        <td> ���ڹ�ϵ��־ </td>
+        <td> 大于关系标志 </td>
         <td style="text-align: center;" rowspan="8"> 0</td>
         <td style="text-align: center;" rowspan="8"> /</td>
         <td>
@@ -678,7 +678,7 @@ TP_GET:RL,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>RLE</code><a id="relation-RLE"></a></td>
-        <td> ���ڵ��ڹ�ϵ��־ </td>
+        <td> 大于等于关系标志 </td>
         <td>
         <pre>
 ALLOT:a
@@ -687,7 +687,7 @@ TP_GET:RLE,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>RNE</code><a id="relation-RNE"></a></td>
-        <td> �����ڹ�ϵ��־ </td>
+        <td> 不等于关系标志 </td>
         <td>
         <pre>
 ALLOT:a
@@ -696,7 +696,7 @@ TP_GET:RNE,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>RE</code><a id="relation-RE"></a></td>
-        <td> ���ڹ�ϵ��־ </td>
+        <td> 等于关系标志 </td>
         <td>
         <pre>
 ALLOT:a
@@ -705,7 +705,7 @@ TP_GET:RE,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>RSE</code><a id="relation-RSE"></a></td>
-        <td> С�ڵ��ڹ�ϵ��־ </td>
+        <td> 小于等于关系标志 </td>
         <td>
         <pre>
 ALLOT:a
@@ -714,7 +714,7 @@ TP_GET:RSE,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>RS</code><a id="relation-RS"></a></td>
-        <td> С�ڹ�ϵ��־ </td>
+        <td> 小于关系标志 </td>
         <td>
         <pre>
 ALLOT:a
@@ -723,7 +723,7 @@ TP_GET:RS,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>RT</code><a id="relation-RT"></a></td>
-        <td> ���־ </td>
+        <td> 真标志 </td>
         <td>
         <pre>
 ALLOT:a
@@ -732,7 +732,7 @@ TP_GET:RT,a</pre>
     </tr>
     <tr>
         <td style="text-align: center;"><code>RF</code><a id="relation-RF"></a></td>
-        <td> �ٱ�־ </td>
+        <td> 假标志 </td>
         <td>
         <pre>
 ALLOT:a
@@ -740,10 +740,10 @@ TP_GET:RF,a</pre>
         </td>
     </tr>
     <tr>
-        <td rowspan="2"> ��ʽָ��</td>
+        <td rowspan="2"> 虚式指令</td>
         <td rowspan="2"> </td>
         <td style="text-align: center;"><code>PASS</code></td>
-        <td> ռλ��ָ��</td>
+        <td> 占位符指令</td>
         <td style="text-align: center;"> [0, n]</td>
         <td style="text-align: center;"> /</td>
         <td>
@@ -751,12 +751,12 @@ TP_GET:RF,a</pre>
 PASS:;</pre>
         </td>
         <td>
-            ռλ��ָ�����ռλ����ָ��ִ��ʱ��RVM ����Դ�ָ�ֱ��ִ�к���ָ��
+            占位符指令，用于占位，当指令执行时，RVM 会忽略此指令，直接执行后续指令
         </td>
     </tr>
     <tr>
         <td style="text-align: center;"><code>UNKNOWN</code></td>
-        <td> δָ֪��</td>
+        <td> 未知指令</td>
         <td style="text-align: center;"> [0, n]</td>
         <td style="text-align: center;"> /</td>
         <td>
@@ -764,138 +764,138 @@ PASS:;</pre>
 UNKNOWN:;</pre>
         </td>
         <td>
-            ���� RVM ��ʶ��������δָ֪��
+            用于 RVM 标识解析到的未知指令
         </td>
     </tr>
 </table>
 
-#### 2.4 ����
-RA����֧���������͵ĳ�����
+#### 2.4 常量
+RA语言支持以下类型的常量：
 
-- **��ֵ���ͣ�Numeric��**
-  - **��������** �� �� `123`, `-456`
-  - **���㳣��** �� �� `3.14`, `-0.001`
-  - **��������** �� ֻ������ֵ��`RT` �� `RF`��Ҳ�����ڱ�ʶ��ϵ��
-- **�ɵ������ͣ�Iterable��**
-  - **�ַ�������** �� ʹ��˫������ס���� `"Hello, World!"`��
-  ֧��ת���ַ����� `\n`�����У���`\t`���Ʊ�������`\"`��˫���ţ���
-- **�����ͣ�Null��**
-  - **��ֵ����** �� ֻ��һ��ֵ��`null`��
+- **数值类型（Numeric）**
+  - **整数常量** ： 如 `123`, `-456`
+  - **浮点常量** ： 如 `3.14`, `-0.001`
+  - **布尔常量** ： 只有两个值：`true` 和 `false`。
+- **可迭代类型（Iterable）**
+  - **字符串常量** ： 使用双引号括住，如 `"Hello, World!"`。
+  支持转义字符，如 `\n`（换行）、`\t`（制表符）、`\"`（双引号）。
+- **空类型（Null）**
+  - **空值常量** ： 只有一个值：`null`。
 
-**ʾ����**
+**示例：**
 ```Ra
 ALLOT:a,b,c,d,e
-PUT:10,a              ; ��������
-PUT:3.14,b            ; ���㳣��
-PUT:"Hello, World!",c ; �ַ�������
-PUT:true,d            ; ��������
-PUT:null,e            ; ��ֵ����
+PUT:10,a              ; 整数常量
+PUT:3.14,b            ; 浮点常量
+PUT:"Hello, World!",c ; 字符串常量
+PUT:true,d            ; 布尔常量
+PUT:null,e            ; 空值常量
 ```
 
-#### 2.5 ��ϵ
-RA����֧���������͵Ĺ�ϵ��
+#### 2.5 关系
+RA语言支持以下类型的关系：
 
-- **���ڹ�ϵ**��`RL`
-- **���ڵ��ڹ�ϵ**��`RLE`
-- **�����ڹ�ϵ**��`RNE`
-- **���ڹ�ϵ**��`RE`
-- **С�ڵ��ڹ�ϵ**��`RSE`
-- **С�ڹ�ϵ**��`RS`
-- **���ϵ**��`RT`
-- **�ٹ�ϵ**��`RF`
+- **大于关系**：`RL`
+- **大于等于关系**：`RLE`
+- **不等于关系**：`RNE`
+- **等于关系**：`RE`
+- **小于等于关系**：`RSE`
+- **小于关系**：`RS`
+- **真关系**：`RT`
+- **假关系**：`RF`
 
-��ϸ������ [��ϵ��־](#relationship)��
+详细描述见 [关系标志](#relationship)。
 
-#### 2.6 ע��
-RA����֧�ֵ���ע�ͺͶ���ע�ͣ�
-- **����ע��** ��
+#### 2.6 注释
+RA语言支持单行注释和多行注释：
+- **单行注释** ：
 
-  �Էֺţ�;����ͷ��ֱ����β���������ݾ�����Ϊע�͡�
+  以分号（;）开头，直到行尾的所有内容均被视为注释。
 
-  **ʾ����**
+  **示例：**
   ```Ra
-  ; ����һ������ע��
-  ALLOT:a ; Ϊ����a�����ڴ�ռ�
-  PUT:10,a ; ��10�洢������ʵ��a
+  ; 这是一个单行注释
+  ALLOT:a ; 为变量a分配内存空间
+  PUT:10,a ; 将10存储到数据实体a
   ```
-- **����ע��** ��
+- **多行注释** ：
   
-  ����ע�Ϳ���ʹ��`~`���`;`��ɡ�
+  多行注释可以使用`~`配合`;`完成。
 
-  **ʾ����**
+  **示例：**
   ```Ra
-  ; ����һ������ע��
-  ~ ���Ƕ���ע�͵ĵڶ���
-  ~ ���Ƕ���ע�͵ĵ�����
-  ALLOT:a ; Ϊ����a�����ڴ�ռ�
+  ; 这是一个多行注释
+  ~ 这是多行注释的第二行
+  ~ 这是多行注释的第三行
+  ALLOT:a ; 为变量a分配内存空间
   ```
   
-**ע��**_`~`�����ӷ���RVM �ڽ�������ʱ�Ὣ��ͷ����`~`��һ��ƴ�ӵ�������һ�У��������չʾ�Ķ���ע��ʵ����Ҳֻ�ǵ���ע�͡�_
+**注：**_`~`是连接符，RVM 在解析代码时会将开头带有`~`的一行拼接到它的上一行，因此上面展示的多行注释实际上也只是单行注释。_
 
-#### 2.7 �ָ���
-RA����ʹ�����·ָ�������֯����ṹ��
+#### 2.7 分隔符
+RA语言使用以下分隔符来组织代码结构：
 
-- **�ֺţ�;��** �����ڽ���һ��ָ�������ע�͡�
-- **���ţ�,��** �����ڷָ��������������
-- **ð�ţ�:��** �����ڷָ�ָ��Ͳ�����
+- **分号（;）** ：用于结束一条指令或用于注释。
+- **逗号（,）** ：用于分隔参数或操作数。
+- **冒号（:）** ：用于分隔指令和参数。
 
-**ʾ����**
+**示例：**
 ```Ra
-ALLOT:a,b,c,d,e;    �ֺſ������ڽ���һ��ָ�������ע��
-PUT:10,a;           �������ڷָ������������
-SOUT:s-l,a,b,c,d,e; ð�����ڷָ�ָ��Ͳ���
+ALLOT:a,b,c,d,e;    分号可以用于结束一条指令或用于注释
+PUT:10,a;           逗号用于分隔参数或操作数
+SOUT:s-l,a,b,c,d,e; 冒号用于分隔指令和参数
 ```
 
-#### 2.8 �հ��ַ�
-�հ��ַ����ո��Ʊ��������з����� RA�����б����ԡ�
+#### 2.8 空白字符
+空白字符（空格、制表符、换行符）在 RA语言中被忽略。
 
-**ʾ����**
+**示例：**
 ```Ra
-ALLOT:a,b,c; û�пհ��ַ�
-ALLOT : d, e, f; �пհ��ַ������ǽ���ʱ�����
+ALLOT:a,b,c; 没有空白字符
+ALLOT : d, e, f; 有空白字符，但是解析时会忽略
 ```
 
-### �����﷨�ṹ
+### 三、语法结构
 
-RA���Ե��﷨�ṹ����ͳһ���������Ƿ���mnemonic����ʽ��ʾָ������ʽ���£�
+RA语言的语法结构简单且统一，采用助记符（mnemonic）形式表示指令，具体格式如下：
 
 ```Ra
 [RI] : <[Arg], [Arg], ...> (;)
 ```
 
-#### 3.1 ָ���ʽ����
-�����Ǹ��﷨�ṹ�и����ֵ���ϸ˵����
-- [**RI**] ��
-  - ��ʾָ��Ĳ����루Opcode������ָ��ĺ��Ĳ��֡�
-  - ���� RA�����е�һ����Чָ�����ƣ����� `ALLOT`��`PUT`��`SOUT`��... �ȡ�
-  - ָ��ͨ��������ĸ���»�����ɣ������ִ�Сд��
-  - ������ϴʷ��ṹ�ж����ָ���
+#### 3.1 指令格式解析
+以下是该语法结构中各部分的详细说明：
+- [**RI**] ：
+  - 表示指令的操作码（Opcode），即指令的核心部分。
+  - 它是 RA语言中的一个有效指令名称，例如 `ALLOT`、`PUT`、`SOUT`、... 等。
+  - 指令通常是由字母与下划线组成，不区分大小写。
+  - 必须符合词法结构中定义的指令集。
 
-- **:** ��
-  - �ָ�������������б��ķ��š�
-  - ���﷨�ṹ�й̶��ķָ�����������ȷָ����������Ĺ�ϵ��
+- **:** ：
+  - 分隔操作码与参数列表的符号。
+  - 是语法结构中固定的分隔符，用于明确指令与其参数的关系。
 
-- <[**Arg**], [**Arg**], ...> ��
-  - �����б�������ָ������Ĳ�������
-  - ����֮���ö��ţ�`,`���ָ���
-  - �������������ݡ�����ʵ�塢�ؼ��ֵȣ���������ȡ����ָ���Ҫ��
-  - ������������������ָ��Ķ��������
+- <[**Arg**], [**Arg**], ...> ：
+  - 参数列表，包含指令所需的操作数。
+  - 参数之间用逗号（`,`）分隔。
+  - 参数可以是数据、数据实体、关键字等，具体类型取决于指令的要求。
+  - 参数的数量和类型由指令的定义决定。
   
-  **ʾ����**
+  **示例：**
   ```
-  ALLOT:a,b; �����������ֱ�������ʵ������a��b��
-  ADD:10,20,a; �����������ֱ���Ŀ��洢����ʵ����������ݡ�
+  ALLOT:a,b; 两个参数，分别是数据实体名称a和b。
+  ADD:10,20,a; 三个参数，分别是目标存储数据实体和两个数据。
   ```
 
-- (`;`) ��
-  - ��ѡ�ķֺ�`;`�����ڽ���һ��ָ�
-  - ���ʡ�Էֺţ���Ĭ���Ի��з���Ϊָ��Ľ�����־�� 
-  - �ֺź��������ע�ͣ�����˵��ָ��Ĺ��ܻ���;��
+- (`;`) ：
+  - 可选的分号`;`，用于结束一条指令。
+  - 如果省略分号，则默认以换行符作为指令的结束标志。 
+  - 分号后可以添加注释，用于说明指令的功能或用途。
 
-#### 3.2 ʾ������
-������һЩ���� RA�����﷨�ṹ��ʾ�����룺
+#### 3.2 示例代码
+以下是一些符合 RA语言语法结构的示例代码：
 
-1. **���ݴ���ָ��** ��
+1. **数据传输指令** ：
 
    ```Ra
    ALLOT:a,b
@@ -903,22 +903,22 @@ RA���Ե��﷨�ṹ����ͳһ���������Ƿ���mnemonic����ʽ��ʾָ������ʽ���£�
    PUT:a,b
    ```
 
-2. **��������ָ��** ��
+2. **算数运算指令** ：
 
    ```Ra
    ALLOT:a,b,c,d
-   ; ����10+20������洢������ʵ��a��
+   ; 计算10+20，结果存储到数据实体a中
    ADD:10,20,a
-   ; ����30-a������洢������ʵ��b��
-   OPP:a,a; ȡ����ʵ�ּ�������
+   ; 计算30-a，结果存储到数据实体b中
+   OPP:a,a; 取反，实现减法运算
    ADD:30,a,b
-   ; ����2*5������洢������ʵ��c��
+   ; 计算2*5，结果存储到数据实体c中
    MUL:2,5,c
-   ; ����c/2������洢������ʵ��d��
+   ; 计算c/2，结果存储到数据实体d中
    DIV:c,2,d
    ```
 
-3. **���Ʋ���ָ��** ��
+3. **控制操作指令** ：
 
     ```Ra
     JMP:label3
@@ -931,94 +931,94 @@ RA���Ե��﷨�ṹ����ͳһ���������Ƿ���mnemonic����ʽ��ʾָ������ʽ���£�
     SET:label_end
     ```
 
-4. **ϵͳ����ָ��** ��
+4. **系统操作指令** ：
 
     ```Ra
-    PASS:; �ղ�������ִ���κβ���
+    PASS:; 空操作，不执行任何操作
     ```
 
-#### 3.3 ��������
-RA����֧�ֶ������͵Ĳ���������������¼��֣�
+#### 3.3 参数类型
+RA语言支持多种类型的参数，具体包括以下几种：
 
-- **��ʱ����** ��
+- **临时数据** ：
 
-  ����`10`��`12.5`��`"Hello world!"`����ֱ����ֵ���ֵĳ�Ϊ**��ʱ����**��RVM ���ڴ����Զ���������Щ��ʱ���ݣ������ڴ�ķ�������ա����ǵ��ض���ֻ���ڵ�ǰָ��ִ���ڼ���Ч��ִ�н�����ᱻ�Զ��ͷš�
+  形如`10`、`12.5`、`"Hello world!"`这种直接以值呈现的称为**临时数据**。RVM 的内存中自动管理着这些临时数据，包括内存的分配与回收。它们的特定是只能在当前指令执行期间有效，执行结束后会被自动释放。
 
-  - **��������**
-    - **����**
-    - **������**
-    - **����ֵ**
+  - **数字类型**
+    - **整数**
+    - **浮点数**
+    - **布尔值**
     
-    ������� [��ֵ����](#24-����)��
-  - **�ַ�������**
+    详情请见 [数值类型](#24-常量)。
+  - **字符串类型**
     
-    ������� [�ַ�������](#24-����)��
+    详情请见 [字符串类型](#24-常量)。
 
-- **����ʵ��** ��
+- **数据实体** ：
 
-  **����ʵ��**�� RA �����еĺ��ĸ�����ڹ����Ͳ������ݡ�����ʵ����ͨ�� `ALLOT` ָ����ģ�������һ������ʵ�壬RVM ��Ϊ�������ʵ�����һ���ڴ�ռ䣬��ͨ��IDӳ����ƽ�ָ���ı�ʶ���������ڴ�ռ�ID����ӳ�䣬��ʵ����ʱ���ݵĴ洢�ͷ��ʡ�����ʱ���ݱ���������ʵ���RVM ��������ָ���ִ�����ڽ������Զ��ͷ�������ݣ�ֱ�������˳�����������ʵ��ľֲ���ʱ��RVM ���Զ��ͷ��������ʵ����ռ�õ��ڴ�ռ��Ա����ڴ�й©��
+  **数据实体**是 RA 语言中的核心概念，用于管理和操作数据。数据实体是通过 `ALLOT` 指令创建的，当创建一个数据实体，RVM 会为这个数据实体分配一段内存空间，并通过ID映射机制将指定的标识符与分配的内存空间ID进行映射，以实现临时数据的存储和访问。当临时数据被存入数据实体后，RVM 将不会在指令的执行周期结束后自动释放这个数据，直到程序退出创建此数据实体的局部域时，RVM 会自动释放这个数据实体所占用的内存空间以避免内存泄漏。
   
-  - **��ʶ��**
+  - **标识符**
     
-    ͨ�� `ALLOT` ָ���������ʵ��ı�ʶ����������ʵ������ơ�
-  - **�ؼ���**
+    通过 `ALLOT` 指令创建的数据实体的标识符，即数据实体的名称。
+  - **关键字**
 
-    RVM �Դ�������ʵ��ؼ��֣�������
-    - `SN` �������ֶ��洢��������ֵ������ʵ�塣
-    - `SR` �������Զ��洢��������ֵ������ʵ�塣
-    - `SE` �������Զ��洢������Ϣ������ʵ�塣
-    - `SS` �������ֶ��洢�ֲ�����Ϣ������ʵ�塣
+    RVM 自带的数据实体关键字，包括：
+    - `SN` ：用于手动存储函数返回值的数据实体。
+    - `SR` ：用于自动存储函数返回值的数据实体。
+    - `SE` ：用于自动存储错误信息的数据实体。
+    - `SS` ：用于手动存储局部域信息的数据实体。
 
-#### 3.5 �﷨����
-Ϊ��ȷ�� RA���Ե��﷨һ���ԣ����������¹���
+#### 3.5 语法规则
+为了确保 RA语言的语法一致性，需遵守以下规则：
 
-1. **ָ��˳��** ��
+1. **指令顺序** ：
     
-    ָ�˳��ִ�У�������������ת��ָ��� `JMP`��`CALL`��`IVOK`�ȣ���
+    指令按顺序执行，除非遇到控制转移指令（如 `JMP`、`CALL`、`IVOK`等）。
     
-    **����** ��
+    **例如** ：
     ```Ra
     ALLOT:a
-    ADD:1,2,a       ; �� ALLOT ָ��ִ��֮��ADD ָ��Żᱻִ�С�
+    ADD:1,2,a       ; 在 ALLOT 指令执行之后，ADD 指令才会被执行。
     ```
-2. **��������ƥ��** ��
+2. **参数数量匹配** ：
    
-   ÿ��ָ��Ĳ���������������䶨��Ҫ��
+   每条指令的参数数量必须符合其定义要求。
    
-   **����** ��
+   **例如** ：
    
    ```Ra
    ALLOT:a
-   PUT:10,a        ; ��ȷ��PUT ָ����Ҫ��������
-   PUT:10          ; ����ȱ�ٵڶ�������
+   PUT:10,a        ; 正确：PUT 指令需要两个参数
+   PUT:10          ; 错误：缺少第二个参数
    ```
 
-3. **��������ƥ��** ��
+3. **参数类型匹配** ：
 
-   �������ͱ�����ָ���Ҫ��һ�¡�
+   参数类型必须与指令的要求一致。
 
-   **����** ��
+   **例如** ：
 
    ```Ra
-   ALLOT:a,b,c     ; ��ȷ��ALLOT ָ����Ҫ������ʶ������
-   ALLOT:1,2,3     ; ����ALLOT��֧����ʱ���͵Ĳ���
+   ALLOT:a,b,c     ; 正确：ALLOT 指令需要三个标识符参数
+   ALLOT:1,2,3     ; 错误：ALLOT不支持临时类型的参数
    ```
 
-4. **�ֺŵ�ʹ��** �� 
+4. **分号的使用** ： 
    
-   �ֺ��ǿ�ѡ�ģ��������ע����ʹ�ã�������ʡ�ԡ�
-   **ʾ��** ��
+   分号是可选的，建议仅在注释中使用，其他处省略。
+   **示例** ：
    ```Ra
-   ALLOT:a,b,c;   ; �Ϸ�
-   ALLOT:a,b,c    ; ���Ƽ�
+   ALLOT:a,b,c;   ; 合法
+   ALLOT:a,b,c    ; 更推荐
    ```
 
-### �ġ���׼��
+### 四、标准库
 
-### �塢����ʱ
+### 五、运行时
 
-### ����������
+### 六、错误处理
 
-### �ߡ�������������
+### 七、兼容性与限制
 
-### �ˡ�ʾ������
+### 八、示例代码
