@@ -1,0 +1,64 @@
+TP_DEF: Object
+TP_ADD_TP_FIELD: Object, id, 0
+TP_ADD_INST_FIELD: Object, uid
+TP_ADD_INST_FIELD: Object, toString
+
+FUNI: Object_toString, this
+    ALLOT: uid, msg
+    TP_SET: tp-str, msg
+    TP_GET_FIELD: this, "uid", uid
+    ITER_APND: "[Object: (uid: ", uid, ")]", msg
+    RET: msg
+END: Object_toString
+
+FUNI: Object_ctor
+    ALLOT: obj, id
+    TP_NEW: Object, obj
+    TP_SET_FIELD: obj, "toString", Object_toString
+    TP_GET_FIELD: Object, "id", id
+    ADD: id, 1, id
+    TP_SET_FIELD: Object, "id", id
+    TP_SET_FIELD: obj, "uid", id
+    RET: obj
+END: Object_ctor
+
+TP_DEF: Person, Object
+TP_ADD_INST_FIELD: Person, name
+TP_ADD_INST_FIELD: Person, age
+TP_ADD_INST_FIELD: Person, sex
+
+FUNI: Person_toString, this
+    ALLOT: msg, name, age, sex, uid
+    TP_SET: tp-str, msg
+    TP_GET_FIELD: this, "name", name
+    TP_GET_FIELD: this, "age", age
+    TP_GET_FIELD: this, "sex", sex
+    TP_GET_FIELD: this, "uid", uid
+    ITER_APND: "[Person: (name: ", name, ") (age: ", age, ") (sex: ", sex, ") (uid: ", uid, ")]", msg
+    RET: msg
+END: Person_toString
+
+FUNI: Person_ctor, name, age, sex
+    ALLOT: person
+    IVOK: Object_ctor, person
+    TP_DERIVE: person, Person
+    TP_SET_FIELD: person, "name", name
+    TP_SET_FIELD: person, "age", age
+    TP_SET_FIELD: person, "sex", sex
+    TP_SET_FIELD: person, "toString", Person_toString
+    RET: person
+END: Person_ctor
+
+FUNC: main
+    ALLOT: person, name, age, sex, method, uid, msg
+    IVOK: Person_ctor, "John", 20, "Male", person
+    TP_GET_FIELD: person, "toString", method
+    TP_SET_FIELD: person, "uid", 2
+    TP_GET_SUPER_FIELD: person, Object, "toString", method
+    TP_GET_FIELD: person, "uid", uid
+    IVOK: method, person, msg
+    SOUT: s-m, msg, uid
+    PASS:;
+END: main
+
+CALL: main

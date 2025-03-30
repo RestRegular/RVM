@@ -1,0 +1,27 @@
+; 自定义类型实例的调用函数
+
+; 载入 test_lib.ra
+LINK: "..\\lib\\test_lib.rsi"
+
+; [辅助函数] 定义 TPGet 函数：获取自定义类型实例的属性
+FUNI: TPGet, inst, filed_name
+    ALLOT: filed
+    TP_GET_FIELD: inst, filed_name, filed
+    RET: filed
+END: TPGet
+
+; [辅助函数] 定义 TPCall 函数：调用自定义类型实例的无返回方法
+FUNC: TPCall, inst, func_name, args
+    ALLOT: method
+    TP_GET_FIELD: inst, func_name, method
+    CALL: method, inst, args
+END: TPCall
+
+; [辅助函数] 定义 TPIvok 函数：调用自定义类型实例的有返回方法
+FUNI: TPIvok, inst, func_name, args
+    ALLOT: method, result
+    TP_GET_FIELD: inst, func_name, method
+    BREAKPOINT:;
+    IVOK: method, inst, args, result
+    RET: result
+END: TPIvok

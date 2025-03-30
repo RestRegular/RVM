@@ -1,0 +1,52 @@
+; 错误处理库
+; 2025-3-3 @RestRegular
+
+; 定义 Object 类
+TP_DEF: Object
+TP_ADD_INST_FIELD: Object, "toString"
+
+; 定义 Error 类
+TP_DEF: Error, Object
+TP_ADD_INST_FIELD: Error, "msg"
+
+; 定义 FileError 类
+TP_DEF: FileError, Error
+TP_ADD_INST_FIELD: FileError, "file_path"
+
+; 定义 Error 类的构造函数
+FUNI: Error_ctor, msg
+    ALLOT: error
+    TP_NEW: Error, error
+    TP_SET_FIELD: error, "msg", msg
+
+    FUNI: Error_toString, error
+        ALLOT: str, msg
+        TP_SET: tp-str, str
+        TP_GET_FIELD: error, "msg", msg
+        ITER_APND: "Error: ", msg, "\n", str
+        RET: str
+    END: Error_toString
+    TP_SET_FIELD: error, "toString", Error_toString
+
+    RET: error
+END: Error_ctor
+
+; 定义 FileError 类的构造函数
+FUNI: FileError_ctor, file_path, msg
+    ALLOT: error
+    TP_NEW: FileError, error
+    TP_SET_FIELD: error, "file_path", file_path
+    TP_SET_FIELD: error, "msg", msg
+
+    FUNI: FileError_toString, error, args
+        ALLOT: str, file_path, msg
+        TP_SET: tp-str, str
+        TP_GET_FIELD: error, "file_path", file_path
+        TP_GET_FIELD: error, "msg", msg
+        ITER_APND: "FileError: ", file_path, ", ErrorMsg: ", msg, "\n", str
+        RET: str
+    END: FileError_toString
+    TP_SET_FIELD: error, "toString", FileError_toString
+
+    RET: error
+END: FileError_ctor

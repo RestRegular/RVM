@@ -1,0 +1,96 @@
+; 定义 Object 类
+TP_DEF: Object
+TP_ADD_INST_FIELD: Object, "toString"
+
+; 定义 Error 类
+TP_DEF: Error, Object
+TP_ADD_INST_FIELD: Error, "msg"
+
+; 定义 FileError 类
+TP_DEF: FileError, Error
+TP_ADD_INST_FIELD: FileError, "file_path"
+
+; 定义 Error 类的 toString 方法
+FUNI: Error_toString, this
+    ALLOT: str, msg
+    TP_SET: tp-str, str
+    TP_GET_FIELD: this, "msg", msg
+    ITER_APND: "Error: ", msg, "\n", str
+    RET: str
+END: Error_toString
+
+; 定义 Error 类的构造函数
+FUNI: Error_ctor, msg
+    ALLOT: this
+    TP_NEW: Error, this
+    TP_SET_FIELD: this, "msg", msg
+    TP_SET_FIELD: this, "toString", Error_toString
+    RET: this
+END: Error_ctor
+
+; 定义 FileError 类的 toString 方法
+FUNI: FileError_toString, this
+    ALLOT: str, file_path, msg
+    TP_SET: tp-str, str
+    TP_GET_FIELD: this, "file_path", file_path
+    TP_GET_FIELD: this, "msg", msg
+    ITER_APND: "FileError: ", file_path, ", ErrorMsg: ", msg, "\n", str
+    RET: str
+END: FileError_toString
+
+; 定义 FileError 类的构造函数
+FUNI: FileError_ctor, file_path, msg
+    ALLOT: this
+    TP_NEW: FileError, this
+    TP_SET_FIELD: this, "file_path", file_path
+    TP_SET_FIELD: this, "msg", msg
+    TP_SET_FIELD: this, "toString", FileError_toString
+    RET: error
+END: FileError_ctor
+
+; [辅助函数] 定义 TPCall 函数：调用自定义类型实例的无返回方法
+FUNC: TPCall, inst, func_name
+    ALLOT: method
+    TP_GET_FIELD: inst, func_name, method
+    CALL: method, inst
+END: TPCall
+
+; [辅助函数] 定义 TPIvok 函数：调用自定义类型实例的有返回方法
+FUNI: TPIvok, inst, func_name
+    ALLOT: method, result
+    TP_GET_FIELD: inst, func_name, method
+    IVOK: method, inst, result
+    RET: result
+END: TPIvok
+
+; 定义测试函数
+FUNC: test_func
+    ALLOT: error
+    ATMP:;
+        IVOK: Error_ctor, "test error", error
+        EXPOSE: error
+        DETECT: Error, e
+            EXPOSE: e
+            ALLOT: msg
+            IVOK: TPIvok, e, "toString", msg
+            SOUT: s-l, "test func: ", msg
+        END: DETECT
+        SOUT: s-m, "test func: test success"
+    END: ATMP
+    SOUT: s-m, error
+END: test_func
+
+; 定义 main 函数
+FUNC: main
+    ATMP:
+        CALL: test_func
+        DETECT: Error, e
+            ALLOT: msg
+            IVOK: TPIvok, e, "toString", msg
+            SOUT: s-l, "main: ", msg
+        END: DETECT
+        SOUT: s-m, "main: test success"
+    END: ATMP
+END: main
+
+CALL: main

@@ -1,0 +1,34 @@
+; file: jt_jf_test.ra
+LOADIN: "D:\\ClionProjects\\RVM\\test\\input.ra"
+
+FUNI: repair_data
+ALLOT: a, b, cmp, result
+SOUT: s-l, "a << "
+IVOK: input_int, result
+COPY: result, a
+SOUT: s-l, "b << "
+IVOK: input_int, result
+COPY: result, b
+ALLOT: package
+TP_SET: tp-series, package
+ITER_APND: a, b, package
+RET: package
+END: repair_data
+
+FUNC: jt_jf_test
+ALLOT: a, b, cmp, package, result
+IVOK: repair_data, package
+ITER_UNPACK: package, a, b
+CMP: a, b, cmp
+CALC_REL: cmp, RS, result
+JT: result, label_true
+JMP: label_false
+SET: label_true
+SOUT: s-l, a, " < ", b, "\n"
+JMP: label_end
+SET: label_false
+SOUT: s-l, a, " >= ", b, "\n"
+SET: label_end
+END: jt_jf_test
+
+CALL: jt_jf_test

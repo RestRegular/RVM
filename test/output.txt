@@ -1,0 +1,20 @@
+
+====================[ ArgumentError ]============================================================
+ [ Trace Back ]
+       ->"D:\ClionProjects\RVM\test\test.ra:6:1", line 6
+       | IVOK: TPIvok, file_error, "toString", error_string
+               ->"D:\ClionProjects\RVM\test\test.ra:1:1", line 1
+               | [File: <Data(test.ra#103): Dx000515>]
+
+    [ Line ] : "D:\ClionProjects\RVM\test\test.ra:6:51", line 6, column 51
+             | IVOK: TPIvok, file_error, "toString", error_string
+
+    [ Info ] : This error is caused by a mismatch in the number of arguments passed in when
+               calling the function.
+             - Calling Function: [Data(RetFunction): [RetFunction: TPIvok(inst, func_name,
+               args)]]
+             - Required Arg Number: 3
+             - Received Arg Number: 2
+
+    [ Tips ] : Check that the argument passed into the calling function match the number of
+               arguments defined by the function.
