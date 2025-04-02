@@ -6,7 +6,7 @@
 
 #### 1.1 背景与目标
 
-RA语言（Rio Assembly Language）是一种类汇编的指令式编程语言，专为 RVM（Rio Virtual Machine）虚拟机设计。其主要目标是为 RVM
+RA语言（RVM Assembly Language）是一种类汇编的指令式编程语言，专为 RVM（Rio Virtual Machine）虚拟机设计。其主要目标是为 RVM
 提供一种高效、灵活且易于理解的低级语言，用于实现 RVM 的指令集。RA语言的设计灵感来源于传统汇编语言，但在语法结构和语义规则上进行了优化，以更好地适应
 RVM 的运行环境。
 
