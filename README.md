@@ -32,42 +32,46 @@ RVM 是一个虚拟机，主要用于运行 RA 代码文件或 RSI 代码文件�
 ### 2.2 编译步骤
 
 - **克隆代码仓库到本地：**
-    ```bash
+    ```batch
     git clone https://github.com/RestRegular/RVM.git
     cd RVM
     ```
 - **创建构建目录并进入：**
-    ```bash
+    ```batch
     mkdir build
     cd build
     ```
 - **使用 CMake 生成构建文件：**
-    ```bash
+    ```batch
     cmake ..
     ```
 - **编译项目：**
-    ```bash
+    ```batch
     cmake --build .
     ```
 
 - **作者的方法：**
 
   我在开发的时候使用了 bat 编写了一个编译脚本，编译后会直接运行，如果你使用 CMake 的话可以直接使用这个编译脚本。代码如下：
-    ```bash
-    # file: execute.bat
+    ```batch
+    rem file: execute.bat
     @echo off
     cls
     color 0A
     set COMMAND_PREFIX="^>^>^>"
-    set CMAKE_PATH=D:\soft\Clion\CLion-2024.2.3\bin\cmake\win\x64\bin\cmake.exe # 请将此路径替换为你的 CMake 路径
+    rem 请将此路径替换为你的 CMake 路径
+    set CMAKE_PATH=D:\soft\Clion\CLion-2024.2.3\bin\cmake\win\x64\bin\cmake.exe
 
     set PROJECT_TARGET=RVM
 
-    set PROJECT_DIR=D:\ClionProjects\%PROJECT_TARGET% # 请将此路径替换为你的项目路径
-    set BUILD_DIR=%PROJECT_DIR%\cmake-build-debug # 在你的项目目录下创建一个名为 cmake-build-debug 的目录（或其他名称，注意修改 BUILD_DIR 变量）
+    rem 请将此路径替换为你的项目路径
+    set PROJECT_DIR=D:\ClionProjects\%PROJECT_TARGET%
+    rem 在你的项目目录下创建一个名为 cmake-build-debug 的目录（或其他名称，注意修改 BUILD_DIR 变量）
+    set BUILD_DIR=%PROJECT_DIR%\cmake-build-debug
     set EXECUTABLE_PATH=%BUILD_DIR%\%PROJECT_TARGET%.exe
     echo %COMMAND_PREFIX:"=% Building project...
-    "%CMAKE_PATH%" --build %BUILD_DIR% --target %PROJECT_TARGET% -j 10 # 这里使用了 -j 10 参数，你可以根据自己的需求进行调整
+    rem 这里使用了 -j 10 参数，你可以根据自己的需求进行调整
+    "%CMAKE_PATH%" --build %BUILD_DIR% --target %PROJECT_TARGET% -j 10
     color 07
     cls
     echo %COMMAND_PREFIX:"=% %EXECUTABLE_PATH% %*
@@ -80,7 +84,7 @@ RVM 是一个虚拟机，主要用于运行 RA 代码文件或 RSI 代码文件�
 
 编译完成后，可在 build 目录下找到生成的可执行文件 RVM。使用以下命令运行程序：
 
-```bash
+```batch
 RVM.exe [options]
 ```
 
