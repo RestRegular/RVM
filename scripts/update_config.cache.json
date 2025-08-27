@@ -1,0 +1,44 @@
+{
+  "validate": true,
+  "version": {
+    "increment_type": "patch",
+    "vs_desc": "...",
+    "change_type": [
+      "Feature"
+    ]
+  },
+  "update_log": {
+    "author": "RestRegular",
+    "log_contents": [
+      "..."
+    ]
+  },
+  "annotation": {
+    "annotations": [
+      "Please ensure that the value of the 'validate' field is true."
+    ],
+    "increment_types": [
+      "major",
+      "minor",
+      "patch"
+    ],
+    "change_types": [
+      "Breaking",
+      "break",
+      "Feature",
+      "feat",
+      "BugFix",
+      "fix",
+      "Optimize",
+      "opt",
+      "Deprecate",
+      "depr",
+      "Refactor",
+      "ref",
+      "Docs",
+      "doc",
+      "Test",
+      "test"
+    ]
+  }
+}

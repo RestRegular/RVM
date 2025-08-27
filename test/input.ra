@@ -1,7 +1,0 @@
-; file: input.ra
-
-FUNI: input_int
-ALLOT: a
-SIN: s-m, tp-int, a
-RET: a
-END: input_int

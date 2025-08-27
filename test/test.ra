@@ -1,241 +1,30 @@
-; This file was compiled by RCC(Rio Compiler Collection) v0.0.1
-; Source file: "D:\PythonCode\PyCharmProjects\rcc\test\test.rio"
-; Target file: "D:\ClionProjects\RVM\test\test.ra"
-; Author: @RestRegular
-; Time: 2025-03-30 21:12:25
+; Rio Program & compiled by RCC(Rio Compiler Collection) v1.0.0
+~ Source file: D:\ClionProjects\RCC\test\test.rio:1:1
+~ Target file: D:\ClionProjects\RVM\test\test.ra:1:1
+~ Author: @RestRegular
+~ Time: 2025-08-26 14:13:19
 
-; var rasm_endl: str const = "\\n"
-ALLOT: _var_test_file_rasm_endl_test_file_
-TP_SET: tp-str, _var_test_file_rasm_endl_test_file_
-PUT: "\\n", _var_test_file_rasm_endl_test_file_
-
-; fun sout((Arg: <msgs(list)>), (Arg: <end(str)=rasm_endl>)): void -> (CodeBlock: {var msg: str = "SOUT: s-l, "; (
-~ Iter (Arg: <msgs>) (Arg: <item>) (Arg: <index>) (CodeBlock: {msg = (CircleCalcExpr: (msg + (CircleCalcExpr: ((Ci
-~ rcleCalcExpr: ("\"" + item)) + "\", "))))})); msg = (CircleCalcExpr: (msg + (CircleCalcExpr: ((CircleCalcExpr: (
-FUNC: _func_test_file_sout_, _var_test_file_msgs_sout_field_, _var_test_file_end_sout_field_
-ALLOT: _var_test_file_msg_sout_field_
-TP_SET: tp-str, _var_test_file_msg_sout_field_
-PUT: "SOUT: s-l, ", _var_test_file_msg_sout_field_
-ALLOT: _var_test_file_item_sout_field_, _var_test_file_index_sout_field_
-ITER_TRAV: _var_test_file_msgs_sout_field_, _var_test_file_item_sout_field_, _var_test_file_index_sout_field_
-ALLOT: __rcc_tem_value_1_sout_field__
-ALLOT: __rcc_tem_value_2_sout_field__
-ALLOT: __rcc_tem_value_3_sout_field__
-TP_SET: tp-str, __rcc_tem_value_3_sout_field__
-ITER_APND: "\"", _var_test_file_item_sout_field_, __rcc_tem_value_3_sout_field__
-TP_SET: tp-str, __rcc_tem_value_2_sout_field__
-ITER_APND: __rcc_tem_value_3_sout_field__, "\", ", __rcc_tem_value_2_sout_field__
-DELETE: __rcc_tem_value_3_sout_field__
-TP_SET: tp-str, __rcc_tem_value_1_sout_field__
-ITER_APND: _var_test_file_msg_sout_field_, __rcc_tem_value_2_sout_field__, __rcc_tem_value_1_sout_field__
-DELETE: __rcc_tem_value_2_sout_field__
-PUT: __rcc_tem_value_1_sout_field__, _var_test_file_msg_sout_field_
-DELETE: __rcc_tem_value_1_sout_field__
-END: ITER_TRAV
-DELETE: _var_test_file_item_sout_field_, _var_test_file_index_sout_field_
-ALLOT: __rcc_tem_value_1_sout_field__
-ALLOT: __rcc_tem_value_2_sout_field__
-ALLOT: __rcc_tem_value_3_sout_field__
-TP_SET: tp-str, __rcc_tem_value_3_sout_field__
-ITER_APND: "\"", _var_test_file_end_sout_field_, __rcc_tem_value_3_sout_field__
-TP_SET: tp-str, __rcc_tem_value_2_sout_field__
-ITER_APND: __rcc_tem_value_3_sout_field__, "\"", __rcc_tem_value_2_sout_field__
-DELETE: __rcc_tem_value_3_sout_field__
-TP_SET: tp-str, __rcc_tem_value_1_sout_field__
-ITER_APND: _var_test_file_msg_sout_field_, __rcc_tem_value_2_sout_field__, __rcc_tem_value_1_sout_field__
-DELETE: __rcc_tem_value_2_sout_field__
-PUT: __rcc_tem_value_1_sout_field__, _var_test_file_msg_sout_field_
-DELETE: __rcc_tem_value_1_sout_field__
-EXE_RASM: _var_test_file_msg_sout_field_
-END: _func_test_file_sout_
-
-; (ClassDef: (Class: Object\n		[ Field ]:\n        	|	uid: (<rcc_components.IdentiToken object at 0x000001AAFAB0A0
-~ 90>, <rcc_components.Token object at 0x000001AAFAB0A240>, [<rcc_components.Label object at 0x000001AAFAB1AEA0>],
-~  <rcc_components.NullToken object at 0x000001AAFAAF4740>)\n        	|	_id: (<rcc_components.IdentiToken object a
-TP_DEF: _class_test_file_Object_
-TP_ADD_INST_FIELD: _class_test_file_Object_, __class_test_file_Object__field_uid_
-TP_ADD_TP_FIELD: _class_test_file_Object_, __class_test_file_Object__field__id_, 0
-FUNI: _func_test_file___class_test_file_Object__field_toString__, _var_test_file_this___class_test_file_Object__field_toString__field_
-ALLOT: __rcc_tem_value_1___class_test_file_Object__field_toString__field__
-ALLOT: __rcc_tem_value_2___class_test_file_Object__field_toString__field__
-ALLOT: __rcc_tem_value_3___class_test_file_Object__field_toString__field__
-TP_GET_FIELD: _var_test_file_this___class_test_file_Object__field_toString__field_, __class_test_file_Object__field_uid_, __rcc_tem_value_3___class_test_file_Object__field_toString__field__
-TP_SET: tp-str, __rcc_tem_value_2___class_test_file_Object__field_toString__field__
-ITER_APND: "<Object: ", __rcc_tem_value_3___class_test_file_Object__field_toString__field__, __rcc_tem_value_2___class_test_file_Object__field_toString__field__
-DELETE: __rcc_tem_value_3___class_test_file_Object__field_toString__field__
-TP_SET: tp-str, __rcc_tem_value_1___class_test_file_Object__field_toString__field__
-ITER_APND: __rcc_tem_value_2___class_test_file_Object__field_toString__field__, ">", __rcc_tem_value_1___class_test_file_Object__field_toString__field__
-DELETE: __rcc_tem_value_2___class_test_file_Object__field_toString__field__
-RET: __rcc_tem_value_1___class_test_file_Object__field_toString__field__
-DELETE: __rcc_tem_value_1___class_test_file_Object__field_toString__field__
-END: _func_test_file___class_test_file_Object__field_toString__
-FUNI: _func_test_file___class_test_file_Object__field_get_uid__, _var_test_file_this___class_test_file_Object__field_get_uid__field_
-ALLOT: __rcc_tem_value_1___class_test_file_Object__field_get_uid__field__
-TP_GET_FIELD: _var_test_file_this___class_test_file_Object__field_get_uid__field_, __class_test_file_Object__field_uid_, __rcc_tem_value_1___class_test_file_Object__field_get_uid__field__
-RET: __rcc_tem_value_1___class_test_file_Object__field_get_uid__field__
-DELETE: __rcc_tem_value_1___class_test_file_Object__field_get_uid__field__
-END: _func_test_file___class_test_file_Object__field_get_uid__
-TP_ADD_INST_FIELD: _class_test_file_Object_, "_func_test_file___class_test_file_Object__field_toString__"
-TP_ADD_INST_FIELD: _class_test_file_Object_, "_func_test_file___class_test_file_Object__field_get_uid__"
-FUNI: _func_test_file___class_test_file_Object__ctor___
-ALLOT: _var_test_file_this___class_test_file_Object__ctor___field_
-TP_NEW: _class_test_file_Object_, _var_test_file_this___class_test_file_Object__ctor___field_
-TP_SET_FIELD: _var_test_file_this___class_test_file_Object__ctor___field_, "_func_test_file___class_test_file_Object__field_toString__", _func_test_file___class_test_file_Object__field_toString__
-TP_SET_FIELD: _var_test_file_this___class_test_file_Object__ctor___field_, "_func_test_file___class_test_file_Object__field_get_uid__", _func_test_file___class_test_file_Object__field_get_uid__
-ALLOT: __rcc_tem_value_1___class_test_file_Object__ctor___field__
-ALLOT: __rcc_tem_value_2___class_test_file_Object__ctor___field__
-TP_GET_FIELD: _class_test_file_Object_, __class_test_file_Object__field__id_, __rcc_tem_value_2___class_test_file_Object__ctor___field__
-ADD: __rcc_tem_value_2___class_test_file_Object__ctor___field__, 1, __rcc_tem_value_1___class_test_file_Object__ctor___field__
-DELETE: __rcc_tem_value_2___class_test_file_Object__ctor___field__
-TP_SET_FIELD: _var_test_file_this___class_test_file_Object__ctor___field_, "__class_test_file_Object__field__id_", __rcc_tem_value_1___class_test_file_Object__ctor___field__
-DELETE: __rcc_tem_value_1___class_test_file_Object__ctor___field__
-ALLOT: __rcc_tem_value_2___class_test_file_Object__ctor___field__
-TP_GET_FIELD: _class_test_file_Object_, __class_test_file_Object__field__id_, __rcc_tem_value_2___class_test_file_Object__ctor___field__
-TP_SET_FIELD: _var_test_file_this___class_test_file_Object__ctor___field_, "__class_test_file_Object__field_uid_", __rcc_tem_value_2___class_test_file_Object__ctor___field__
-DELETE: __rcc_tem_value_2___class_test_file_Object__ctor___field__
-RET: _var_test_file_this___class_test_file_Object__ctor___field_
-END: _func_test_file___class_test_file_Object__ctor___
-FUNI: _func_test_file___class_test_file_Object__ctor_uid__, _var_test_file_uid___class_test_file_Object__ctor_uid__field_
-ALLOT: _var_test_file_this___class_test_file_Object__ctor_uid__field_
-TP_NEW: _class_test_file_Object_, _var_test_file_this___class_test_file_Object__ctor_uid__field_
-TP_SET_FIELD: _var_test_file_this___class_test_file_Object__ctor_uid__field_, "_func_test_file___class_test_file_Object__field_toString__", _func_test_file___class_test_file_Object__field_toString__
-TP_SET_FIELD: _var_test_file_this___class_test_file_Object__ctor_uid__field_, "_func_test_file___class_test_file_Object__field_get_uid__", _func_test_file___class_test_file_Object__field_get_uid__
-ALLOT: __rcc_tem_value_3___class_test_file_Object__ctor_uid__field__
-ALLOT: __rcc_tem_value_4___class_test_file_Object__ctor_uid__field__
-TP_GET_FIELD: _class_test_file_Object_, __class_test_file_Object__field__id_, __rcc_tem_value_4___class_test_file_Object__ctor_uid__field__
-CMP: _var_test_file_uid___class_test_file_Object__ctor_uid__field_, __rcc_tem_value_4___class_test_file_Object__ctor_uid__field__, __rcc_tem_value_3___class_test_file_Object__ctor_uid__field__
-CALC_REL: __rcc_tem_value_3___class_test_file_Object__ctor_uid__field__, RL, __rcc_tem_value_3___class_test_file_Object__ctor_uid__field__
-DELETE: __rcc_tem_value_4___class_test_file_Object__ctor_uid__field__
-JT: __rcc_tem_value_3___class_test_file_Object__ctor_uid__field__, _rcc_tem_if_cond_label_2_
-DELETE: __rcc_tem_value_3___class_test_file_Object__ctor_uid__field__
-JMP: _rcc_tem_else_cond_label_3_
-JMP: _rcc_tem_end_cond_label_1_
-SET: _rcc_tem_if_cond_label_2_
-DELETE: __rcc_tem_value_3___class_test_file_Object__ctor_uid__field__
-TP_SET_FIELD: _var_test_file_this___class_test_file_Object__ctor_uid__field_, "__class_test_file_Object__field__id_", _var_test_file_uid___class_test_file_Object__ctor_uid__field_
-TP_SET_FIELD: _var_test_file_this___class_test_file_Object__ctor_uid__field_, "__class_test_file_Object__field_uid_", _var_test_file_uid___class_test_file_Object__ctor_uid__field_
-JMP: _rcc_tem_end_cond_label_1_
-SET: _rcc_tem_else_cond_label_3_
-ALLOT: __rcc_tem_value_4_COND_field__
-TP_SET: tp-list, __rcc_tem_value_4_COND_field__
-ITER_APND: "Error: uid must be greater than Object._id", __rcc_tem_value_4_COND_field__
-CALL: _func_test_file_sout_, __rcc_tem_value_4_COND_field__, _var_test_file_rasm_endl_test_file_
-DELETE: __rcc_tem_value_4_COND_field__
-JMP: _rcc_tem_end_cond_label_1_
-SET: _rcc_tem_end_cond_label_1_
-RET: _var_test_file_this___class_test_file_Object__ctor_uid__field_
-END: _func_test_file___class_test_file_Object__ctor_uid__
-
-; (ClassDef: (Class: Person >> Object\n		[ Field ]:\n        	|	name: (<rcc_components.IdentiToken object at 0x000
-~ 001AAFAB10AA0>, <rcc_components.Token object at 0x000001AAFAB10C50>, [<rcc_components.Label object at 0x000001AA
-~ FAB28050>], <rcc_components.NullToken object at 0x000001AAFAAF4740>)\n        	|	age: (<rcc_components.IdentiTok
-TP_DEF: _class_test_file_Person_, _class_test_file_Object_
-TP_ADD_INST_FIELD: _class_test_file_Person_, __class_test_file_Person__field_name_
-TP_ADD_INST_FIELD: _class_test_file_Person_, __class_test_file_Person__field_age_
-TP_ADD_INST_FIELD: _class_test_file_Person_, __class_test_file_Person__field_sex_
-FUNI: _func_test_file___class_test_file_Person__field_toString__, _var_test_file_this___class_test_file_Person__field_toString__field_
-ALLOT: __rcc_tem_value_4___class_test_file_Person__field_toString__field__
-ALLOT: __rcc_tem_value_5___class_test_file_Person__field_toString__field__
-ALLOT: __rcc_tem_value_6___class_test_file_Person__field_toString__field__
-TP_GET_FIELD: _var_test_file_this___class_test_file_Person__field_toString__field_, __class_test_file_Person__field_sex_, __rcc_tem_value_6___class_test_file_Person__field_toString__field__
-ALLOT: __rcc_tem_value_7___class_test_file_Person__field_toString__field__
-ALLOT: __rcc_tem_value_8___class_test_file_Person__field_toString__field__
-ALLOT: __rcc_tem_value_9___class_test_file_Person__field_toString__field__
-TP_GET_FIELD: _var_test_file_this___class_test_file_Person__field_toString__field_, __class_test_file_Person__field_age_, __rcc_tem_value_9___class_test_file_Person__field_toString__field__
-ALLOT: __rcc_tem_value_10___class_test_file_Person__field_toString__field__
-ALLOT: __rcc_tem_value_11___class_test_file_Person__field_toString__field__
-ALLOT: __rcc_tem_value_12___class_test_file_Person__field_toString__field__
-TP_GET_FIELD: _var_test_file_this___class_test_file_Person__field_toString__field_, __class_test_file_Person__field_name_, __rcc_tem_value_12___class_test_file_Person__field_toString__field__
-TP_SET: tp-str, __rcc_tem_value_11___class_test_file_Person__field_toString__field__
-ITER_APND: "<Person: ", __rcc_tem_value_12___class_test_file_Person__field_toString__field__, __rcc_tem_value_11___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_12___class_test_file_Person__field_toString__field__
-TP_SET: tp-str, __rcc_tem_value_10___class_test_file_Person__field_toString__field__
-ITER_APND: __rcc_tem_value_11___class_test_file_Person__field_toString__field__, ", ", __rcc_tem_value_10___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_11___class_test_file_Person__field_toString__field__
-TP_SET: tp-str, __rcc_tem_value_8___class_test_file_Person__field_toString__field__
-ITER_APND: __rcc_tem_value_10___class_test_file_Person__field_toString__field__, __rcc_tem_value_9___class_test_file_Person__field_toString__field__, __rcc_tem_value_8___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_9___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_10___class_test_file_Person__field_toString__field__
-TP_SET: tp-str, __rcc_tem_value_7___class_test_file_Person__field_toString__field__
-ITER_APND: __rcc_tem_value_8___class_test_file_Person__field_toString__field__, ", ", __rcc_tem_value_7___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_8___class_test_file_Person__field_toString__field__
-TP_SET: tp-str, __rcc_tem_value_5___class_test_file_Person__field_toString__field__
-ITER_APND: __rcc_tem_value_7___class_test_file_Person__field_toString__field__, __rcc_tem_value_6___class_test_file_Person__field_toString__field__, __rcc_tem_value_5___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_6___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_7___class_test_file_Person__field_toString__field__
-TP_SET: tp-str, __rcc_tem_value_4___class_test_file_Person__field_toString__field__
-ITER_APND: __rcc_tem_value_5___class_test_file_Person__field_toString__field__, ">", __rcc_tem_value_4___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_5___class_test_file_Person__field_toString__field__
-RET: __rcc_tem_value_4___class_test_file_Person__field_toString__field__
-DELETE: __rcc_tem_value_4___class_test_file_Person__field_toString__field__
-END: _func_test_file___class_test_file_Person__field_toString__
-TP_ADD_INST_FIELD: _class_test_file_Person_, "_func_test_file___class_test_file_Person__field_toString__"
-FUNI: _func_test_file___class_test_file_Person__ctor_name_age_sex__, _var_test_file_name___class_test_file_Person__ctor_name_age_sex__field_, _var_test_file_age___class_test_file_Person__ctor_name_age_sex__field_, _var_test_file_sex___class_test_file_Person__ctor_name_age_sex__field_
-ALLOT: _var_test_file_this___class_test_file_Person__ctor_name_age_sex__field_
-ALLOT: __rcc_tem_value_4___class_test_file_Person__ctor_name_age_sex__field__
-IVOK: _func_test_file___class_test_file_Object__ctor___, __rcc_tem_value_4___class_test_file_Person__ctor_name_age_sex__field__
-PUT: __rcc_tem_value_4___class_test_file_Person__ctor_name_age_sex__field__, _var_test_file_this___class_test_file_Person__ctor_name_age_sex__field_
-DELETE: __rcc_tem_value_4___class_test_file_Person__ctor_name_age_sex__field__
-TP_DERIVE: _var_test_file_this___class_test_file_Person__ctor_name_age_sex__field_, _class_test_file_Person_
-TP_SET_FIELD: _var_test_file_this___class_test_file_Person__ctor_name_age_sex__field_, "_func_test_file___class_test_file_Person__field_toString__", _func_test_file___class_test_file_Person__field_toString__
-TP_SET_FIELD: _var_test_file_this___class_test_file_Person__ctor_name_age_sex__field_, "__class_test_file_Person__field_name_", _var_test_file_name___class_test_file_Person__ctor_name_age_sex__field_
-TP_SET_FIELD: _var_test_file_this___class_test_file_Person__ctor_name_age_sex__field_, "__class_test_file_Person__field_age_", _var_test_file_age___class_test_file_Person__ctor_name_age_sex__field_
-TP_SET_FIELD: _var_test_file_this___class_test_file_Person__ctor_name_age_sex__field_, "__class_test_file_Person__field_sex_", _var_test_file_sex___class_test_file_Person__ctor_name_age_sex__field_
-RET: _var_test_file_this___class_test_file_Person__ctor_name_age_sex__field_
-END: _func_test_file___class_test_file_Person__ctor_name_age_sex__
-
-; fun main(): void -> (CodeBlock: {var o: Object = (CallGeneric: Object(TableArgExpr: ())); (CallFunc: (CallGeneri
-~ c: sout(TableArgExpr: (Arg: <(SquareListExpr: [(CallGeneric: o.get_uid(TableArgExpr: (Arg: <_var_test_file_o_mai
-~ n_field_>))), rasm_endl, (CallGeneric: o.toString(TableArgExpr: (Arg: <_var_test_file_o_main_field_>)))])>)))); 
-FUNC: _func_test_file_main_
-ALLOT: _var_test_file_o_main_field_
-; No need to set type.
-ALLOT: __rcc_tem_value_4_main_field__
-IVOK: _func_test_file___class_test_file_Object__ctor___, __rcc_tem_value_4_main_field__
-PUT: __rcc_tem_value_4_main_field__, _var_test_file_o_main_field_
-DELETE: __rcc_tem_value_4_main_field__
-ALLOT: __rcc_tem_value_4_main_field__
-TP_SET: tp-list, __rcc_tem_value_4_main_field__
-ALLOT: __rcc_tem_value_5_main_field__
-TP_GET_FIELD: _var_test_file_o_main_field_, "_func_test_file___class_test_file_Object__field_get_uid__", __rcc_tem_value_5_main_field__
-ALLOT: __rcc_tem_value_6_main_field__
-IVOK: __rcc_tem_value_5_main_field__, _var_test_file_o_main_field_, __rcc_tem_value_6_main_field__
-DELETE: __rcc_tem_value_5_main_field__
-ALLOT: __rcc_tem_value_7_main_field__
-TP_GET_FIELD: _var_test_file_o_main_field_, "_func_test_file___class_test_file_Object__field_toString__", __rcc_tem_value_7_main_field__
-ALLOT: __rcc_tem_value_8_main_field__
-IVOK: __rcc_tem_value_7_main_field__, _var_test_file_o_main_field_, __rcc_tem_value_8_main_field__
-DELETE: __rcc_tem_value_7_main_field__
-ITER_APND: __rcc_tem_value_6_main_field__, _var_test_file_rasm_endl_test_file_, __rcc_tem_value_8_main_field__, __rcc_tem_value_4_main_field__
-DELETE: __rcc_tem_value_6_main_field__
-DELETE: __rcc_tem_value_8_main_field__
-CALL: _func_test_file_sout_, __rcc_tem_value_4_main_field__, _var_test_file_rasm_endl_test_file_
-DELETE: __rcc_tem_value_4_main_field__
-ALLOT: _var_test_file_p_main_field_
-; No need to set type.
-ALLOT: __rcc_tem_value_4_main_field__
-IVOK: _func_test_file___class_test_file_Person__ctor_name_age_sex__, "Rio", 18, "Male", __rcc_tem_value_4_main_field__
-PUT: __rcc_tem_value_4_main_field__, _var_test_file_p_main_field_
-DELETE: __rcc_tem_value_4_main_field__
-ALLOT: __rcc_tem_value_4_main_field__
-TP_SET: tp-list, __rcc_tem_value_4_main_field__
-ALLOT: __rcc_tem_value_5_main_field__
-TP_GET_FIELD: _var_test_file_p_main_field_, "_func_test_file___class_test_file_Object__field_get_uid__", __rcc_tem_value_5_main_field__
-ALLOT: __rcc_tem_value_6_main_field__
-IVOK: __rcc_tem_value_5_main_field__, _var_test_file_p_main_field_, __rcc_tem_value_6_main_field__
-DELETE: __rcc_tem_value_5_main_field__
-ALLOT: __rcc_tem_value_7_main_field__
-TP_GET_FIELD: _var_test_file_p_main_field_, "_func_test_file___class_test_file_Person__field_toString__", __rcc_tem_value_7_main_field__
-ALLOT: __rcc_tem_value_8_main_field__
-IVOK: __rcc_tem_value_7_main_field__, _var_test_file_p_main_field_, __rcc_tem_value_8_main_field__
-DELETE: __rcc_tem_value_7_main_field__
-ITER_APND: __rcc_tem_value_6_main_field__, _var_test_file_rasm_endl_test_file_, __rcc_tem_value_8_main_field__, __rcc_tem_value_4_main_field__
-DELETE: __rcc_tem_value_6_main_field__
-DELETE: __rcc_tem_value_8_main_field__
-CALL: _func_test_file_sout_, __rcc_tem_value_4_main_field__, _var_test_file_rasm_endl_test_file_
-DELETE: __rcc_tem_value_4_main_field__
-END: _func_test_file_main_
-
-; (CallFunc: (CallGeneric: main(TableArgExpr: ())))
-CALL: _func_test_file_main_
-
+FUNC: vid2
+; This is a pure-built-in function: `export`
+PASS: ; Function implementation is encapsulated.
+END: vid2
+FUNI: vid3
+; This is a pure-built-in function: `import`
+PASS: ; Function implementation is encapsulated.
+END: vid3
+; D:\ClionProjects\RCC\test\test.rio:1:1, line 1
+ALLOT: vid5
+PAIR_SET: "a", 1, vid5
+ALLOT: vid6
+PAIR_SET: "b", 2, vid6
+ALLOT: vid7
+PAIR_SET: "c", 3, vid7
+ALLOT: vid8
+TP_SET: tp-dict, vid8
+ITER_APND: vid5, vid6, vid7, vid8
+ALLOT: vid4
+TP_SET: tp-dict, vid4
+PUT: vid8, vid4
+ALLOT: a, b, c
+ITER_UNPACK: vid4, a, b, c
+SOUT: s-m, a, b, c

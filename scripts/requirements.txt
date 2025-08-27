@@ -1,0 +1,4 @@
+# auto_version_increment.py, colorful_echo.py, execute.py
+newrcc~=0.2.1
+# execute.py
+python-dotenv~=1.1.1
