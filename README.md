@@ -52,33 +52,13 @@ RVM 是一个虚拟机，主要用于运行 RA 代码文件或 RSI 代码文件�
 
 - **作者的方法：**
 
-  我在开发的时候使用了 bat 编写了一个编译脚本，编译后会直接运行，如果你使用 CMake 的话可以直接使用这个编译脚本。代码如下：
-    ```batch
-    rem file: execute.bat
-    @echo off
-    cls
-    color 0A
-    set COMMAND_PREFIX="^>^>^>"
-    rem 请将此路径替换为你的 CMake 路径
-    set CMAKE_PATH=D:\soft\Clion\CLion-2024.2.3\bin\cmake\win\x64\bin\cmake.exe
+    我在开发的时候使用了 python 编写了一个自动编译和更新版本号的脚本，如果你使用 CMake 的话可以直接使用这个编译脚本。
+    - [~/RVM/scripts/execute.py](https://github.com/RestRegular/RVM/blob/main/scripts/execute.py)
+    - [~/RVM/scripts/execute.bat](https://github.com/RestRegular/RVM/blob/main/scripts/execute.bat)
 
-    set PROJECT_TARGET=RVM
-
-    rem 请将此路径替换为你的项目路径
-    set PROJECT_DIR=D:\ClionProjects\%PROJECT_TARGET%
-    rem 在你的项目目录下创建一个名为 cmake-build-debug 的目录（或其他名称，注意修改 BUILD_DIR 变量）
-    set BUILD_DIR=%PROJECT_DIR%\cmake-build-debug
-    set EXECUTABLE_PATH=%BUILD_DIR%\%PROJECT_TARGET%.exe
-    echo %COMMAND_PREFIX:"=% Building project...
-    rem 这里使用了 -j 10 参数，你可以根据自己的需求进行调整
-    "%CMAKE_PATH%" --build %BUILD_DIR% --target %PROJECT_TARGET% -j 10
-    color 07
-    cls
-    echo %COMMAND_PREFIX:"=% %EXECUTABLE_PATH% %*
-    %EXECUTABLE_PATH% %*
-    ```
     **运行命令：**
-    `execute.bat [options]`
+    - `python execute.py`
+    - `execute.bat`
 
 ## 3. 使用方法
 
@@ -91,33 +71,33 @@ RVM.exe [options]
 ## 4. 参数说明
 
 1. **标志参数**
-    `--help (-h)`：显示帮助信息并退出。
-    `--version (-v)`：显示版本信息并退出。
-    `--vs-check (-vc)`：显示程序版本和指定 RSI 文件的版本信息并退出。
-    `--run (-r)`：运行指定的可执行文件。
-    `--comp (-c)`：编译指定的源文件。
-    `--time-info (-ti)`：启用执行时间信息输出。
-    `--debug (-d, -db)`：启用调试模式。
-    `--rvm-work-directory (-rwd)`：指定 RVM 目录为程序的工作目录。
-    `--precomp-link (-pcl, -pl)`：指定预编译 RSI 文件的路径。
+   - `--help (-h)`：显示帮助信息并退出。
+   - `--version (-v)`：显示版本信息并退出。
+   - `--vs-check (-vc)`：显示程序版本和指定 RSI 文件的版本信息并退出。
+   - `--run (-r)`：运行指定的可执行文件。
+   - `--comp (-c)`：编译指定的源文件。
+   - `--time-info (-ti)`：启用执行时间信息输出。
+   - `--debug (-d, -db)`：启用调试模式。
+   - `--rvm-work-directory (-rwd)`：指定 RVM 目录为程序的工作目录。
+   - `--precomp-link (-pcl, -pl)`：指定预编译 RSI 文件的路径。
 
 2. **选项参数**
-    `--help-option (-ho)`：指定帮助选项的名称。
-    `--comp-level (-cl)`：指定编译级别。
-    `--target (-tar, -t)`：指定操作的目标文件路径。
-    `--archive (-arc, -a)`：指定生成文件的输出路径。
-    `--working-dir (-wd)`：指定操作的工作目录。
-    `--output-redirect (-or)`：指定输出重定向的位置。
-    `--precomp-link-dir (-pcld, -pld)`：指定预编译 RSI 文件的路径。
+   - `--help-option (-ho)`：指定帮助选项的名称。
+   - `--comp-level (-cl)`：指定编译级别。
+   - `--target (-tar, -t)`：指定操作的目标文件路径。
+   - `--archive (-arc, -a)`：指定生成文件的输出路径。
+   - `--working-dir (-wd)`：指定操作的工作目录。
+   - `--output-redirect (-or)`：指定输出重定向的位置。
+   - `--precomp-link-dir (-pcld, -pld)`：指定预编译 RSI 文件的路径。
 
 3. **互斥和依赖关系**
-    `--run` 和 `--comp` 互斥。
-    `--rvm-work-directory` 和 `--working-dir` 互斥。
-    `--help`、`--version` 与 `--run`、`--comp`、`--debug` 等选项互斥。
-    `--help-option` 依赖于 `--help`。
-    `--run` 和 `--comp` 依赖于 `--target`。
-    `--debug` 依赖于 `--run`。
-    `--vs-check` 依赖于 `--target`。
+   - `--run` 和 `--comp` 互斥。
+   - `--rvm-work-directory` 和 `--working-dir` 互斥。
+   - `--help`、`--version` 与 `--run`、`--comp`、`--debug` 等选项互斥。
+   - `--help-option` 依赖于 `--help`。
+   - `--run` 和 `--comp` 依赖于 `--target`。
+   - `--debug` 依赖于 `--run`。
+   - `--vs-check` 依赖于 `--target`。
 
 ## 5. 代码结构
 
