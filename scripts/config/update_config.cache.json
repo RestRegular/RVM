@@ -1,16 +1,15 @@
 {
   "validate": true,
   "version": {
-    "increment_type": "patch",
-    "vs_desc": "...",
+    "vs_desc": "重构 RVM 版本输出信息格式，与 RCC 保持一致",
     "change_type": [
-      "Feature"
+      "ref"
     ]
   },
   "update_log": {
     "author": "RestRegular",
     "log_contents": [
-      "..."
+      "将 RVM 的版本输出格式重构为与 RCC 格式一致。"
     ]
   },
   "annotation": {

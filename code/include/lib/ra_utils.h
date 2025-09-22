@@ -50,18 +50,18 @@ namespace utils {
         static std::vector<std::string> split(const std::string &content, char delimiter = ',');
         std::string processQuotedString(std::string_view input);
         void registerEscapeHandler(char escapeChar, std::function<std::string(void)> handler);
-        std::string unescape(const std::string &input);
-        void unescape_nret(std::string &input);
+        static std::string unescape(const std::string &input);
+        static void unescape_nret(std::string &input);
         static std::string parseStringFormat(const std::string &input);
         static void parseStringFormat_nret(std::string &result);
-        static bool isStringFormat(const std::string &str);
+        static std::pair<bool, std::string> isStringFormat(const std::string &str);
         static void trim(std::string &str);
         static std::string trim(const std::string &str);
         static std::string toStringFormat(const std::string &str);
         static std::map<std::string, std::string> splitStringByChars(const std::string& input, const std::string& delimiters);
         static std::string escape(const std::string &input);
         static std::string wrapText(const std::string& text, size_t lineWidth, size_t indent = 0,
-                                    std::string last_line_suffix = "", std::string next_line_prefix = "");
+                                    const std::string& last_line_suffix = "", const std::string& next_line_prefix = "");
         static std::string combineNearbyString(const std::string &input, const int &line_row);
         static bool isSpace(const char &c);
     private:
@@ -75,8 +75,8 @@ namespace utils {
     std::string doubleToString(double value);
     bool isStringFormat(const std::string& str);
     std::string parseStringFormat(const std::string& str);
-    void parseStringFormat_noReturn(std::string& result);
-    std::string getSpaceFormatString(std::string name, std::string value);
+    void parseStringFormat_nret(std::string& str);
+    std::string getSpaceFormatString(const std::string& name, const std::string& value);
     std::string getObjectFormatString(const std::string &type, const std::string &name);
     std::string getTypeFormatString(const ArgType &argType);
     std::string getArgTypeName(const ArgType& argType);
@@ -94,7 +94,7 @@ namespace utils {
     std::pair<std::string, std::string> getFileInfoFromPath(const std::string &path);
     std::string getFileFromPath(const std::string &path);
     std::string getFileDirFromPath(const std::string &path);
-    std::string getWindowsRVMDir();
+    std::string getRVMDir();
     std::string getWindowsDefaultDir();
     std::string getAbsolutePath(const std::string& path, const std::string &dir_path = "");
     std::string getEscapedPathFormatString(const std::string& path);
@@ -153,13 +153,13 @@ namespace utils {
     struct Arg {
     public:
         Arg() = default;
-        Arg(Pos pos, const std::string &value);
-        explicit Arg(std::string value);
+        Arg(Pos  pos, const std::string &value);
+        explicit Arg(const std::string& value);
         [[nodiscard]] const Pos &getPos() const;
         [[nodiscard]] utils::ArgType getType() const;
         [[nodiscard]] const std::string &getValue() const;
         [[nodiscard]] std::string toString() const;
-        const std::string getPosStr() const;
+        std::string getPosStr() const;
         void serialize(std::ostream& out, const SerializationProfile &profile) const;
         void deserialize(std::istream& in, const SerializationProfile &profile);
     private:

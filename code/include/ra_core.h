@@ -380,7 +380,7 @@ namespace core {
         struct String final : Iterable {
             static id::TypeID typeId;
 
-            explicit String(std::string value);
+            explicit String(const std::string& value);
 
             [[nodiscard]] std::string getValStr() const override;
 
@@ -400,7 +400,7 @@ namespace core {
 
             [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            size_t size() const override;
+            [[nodiscard]] size_t size() const override;
 
             void append(const std::shared_ptr<RVM_Data> &data) override;
 
@@ -412,17 +412,17 @@ namespace core {
 
             void eraseDataAt(int index) override;
 
-            std::string toEscapedString() const override;
+            [[nodiscard]] std::string toEscapedString() const override;
 
-            std::shared_ptr<List> trans_to_list() const;
+            [[nodiscard]] std::shared_ptr<List> trans_to_list() const;
 
-            std::shared_ptr<Series> trans_to_series() const;
+            [[nodiscard]] std::shared_ptr<Series> trans_to_series() const;
 
             void insertDataAt(int index, const std::shared_ptr<RVM_Data> &data) override;
 
-            std::string toString() const override;
+            [[nodiscard]] std::string toString() const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
             void splice(const std::shared_ptr<Iterable>& other) override;
 

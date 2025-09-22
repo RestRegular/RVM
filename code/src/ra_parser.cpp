@@ -124,10 +124,10 @@ namespace parser {
             base::PROGRAM_WORKING_DIRECTORY_STACK.push(
                     utils::getAbsolutePath(working_directory.empty() || working_directory == undefined_ ?
                     utils::getFileDirFromPath(executed_file_path) : working_directory));
-            auto [SR_id, _] = data_space_pool.addGlobalData("SR", std::make_shared<data::Null>());
+            auto [SR_id, _1] = data_space_pool.addGlobalData("SR", std::make_shared<data::Null>());
             SR_SpaceID = SR_id;
-            auto [_SE_id, __] = data_space_pool.addGlobalData("_SE", std::make_shared<data::Null>());
-            _SE_SpaceID = _SE_id;
+            auto [SE_id_, _2] = data_space_pool.addGlobalData("_SE", std::make_shared<data::Null>());
+            _SE_SpaceID = SE_id_;
             data_space_pool.addGlobalDataBatch({
                     {"SN", std::make_shared<data::Null>()},
                     {"SE", std::make_shared<data::Null>()},
@@ -161,11 +161,11 @@ namespace parser {
         void serializeLinkedExtensions(std::ostream &out) {
             size_t extension_count = loadedExtensions.size();
             out.write(reinterpret_cast<const char *>(&extension_count), sizeof(extension_count));
-            for (const auto &[ext_name, ext_data]: loadedExtensions) {
+            for (const auto& ext_name : loadedExtensions | std::views::keys) {
                 size_t extension_size = ext_name.size();
                 out.write(reinterpret_cast<const char *>(&extension_size), sizeof(extension_size));
                 if (extension_size > 0){
-                    out.write(ext_name.c_str(), extension_size);
+                    out.write(ext_name.c_str(), static_cast<long long>(extension_size));
                 }
                 // FixMe
             }
@@ -180,7 +180,7 @@ namespace parser {
                 if (extension_size > 0){
                     std::string extension;
                     extension.resize(extension_size);
-                    in.read(&extension[0], extension_size);
+                    in.read(&extension[0], static_cast<long long>(extension_size));
                     loadedExtensions.emplace(extension, nullptr); // FixMe
                 }
             }
@@ -203,7 +203,7 @@ namespace parser {
                 utils::StringManager::trim(trimmedLine);
                 if (trimmedLine.empty()) {
                     if (!currentLine.empty() && currentLine[0] != ';') {
-                        currentLine = utils::StringManager::combineNearbyString(currentLine, rawIndex);
+                        currentLine = utils::StringManager::combineNearbyString(currentLine, static_cast<int>(rawIndex));
                         processedLines.push_back(currentLine);
                         lineIndents.push_back(utils::getSpaceFrontOfLineCode(lines[rawIndex - 1]));
                         lineRawIndex.push_back(rawIndex);
@@ -219,7 +219,7 @@ namespace parser {
                     }
                 } else {
                     if (!currentLine.empty() && currentLine[0] != ';') {
-                        currentLine = utils::StringManager::combineNearbyString(currentLine, rawIndex);
+                        currentLine = utils::StringManager::combineNearbyString(currentLine, static_cast<int>(rawIndex));
                         processedLines.push_back(currentLine);
                         lineIndents.push_back(utils::getSpaceFrontOfLineCode(lines[rawIndex - 1]));
                         lineRawIndex.push_back(rawIndex);
@@ -247,7 +247,7 @@ namespace parser {
                 rawIndex++;
             }
             if (!currentLine.empty() && currentLine[0] != ';') {
-                currentLine = utils::StringManager::combineNearbyString(currentLine, rawIndex);
+                currentLine = utils::StringManager::combineNearbyString(currentLine, static_cast<int>(rawIndex));
                 processedLines.push_back(currentLine);
                 lineIndents.push_back(utils::getSpaceFrontOfLineCode(lines[rawIndex - 1]));
                 lineRawIndex.push_back(rawIndex);
@@ -301,7 +301,7 @@ namespace parser {
                 }
                 std::vector<std::string> rawParameters = utils::StringManager::split(parametersStr, ',');
                 std::vector<utils::Arg> args{};
-                int paramStartColumn = indents[lineNumber - 1] + static_cast<int>(colonPos) + 2;
+                int paramStartColumn = static_cast<int>(indents[lineNumber - 1]) + static_cast<int>(colonPos) + 2;
                 static auto getPrefixSpaceLength = [](const std::string &content) -> size_t {
                     size_t count = 0;
                     for (const char c : content) {
@@ -317,7 +317,7 @@ namespace parser {
                     const int &orig_param_length = static_cast<int>(param.length());
                     utils::Pos argPos;
                     if (!fixed_pos) {
-                        argPos = utils::Pos(rawIndex[lineNumber - 1], paramStartColumn + getPrefixSpaceLength(param), code_path);
+                        argPos = utils::Pos(static_cast<int>(rawIndex[lineNumber - 1]), paramStartColumn + static_cast<int>(getPrefixSpaceLength(param)), code_path);
                     } else {
                         argPos = fixed_pos.value();
                     }
@@ -341,7 +341,7 @@ namespace parser {
                 }
                 utils::Pos insPos;
                 if (!fixed_pos){
-                    insPos = utils::Pos(rawIndex[lineNumber - 1], 1, code_path);
+                    insPos = utils::Pos(static_cast<int>(rawIndex[lineNumber - 1]), 1, code_path);
                 } else {
                     insPos = fixed_pos.value();
                 }

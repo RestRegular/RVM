@@ -1,7 +1,6 @@
 {
   "validate": false,
   "version": {
-    "increment_type": "patch",
     "vs_desc": "...",
     "change_type": [
       "Feature"

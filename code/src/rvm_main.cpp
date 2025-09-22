@@ -17,56 +17,56 @@ using namespace utils;
 
 ProgArgParser argParser{};
 
-std::string __program_target_file_path__;
-std::string __program_archive_file_path__;
-std::string __program_help_option_name__;
-std::string __program_environment_directory__;
-std::string __program_output_redirect__;
-std::string __program_working_directory__;
-bool __program_run_executable__;
-bool __program_serialize__;
-bool __program_debug_option__;
-bool __program_run_time_info_option__;
-bool __program_help_option__;
-bool __program_version_option__;
-bool __program_vs_check_option__;
-bool __program_rvm_work_directory__;
+std::string program_target_file_path_;
+std::string program_archive_file_path_;
+std::string program_help_option_name_;
+std::string program_environment_directory_;
+std::string program_output_redirect_;
+std::string program_working_directory_;
+bool program_run_executable_;
+bool program_serialize_;
+bool program_debug_option_;
+bool program_run_time_info_option_;
+bool program_help_option_;
+bool program_version_option_;
+bool program_vs_check_option_;
+bool program_rvm_work_directory_;
 
 void initializeArgumentParser() {
-    argParser.addFlag("help", &__program_help_option__, false, true,
+    argParser.addFlag("help", &program_help_option_, false, true,
                       "Displays this help message and exits. "
                       "Use this flag to show a list of available options, flags, and their descriptions.",
                       {"h"});
-    argParser.addFlag("version", &__program_version_option__, false, true,
+    argParser.addFlag("version", &program_version_option_, false, true,
                       "Displays the version information and exits. "
                       "Use this flag to check the current version of the program.",
                       {"v"});
-    argParser.addFlag("vs-check", &__program_vs_check_option__, false, true,
+    argParser.addFlag("vs-check", &program_vs_check_option_, false, true,
                       "Displays the program version and exits. "
                       "Use this flag to check the current program version "
                       "and the version of the RSI file, whose path must be "
                       "specified using the target option.",
                       {"vc"});
-    argParser.addFlag("run", &__program_run_executable__, false, true,
+    argParser.addFlag("run", &program_run_executable_, false, true,
                       "Runs the specified executable file. "
                       "This flag is used to execute the target file provided via the '--target' option.",
                       {"r"});
-    argParser.addFlag("comp", &__program_serialize__, false, true,
+    argParser.addFlag("comp", &program_serialize_, false, true,
                       "Compiles the specified source file. "
                       "This flag is used to compile the target file provided via the '--target' option "
                       "and generate the output file specified by the '--archive' option.",
                       {"c"});
-    argParser.addFlag("time-info", &__program_run_time_info_option__, false, true,
+    argParser.addFlag("time-info", &program_run_time_info_option_, false, true,
                       "Enables timing information during execution. "
                       "This flag outputs detailed timing metrics for the program's execution, "
                       "useful for performance analysis and optimization.",
                       {"ti"});
-    argParser.addFlag("debug", &__program_debug_option__, false, true,
+    argParser.addFlag("debug", &program_debug_option_, false, true,
                       "Enables debug mode. "
                       "This flag activates additional debugging information and tools "
                       "to assist in diagnosing issues during execution or compilation.",
                       {"d", "db"});
-    argParser.addFlag("rvm-work-directory", &__program_rvm_work_directory__, false, true,
+    argParser.addFlag("rvm-work-directory", &program_rvm_work_directory_, false, true,
                       "This flag is used to specify the rvm directory as the program's environment working directory.",
                       {"rwd"});
     argParser.addFlag("precomp-link", &env::precompiled_link_option, false, true,
@@ -75,7 +75,7 @@ void initializeArgumentParser() {
                       "the folder path where the pre-compiled files are stored.",
                       {"pcl", "pl"});
 
-    argParser.addOption<std::string>("help-option", &__program_help_option_name__,
+    argParser.addOption<std::string>("help-option", &program_help_option_name_,
                                                      "",
                                                      "Specifies the name of the help option. "
                                                      "This option is used to customize the name of the help option displayed in the help message.",
@@ -86,22 +86,22 @@ void initializeArgumentParser() {
                                                      "Determines the optimization and debugging information included in the output. "
                                                      "For example, 'Debug' includes additional debugging information, while other profiles may optimize for performance or size.",
                                                      {"cl"});
-    argParser.addOption<std::string>("target", &__program_target_file_path__,
+    argParser.addOption<std::string>("target", &program_target_file_path_,
                                      R"(D:\ClionProjects\RVM\test\test.ra)",
                                      "Specifies the target file path for the operation. "
                                      "When the operation is '--run', it refers to the executable file path. "
                                      "When the operation is '--comp', it refers to the source file to be compiled.",
                                      {"tar", "t"});
-    argParser.addOption<std::string>("archive", &__program_archive_file_path__,
+    argParser.addOption<std::string>("archive", &program_archive_file_path_,
                                      ".\\a.rsi",
                                      "Specifies the output file path for the generated file. "
                                      "When the operation is '--comp', it refers to the path where the compiled file will be saved.",
                                      {"arc", "a"});
-    argParser.addOption<std::string>("env-dir", &__program_environment_directory__,
+    argParser.addOption<std::string>("env-dir", &program_environment_directory_,
                                      PROGRAM_ENVIRONMENT_DIRECTORY,
                                      "Specifies the environment working directory for the operation. ",
                                      {"ed"});
-    argParser.addOption<std::string>("output-redirect", &__program_output_redirect__,
+    argParser.addOption<std::string>("output-redirect", &program_output_redirect_,
                                      "console",
                                      "Specifies the output redirect place for the operation.",
                                      {"or"});
@@ -110,7 +110,7 @@ void initializeArgumentParser() {
                                      "Specifies the path to the precompiled RSI file. "
                                      "When the '--precomp-link' flag is used, this option specifies the path to the precompiled RSI file.",
                                      {"pcld", "pld"});
-    argParser.addOption<std::string>("working-dir", &__program_working_directory__,
+    argParser.addOption<std::string>("working-dir", &program_working_directory_,
                                      undefined_,
                                      "Specifies the working directory for the operation. ",
                                      {"wd"});
@@ -147,63 +147,63 @@ int main(const int argc, char *argv[]){
     try {
         initializeArgumentParser();
         argParser.parse(argc, argv);
-        setProgramEnvDir(__program_rvm_work_directory__ ?
-                                PROGRAM_RVM_DIRECTORY : __program_environment_directory__);
+        setProgramEnvDir(program_rvm_work_directory_ ?
+                                PROGRAM_RVM_DIRECTORY : program_environment_directory_);
         if (env::precompiled_link_option) {
             env::precompiled_link_dir_path = getAbsolutePath(env::precompiled_link_dir_path);
         }
-        if (__program_output_redirect__ != "console") {
+        if (program_output_redirect_ != "console") {
             io->setOutputToConsole(false);
-            io->setOutputToFile(__program_output_redirect__);
+            io->setOutputToFile(program_output_redirect_);
         }
-        if (__program_debug_option__) {
-            if (__program_output_redirect__ != "console") {
+        if (program_debug_option_) {
+            if (program_output_redirect_ != "console") {
                 throw std::runtime_error("Cannot redirect output to file when debug mode is enabled.");
             }
             InsSet::debug_mode = DebugMode::Standard;
         }
-        if (__program_serialize__) {
-            auto file_ext = getFileExtFromPath(__program_target_file_path__);
-            env::initialize(__program_target_file_path__, __program_working_directory__);
-            const auto ins_set = parse::parseCodeFromPath(__program_target_file_path__, false);
-            parse::serializeExecutableInsToBinaryFile(__program_archive_file_path__, ins_set,
+        if (program_serialize_) {
+            auto file_ext = getFileExtFromPath(program_target_file_path_);
+            env::initialize(program_target_file_path_, program_working_directory_);
+            const auto ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
+            parse::serializeExecutableInsToBinaryFile(program_archive_file_path_, ins_set,
                                                       env::__program_serialization_profile__);
             *io << "[RVM Msg] >> Compilation finished with ["
                 << getSerializationProfileName(env::__program_serialization_profile__) << "] profile.";
         }
-        if (__program_run_executable__) {
-            const auto file_ext = getFileExtFromPath(__program_target_file_path__);
-            appendProgramWorkingDir(__program_target_file_path__);
+        if (program_run_executable_) {
+            const auto file_ext = getFileExtFromPath(program_target_file_path_);
+            appendProgramWorkingDir(program_target_file_path_);
             std::shared_ptr<InsSet> ins_set;
             if (file_ext == RSI_EXT) {
                 ins_set = parse::deserializeExecutableInsFromBinaryFile(
-                        __program_target_file_path__, env::__program_serialization_profile__);
+                        program_target_file_path_, env::__program_serialization_profile__);
             } else {
-                ins_set = parse::parseCodeFromPath(__program_target_file_path__, false);
+                ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
             }
-            env::initialize(ins_set->scope_leader_file, __program_working_directory__);
+            env::initialize(ins_set->scope_leader_file, program_working_directory_);
             ins_set->execute();
         }
-        if (__program_help_option__) {
-            if (__program_help_option_name__.empty()) {
+        if (program_help_option_) {
+            if (program_help_option_name_.empty()) {
                 *io << argParser.getHelpString();
             } else {
-                *io << argParser.getOptionDescription(__program_help_option_name__);
+                *io << argParser.getOptionDescription(program_help_option_name_);
             }
         }
-        if (__program_version_option__) {
-            *io << "[RVM Msg] >> " << rvm_serial_header.getRVMVersionInfo();
+        if (program_version_option_) {
+            *io << RVMSerialHeader::getRVMVersionInfo();
         }
-        if (__program_vs_check_option__) {
-            auto file_ext = getFileExtFromPath(__program_target_file_path__);
+        if (program_vs_check_option_) {
+            auto file_ext = getFileExtFromPath(program_target_file_path_);
             try {
-                const auto &binary_file_path = getAbsolutePath(__program_target_file_path__);
+                const auto &binary_file_path = getAbsolutePath(program_target_file_path_);
                 std::ifstream binary_file(binary_file_path, std::ios::binary);
                 rvm_serial_header.deserialize(binary_file, env::__program_serialization_profile__,
                                                     binary_file_path, false);
                 env::deserializeLinkedExtensions(binary_file);
                 binary_file.close();
-                if (auto version_info = rvm_serial_header.getRSIVersionInfo(__program_target_file_path__);
+                if (auto version_info = rvm_serial_header.getRSIVersionInfo(program_target_file_path_);
                     version_info.empty()) {
                     *io += "[RVM Error] >> No version information found in the target RSI file.";
                 } else {
@@ -218,7 +218,7 @@ int main(const int argc, char *argv[]){
                 *io += "\n[RVM Error] >> " + std::string(e.what());
             }
         }
-        if (__program_run_time_info_option__) {
+        if (program_run_time_info_option_) {
             *io << printProgramSpentTimeInfo();
         }
     } catch (RVM_Error &rvm_error) {

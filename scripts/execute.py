@@ -2,22 +2,57 @@ import os
 import sys
 import subprocess
 from typing import Union
+import shutil
 
 from dotenv import load_dotenv
-from newrcc.CConsole import colorfulText
-from newrcc.CColor import TextColor, RESET
+from newrcc.c_console import ctext
+from newrcc.c_color import TextColor, RESET
+
+from auto_version_increment import parse_version_from_content, get_version_str
 
 
 def log(msg: str, color: Union[TextColor, str] = TextColor.CYAN, start: str = "", end: str = "\n"):
-    print(colorfulText(f"{start}>>> {msg}{end}", color), end="")
+    print(ctext(f"{start}>>> {msg}{end}", color), end="")
 
 
 def error(error_msg: str, start: str = "", end: str = "\n"):
-    print(colorfulText(f"{start}>>> 错误: {error_msg}{end}", TextColor.RED))
+    print(ctext(f"{start}>>> 错误: {error_msg}{end}", TextColor.RED))
     sys.exit(-1)
 
 
-def load_env() -> None:
+def save_project_version_release(version: dict):
+    executable_path = os.getenv("PROJECT_EXECUTABLE_PATH")
+    release_dir = os.getenv("PROJECT_RELEASE_DIR")
+    # 检查环境变量是否设置
+    if not executable_path:
+        raise Exception("未设置PROJECT_EXECUTABLE_PATH环境变量")
+
+    if not release_dir:
+        raise Exception("未设置PROJECT_RELEASE_DIR环境变量")
+
+    major_dir = os.path.join(release_dir, f"v{version['MAJOR']}")
+    if not os.path.exists(major_dir):
+        os.makedirs(major_dir, exist_ok=True)
+    minor_dir = os.path.join(major_dir, f"v{version['MAJOR']}.{version['MINOR']}")
+    if not os.path.exists(minor_dir):
+        os.makedirs(minor_dir, exist_ok=True)
+    patch_dir = os.path.join(minor_dir, f"v{version['MAJOR']}.{version['MINOR']}.{version['PATCH']}")
+    if not os.path.exists(patch_dir):
+        os.makedirs(patch_dir, exist_ok=True)
+    dest_dir = os.path.join(release_dir, major_dir, minor_dir, patch_dir)
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir, exist_ok=True)
+    file_name = os.path.basename(executable_path)
+    destination_path = os.path.join(dest_dir, file_name)
+    try:
+        shutil.copy2(executable_path, destination_path)
+        log(f"已保存版本 {get_version_str(version)} release: {destination_path}")
+    except Exception as e:
+        error(f"保存版本 {version} release 失败：{e}")
+
+
+def run(auto_increment_version: str = "true", *args, **kwargs) -> None:
+    auto_increment_version = auto_increment_version == "true"
     log('正在加载环境变量...')
     succeed = load_dotenv()
     if succeed:
@@ -25,7 +60,7 @@ def load_env() -> None:
     else:
         error('加载环境变量失败！')
 
-    if os.getenv("RUN_VERSION_INCREMENT_SCRIPT", "true") == 'true':
+    if auto_increment_version and os.getenv("RUN_VERSION_INCREMENT_SCRIPT", "true") == 'true':
         # 检查版本更新脚本是否存在
         vs_script_path = os.getenv("VERSION_SCRIPT_PATH")
         log(f'正在检查版本更新脚本：{vs_script_path}')
@@ -52,10 +87,18 @@ def load_env() -> None:
         if not os.path.exists(executable_path):
             raise FileNotFoundError(f'生成的可执行文件不存在：{executable_path}')
         log('构建项目成功！', TextColor.GREEN)
+        if auto_increment_version:
+            with open(os.getenv("PROJECT_VERSION_FILE_PATH"), 'r', encoding='gb18030') as vf:
+                print(ctext(f'>>> 正在读取版本文件：{os.getenv("PROJECT_VERSION_FILE_PATH")}', TextColor.CYAN))
+                version_content = vf.read()
+            version = parse_version_from_content(version_content)
+            save_project_version_release(version)
     except subprocess.CalledProcessError as e:
         error(f'构建项目失败：{e}')
     except FileNotFoundError as e:
         error(f'构建项目失败：{e}')
+    except Exception as e:
+        error(f'错误：{e}')
 
     # 获取运行参数
     run_args = os.getenv("RUN_ARGS", None)
@@ -80,4 +123,4 @@ def load_env() -> None:
 
 
 if __name__ == '__main__':
-    load_env()
+    run(*sys.argv[1:])

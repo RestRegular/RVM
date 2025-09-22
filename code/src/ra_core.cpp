@@ -695,7 +695,7 @@ namespace core::data {
     }
 
     std::string Char::getValStr() const {
-        return std::string (1, static_cast<char>(this->getValue()));
+        return {1, static_cast<char>(this->getValue())};
     }
 
     std::string Char::toEscapedString() const {
@@ -712,17 +712,16 @@ namespace core::data {
 
     id::TypeID Iterable::typeId{"Iterable", base::IDType::Iterable, undefined_};
 
-    Iterable::Iterable() :
-            base::RVM_Data() {}
+    Iterable::Iterable() = default;
 
     base::RVM_ID &Iterable::getTypeID() const {
-        return Iterable::typeId;
+        return typeId;
     }
 
     id::TypeID String::typeId{"String", std::make_shared<id::TypeID>(Iterable::typeId), base::IDType::String, tp_str};
 
-    String::String(std::string value) :
-        value(std::move(value)) {}
+    String::String(const std::string& value) :
+        value(utils::parseStringFormat(value)) {}
 
     std::string String::getTypeName() const {
         return "String";
@@ -745,17 +744,16 @@ namespace core::data {
     }
 
     id::TypeID &String::getTypeID() const {
-        return String::typeId;
+        return typeId;
     }
 
     bool String::updateData(const std::shared_ptr<RVM_Data> &newData) {
         if (typeId.fullEqualWith(newData->getTypeID())) {
-            auto newString = std::static_pointer_cast<const String>(newData);
+            const auto newString = std::static_pointer_cast<const String>(newData);
             this->value = newString->value;
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 
     std::shared_ptr<base::RVM_Data> String::copy_ptr() const {
@@ -763,7 +761,7 @@ namespace core::data {
     }
 
     bool String::compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const {
-        if (other->getTypeID() != String::typeId){
+        if (other->getTypeID() != typeId){
             return false;
         }
         switch (relational) {

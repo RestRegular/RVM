@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.31)
 
 project(RVM)
 
@@ -20,20 +20,25 @@ else()
     message(FATAL_ERROR "Python3 not found!")
 endif()
 
-add_executable(RVM src/rvm_main.cpp
-        src/ra_base.cpp
-        include/ra_base.h
-        src/ra_core.cpp
-        include/ra_core.h
-        src/ra_parser.cpp
-        include/ra_parser.h
-        src/lib/ra_utils.cpp
-        include/lib/ra_utils.h
-        src/rvm_ris.cpp
-        include/rvm_ris.h
-        src/lib/newrcc.cpp
-        include/lib/newrcc.h
-        include/rvm_version.h
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
+
+add_executable(RVM code/src/rvm_main.cpp
+        code/src/ra_base.cpp
+        code/include/ra_base.h
+        code/src/ra_core.cpp
+        code/include/ra_core.h
+        code/src/ra_parser.cpp
+        code/include/ra_parser.h
+        code/src/lib/ra_utils.cpp
+        code/include/lib/ra_utils.h
+        code/src/rvm_ris.cpp
+        code/include/rvm_ris.h
+        code/src/lib/newrcc.cpp
+        code/include/lib/newrcc.h
+        code/include/rvm_version.h
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")

@@ -1,30 +1,7 @@
-; Rio Program & compiled by RCC(Rio Compiler Collection) v1.0.0
-~ Source file: D:\ClionProjects\RCC\test\test.rio:1:1
-~ Target file: D:\ClionProjects\RVM\test\test.ra:1:1
-~ Author: @RestRegular
-~ Time: 2025-08-26 14:13:19
-
-FUNC: vid2
-; This is a pure-built-in function: `export`
-PASS: ; Function implementation is encapsulated.
-END: vid2
-FUNI: vid3
-; This is a pure-built-in function: `import`
-PASS: ; Function implementation is encapsulated.
-END: vid3
-; D:\ClionProjects\RCC\test\test.rio:1:1, line 1
-ALLOT: vid5
-PAIR_SET: "a", 1, vid5
-ALLOT: vid6
-PAIR_SET: "b", 2, vid6
-ALLOT: vid7
-PAIR_SET: "c", 3, vid7
-ALLOT: vid8
-TP_SET: tp-dict, vid8
-ITER_APND: vid5, vid6, vid7, vid8
-ALLOT: vid4
-TP_SET: tp-dict, vid4
-PUT: vid8, vid4
-ALLOT: a, b, c
-ITER_UNPACK: vid4, a, b, c
-SOUT: s-m, a, b, c
+ALLOT: a, b
+TP_SET: tp-list, a
+TP_SET: tp-list, b
+ITER_APND: 1, 2, 3, a
+ITER_APND: 4, 5, 6, b
+ADD: a, b, b
+SOUT: s-m, s-unpack, b

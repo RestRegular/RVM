@@ -94,9 +94,9 @@ namespace utils {
         return "[" + type + ": " + name + "]";
     }
 
-    std::string getWindowsRVMDir() {
+    std::string getRVMDir() {
         char path[MAX_PATH];
-        GetModuleFileNameA(NULL, path, MAX_PATH);
+        GetModuleFileNameA(nullptr, path, MAX_PATH);
         return std::filesystem::path(path).parent_path().string();
     }
 
@@ -255,23 +255,17 @@ namespace utils {
 
     // 判断字符串是否为字符串格式
     bool isStringFormat(const std::string &str) {
-        return str.front() == '"' && str.back() == '"';
+        return StringManager::isStringFormat(str).first;
     }
 
     // 解析字符串格式
-    std::string parseStringFormat(const std::string &result) {
-        if (isStringFormat(result)) {
-            return result.substr(1, result.size() - 2);
-        } else {
-            return result;
-        }
+    std::string parseStringFormat(const std::string &str) {
+        return StringManager::parseStringFormat(str);
     }
 
     // 解析字符串格式，不返回结果
-    void parseStringFormat_noReturn(std::string &result) {
-        if (isStringFormat(result)) {
-            result = result.substr(1, result.size() - 2);
-        }
+    void parseStringFormat_nret(std::string &str) {
+        StringManager::parseStringFormat_nret(str);
     }
 
     bool isNumber(const std::string &str) {
@@ -318,20 +312,20 @@ namespace utils {
         ' ', '\t', '\n', '\r'
     };
 
-    std::string StringManager::handleEscapeSequence(std::string_view input, size_t &pos) {
+    std::string StringManager::handleEscapeSequence(const std::string_view input, size_t &pos) {
         if (pos + 1 >= input.length()) {
             throw std::runtime_error("Invalid escape sequence at end of string");
         }
         char escapeChar = input[++pos];
-        auto it = escapeHandlers.find(escapeChar);
-        if (it != escapeHandlers.end()) {
+        if (const auto it = escapeHandlers.find(escapeChar);
+            it != escapeHandlers.end()) {
             return it->second();
         }
         std::cerr << "[RVM Warning]: Unknown escape sequence '\\" << escapeChar << "'" << std::endl;
-        return std::string (1, escapeChar);
+        return {1, escapeChar};
     }
 
-    std::string StringManager::processQuotedString(std::string_view input) {
+    std::string StringManager::processQuotedString(const std::string_view input) {
         std::string result;
         result.reserve(input.length());
         for (size_t i = 0; i < input.length(); ++i) {
@@ -357,7 +351,7 @@ namespace utils {
                 }
                 if (c == '"') {
                     int backslashCount = 0;
-                    for (int j = i - 1; j >= 0 && content[j] == '\\'; --j) {
+                    for (int j = static_cast<int>(i) - 1; j >= 0 && content[j] == '\\'; --j) {
                         ++backslashCount;
                     }
                     if (backslashCount % 2 == 0) {
@@ -383,27 +377,89 @@ namespace utils {
     }
 
     void StringManager::parseStringFormat_nret(std::string &result) {
-        if (isStringFormat(result)) {
-            result = result.substr(1, result.length() - 2);
-        }
+        if (const auto &[res, str] = isStringFormat(result);
+            res) {
+            result = unescape(std::string{result.begin() + 1, result.end() - 1});
+            }
     }
 
-    std::string StringManager::unescape(const std::string &input) {
+    std::string StringManager::unescape(const std::string &input)
+    {
         std::string result;
-        result.reserve(input.length());
-        bool inQuotes = false;
-        for (size_t i = 0; i < input.length(); ++i) {
-            char c = input[i];
-            if (c == '"' && (i == 0 || input[i - 1] != '\\')) {
-                inQuotes = !inQuotes;
+        std::istringstream iss(input);
+        char c;
+        while (iss.get(c))
+        {
+            if (c != '\\') {
                 result += c;
-            } else if (inQuotes && c == '\\') {
-                result += handleEscapeSequence(input, i);
-            } else {
+                continue;
+            }
+            // 处理转义字符
+            if (!iss.get(c)) {
+                // 字符串以反斜杠结尾，直接添加
+                result += '\\';
+                break;
+            }
+            switch (c) {
+            case 'a':  result += '\a'; break; // 响铃
+            case 'b':  result += '\b'; break; // 退格
+            case 'f':  result += '\f'; break; // 换页
+            case 'n':  result += '\n'; break; // 换行
+            case 'r':  result += '\r'; break; // 回车
+            case 't':  result += '\t'; break; // 水平制表
+            case 'v':  result += '\v'; break; // 垂直制表
+            case '\\': result += '\\'; break; // 反斜杠
+            case '"':  result += '"';  break; // 双引号
+            case '\'': result += '\''; break; // 单引号
+                // 处理八进制转义 \0ooo (1-3位数字)
+            case '0': {
+                    std::string octStr;
+                    octStr += '0'; // 已经读取的'0'
+                    // 最多再读2位八进制数字
+                    for (int i = 0; i < 2; ++i) {
+                        if (char next = static_cast<char>(iss.peek());
+                            next >= '0' && next <= '7') {
+                            iss.get(next);
+                            octStr += next;
+                            } else {
+                                break;
+                            }
+                    }
+                    // 转换为字符
+                    char octChar = static_cast<char>(std::stoi(octStr, nullptr, 8));
+                    result += octChar;
+                    break;
+            } // 处理十六进制转义 \xhh (1-2位数字)
+            case 'x': {
+                    std::string hexStr;
+                    // 读取1-2位十六进制数字
+                    for (int i = 0; i < 2; ++i) {
+                        if (char next = static_cast<char>(iss.peek());
+                            isxdigit(static_cast<unsigned char>(next))) {
+                            iss.get(next);
+                            hexStr += next;
+                            } else {
+                                break;
+                            }
+                    }
+
+                    if (hexStr.empty()) {
+                        // 没有有效的十六进制数字，将\x原样添加
+                        result += "\\x";
+                    } else {
+                        // 转换为字符
+                        char hexChar = static_cast<char>(std::stoi(hexStr, nullptr, 16));
+                        result += hexChar;
+                    }
+                    break;
+            } // 未知转义序列，原样保留
+            default:
+                result += '\\';
                 result += c;
+                break;
             }
         }
-        parseStringFormat_nret(result);
+
         return result;
     }
 
@@ -412,8 +468,12 @@ namespace utils {
         input = std::move(result);
     }
 
-    inline bool StringManager::isStringFormat(const std::string &str) {
-        return str.size() >= 2 && str.front() == '"' && str.back() == '"';
+    inline std::pair<bool, std::string> StringManager::isStringFormat(const std::string& str) {
+        if (str.size() >= 2 && str.front() == '"' && str.back() == '"')
+        {
+            return {true, "\"" + escape(std::string{str.begin() + 1, str.end() - 1}) + "\""};
+        }
+        return {false, ""};
     }
 
     void StringManager::trim(std::string &str) {
@@ -435,7 +495,7 @@ namespace utils {
     std::map<std::string, std::string>
     StringManager::splitStringByChars(const std::string &input, const std::string &delimiters) {
         std::map<std::string, std::string> result;
-        std::string_view input_view(input);
+        const std::string_view input_view(input);
         size_t start = 0;
         // 处理第一个部分（prefix）
         size_t end = input_view.find_first_of(delimiters, start);
@@ -461,33 +521,34 @@ namespace utils {
 
     std::string StringManager::escape(const std::string &input) {
         std::string result;
-        result.reserve(input.size() * 2); // 预留足够的空间，避免频繁分配内存
-        for (char c: input) {
+        for (const char c : input) {
             switch (c) {
-                case '\n':
-                    result.append("\\n");
-                    break;  // 换行符
-                case '\t':
-                    result.append("\\t");
-                    break;  // 制表符
-                case '\r':
-                    result.append("\\r");
-                    break;  // 回车符
-                case '\"':
-                    result.append("\\\"");
-                    break; // 双引号
-                case '\\':
-                    result.append("\\\\");
-                    break; // 反斜杠
-                default:
-                    result.push_back(c);
-                    break;        // 其他字符直接追加
+            case '\a': result += "\\a"; break;
+            case '\b': result += "\\b"; break;
+            case '\f': result += "\\f"; break;
+            case '\n': result += "\\n"; break;
+            case '\r': result += "\\r"; break;
+            case '\t': result += "\\t"; break;
+            case '\v': result += "\\v"; break;
+            case '\\': result += "\\\\"; break;
+            case '"':  result += "\\\""; break;
+            case '\'': result += "\\'"; break;
+            default:
+                // 非打印字符用十六进制表示
+                if (isprint(static_cast<unsigned char>(c))) {
+                    result += c;
+                } else {
+                    char buf[5];
+                    std::snprintf(buf, sizeof(buf), "\\x%02X",
+                                 static_cast<unsigned char>(c));
+                    result += buf;
+                }
             }
         }
         return result;
     }
 
-    std::string StringManager::wrapText(const std::string &text, size_t lineWidth, size_t indent, std::string last_line_suffix, std::string next_line_prefix){
+    std::string StringManager::wrapText(const std::string &text, size_t lineWidth, size_t indent, const std::string& last_line_suffix, const std::string& next_line_prefix){
         std::ostringstream oss;
         size_t currentWidth = 0;
         std::istringstream words(text);
@@ -692,7 +753,7 @@ namespace utils {
 
             // 写入字符串的内容
             if (filepathLength > 0) {
-                out.write(filepath.c_str(), filepathLength);
+                out.write(filepath.c_str(), static_cast<long long>(filepathLength));
             }
         }
     }
@@ -710,7 +771,7 @@ namespace utils {
             // 读取字符串的内容
             if (filepathLength > 0) {
                 filepath.resize(filepathLength);  // 调整字符串大小
-                in.read(&filepath[0], filepathLength);
+                in.read(&filepath[0], static_cast<long long>(filepathLength));
             } else {
                 filepath.clear();  // 如果长度为0，清空字符串
             }
@@ -754,12 +815,12 @@ namespace utils {
     }
 
     // Arg具体实现
-    Arg::Arg(Pos pos, const std::string &value) : pos(pos) {
-        this->type = utils::getArgType(value);
+    Arg::Arg(Pos pos, const std::string &value) : pos(std::move(pos)) {
+        this->type = getArgType(value);
         if (this->type == ArgType::string){
-            this->value = std::move(utils::StringManager::getInstance().unescape(value));
+            this->value = std::move(StringManager::unescape(value));
         } else {
-            this->value = std::move(value);
+            this->value = value;
         }
     }
 
@@ -767,7 +828,7 @@ namespace utils {
         return pos;
     }
 
-    const std::string Arg::getPosStr() const {
+    std::string Arg::getPosStr() const {
         return pos.toString();
     }
 
@@ -793,7 +854,7 @@ namespace utils {
         return "Error";
     }
 
-    Arg::Arg(std::string value): Arg(Pos(-1, -1, ""), std::move(value)) {}
+    Arg::Arg(const std::string& value): Arg(Pos(-1, -1, ""), value) {}
 
     // 序列化函数
     void Arg::serialize(std::ostream &out, const utils::SerializationProfile &profile) const {
@@ -809,7 +870,7 @@ namespace utils {
 
         // 序列化字符串的内容
         if (valueLength > 0) {
-            out.write(value.c_str(), valueLength);
+            out.write(value.c_str(), static_cast<long long>(valueLength));
         }
     }
 
@@ -828,7 +889,7 @@ namespace utils {
         // 反序列化字符串的内容
         if (valueLength > 0) {
             value.resize(valueLength);
-            in.read(&value[0], valueLength);
+            in.read(&value[0], static_cast<long long>(valueLength));
         } else {
             value.clear();
         }
@@ -878,7 +939,7 @@ namespace utils {
         }
 
         // 写入内容
-        file.write(content.data(), content.size());
+        file.write(content.data(), static_cast<long long>(content.size()));
         return file.good(); // 检查写入是否成功
     }
 
@@ -891,7 +952,7 @@ namespace utils {
         }
 
         // 写入内容
-        file.write(content.data(), content.size());
+        file.write(content.data(), static_cast<long long>(content.size()));
         return file.good(); // 检查写入是否成功
     }
 
@@ -974,7 +1035,7 @@ namespace utils {
         return isValidIdentifier(content);
     }
 
-    std::string getSpaceFormatString(std::string name, std::string value){
+    std::string getSpaceFormatString(const std::string& name, const std::string& value){
         return "[Space(" + name + "): " + value + "]";
     }
 
@@ -1121,7 +1182,6 @@ namespace utils {
             case TimeFormat::ISO:
                 return {'-', '-', ' ', ':', ':'};
             case TimeFormat::US:
-                return {'/', '/', ' ', ':', ':'};
             case TimeFormat::European:
                 return {'/', '/', ' ', ':', ':'};
             default:

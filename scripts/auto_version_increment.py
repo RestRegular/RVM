@@ -1,12 +1,14 @@
+import copy
 import os
 import re
 from enum import Enum
 from datetime import datetime
 import json
+from typing import List
 
 from dotenv import load_dotenv
-from newrcc.CConsole import colorfulText
-from newrcc.CColor import TextColor
+from newrcc.c_console import ctext
+from newrcc.c_color import TextColor
 
 load_dotenv()
 VERSION_FILE_PATH = os.getenv("PROJECT_VERSION_FILE_PATH")
@@ -20,7 +22,6 @@ DETAILS_MARKER = "<!-- Add Version Details -->"
 UPDATE_LOG_TEMPLATE = {
     "validate": False,
     "version": {
-        "increment_type": "patch",
         "vs_desc": "...",
         "change_type": ["Feature"]
     },
@@ -96,6 +97,33 @@ class IncrementType(Enum):
         elif self == IncrementType.PATCH:
             return {'MAJOR': major, 'MINOR': minor, 'PATCH': patch + 1}
 
+    @staticmethod
+    def from_change_type(change_types: List[str]) -> 'IncrementType':
+        INCREMENT_TYPE_MATCH_CHANGE_TYPE_MAP = {
+            "Breaking": 0, # major
+            "Feature": 1, # minor
+            "BugFix": 2, # patch
+            "Optimize": 2, # patch
+            "Deprecate": 1, # minor
+            "Refactor": 2, # patch
+            "Docs": 2, # patch
+            "Test": 2, # patch
+        }
+        max_inc_type = 2
+        for ct in change_types:
+            # 转换为标准变更类型
+            if ct in CHANGE_TYPE_MAP.values():
+                std_type = ct
+            else:
+                std_type = CHANGE_TYPE_MAP.get(ct, "BugFix")
+
+            # 获取对应的版本递增类型值，默认为patch
+            inc_type = INCREMENT_TYPE_MATCH_CHANGE_TYPE_MAP.get(std_type, 1)
+            if inc_type < max_inc_type:
+                max_inc_type = inc_type
+
+        return IncrementType.from_int(max_inc_type)
+
 
 def get_version_str(version: dict) -> str:
     return f'v{version["MAJOR"]}.{version["MINOR"]}.{version["PATCH"]}'
@@ -107,7 +135,7 @@ def parse_version_from_content(version_content: str) -> dict:
     matches = re.findall(version_pattern, version_content)
 
     if not matches:
-        print(colorfulText('>>> 错误：未找到任何版本号定义，请检查版本文件格式', TextColor.RED))
+        print(ctext('>>> 错误：未找到任何版本号定义，请检查版本文件格式', TextColor.RED))
         raise Exception('未找到任何版本号定义，请检查版本文件格式')
 
     version = {}
@@ -115,13 +143,13 @@ def parse_version_from_content(version_content: str) -> dict:
         try:
             version[key] = int(value)
         except ValueError:
-            print(colorfulText(f'>>> 错误：版本号 {key} 的值 {value} 不是有效的整数', TextColor.RED))
+            print(ctext(f'>>> 错误：版本号 {key} 的值 {value} 不是有效的整数', TextColor.RED))
             raise Exception(f'版本号 {key} 的值 {value} 不是有效的整数')
 
     required_versions = ['MAJOR', 'MINOR', 'PATCH']
     for ver in required_versions:
         if ver not in version:
-            print(colorfulText(f'>>> 错误：未找到{ver}版本号，请检查版本文件格式', TextColor.RED))
+            print(ctext(f'>>> 错误：未找到{ver}版本号，请检查版本文件格式', TextColor.RED))
             raise Exception(f'未找到{ver}版本号，请检查版本文件格式')
     return version
 
@@ -134,92 +162,87 @@ def parse_update_config(version: dict) -> tuple[dict, str, str]:
     """
     date = datetime.now().strftime("%Y-%m-%d")
     time = datetime.now().strftime("%Y/%m/%d %H:%M")
-    print(colorfulText(f">>> 正在处理更新配置，当前时间: {time}", TextColor.CYAN))
+    print(ctext(f">>> 正在处理更新配置，当前时间: {time}", TextColor.CYAN))
 
     try:
         with open(UPDATE_CONFIG_PATH, 'r', encoding='utf-8') as cf:
             update_config = json.load(cf)
-        print(colorfulText(f">>> 成功读取配置文件: {UPDATE_CONFIG_PATH}", TextColor.GREEN))
+        print(ctext(f">>> 成功读取配置文件: {UPDATE_CONFIG_PATH}", TextColor.GREEN))
     except FileNotFoundError:
-        print(colorfulText(f">>> 错误: 配置文件不存在 - {UPDATE_CONFIG_PATH}", TextColor.RED))
+        print(ctext(f">>> 错误: 配置文件不存在 - {UPDATE_CONFIG_PATH}", TextColor.RED))
         raise
     except json.JSONDecodeError:
-        print(colorfulText(f">>> 错误: 配置文件格式无效，不是合法的JSON - {UPDATE_CONFIG_PATH}", TextColor.RED))
+        print(ctext(f">>> 错误: 配置文件格式无效，不是合法的JSON - {UPDATE_CONFIG_PATH}", TextColor.RED))
         raise
     except Exception as e:
-        print(colorfulText(f">>> 错误: 读取配置文件失败: {str(e)}", TextColor.RED))
+        print(ctext(f">>> 错误: 读取配置文件失败: {str(e)}", TextColor.RED))
         raise
 
     required_fields = ['validate', 'version', 'update_log']
     missing_fields = [field for field in required_fields if field not in update_config]
     if missing_fields:
         error_msg = f"配置文件缺少必要字段: {', '.join(missing_fields)}"
-        print(colorfulText(f">>> 错误: 配置文件格式错误 - {error_msg}", TextColor.RED))
+        print(ctext(f">>> 错误: 配置文件格式错误 - {error_msg}", TextColor.RED))
         raise Exception(f"配置文件格式错误: {error_msg}")
 
     validate = update_config['validate']
     if not isinstance(validate, bool) or not validate:
-        print(colorfulText(">>> 错误: 配置文件验证失败 - 'validate' 必须设为 True", TextColor.RED))
+        print(ctext(">>> 错误: 配置文件验证失败 - 'validate' 必须设为 True", TextColor.RED))
         raise Exception("配置文件验证失败: 'validate' 字段必须为 True")
 
     version_config = update_config['version']
     update_log = update_config['update_log']
 
-    try:
-        vs_incr_type = version_config['increment_type']
-        if isinstance(vs_incr_type, str):
-            vs_incr_type = IncrementType.from_str(vs_incr_type)
-        elif isinstance(vs_incr_type, int):
-            vs_incr_type = IncrementType.from_int(vs_incr_type)
-        else:
-            raise ValueError(type(vs_incr_type))
-        print(colorfulText(f">>> 成功解析版本增量类型: {vs_incr_type}", TextColor.GREEN))
-    except KeyError:
-        print(colorfulText(">>> 错误: 配置文件缺少'increment_type'字段", TextColor.RED))
-        raise
-    except ValueError as e:
-        print(colorfulText(f">>> 错误: 无效的版本增量类型: {str(e)}", TextColor.RED))
-        raise
-
-    version = vs_incr_type.increment(*version.values())
-
     vs_change_type = version_config.get('change_type')
+    vs_cg_tps = copy.copy(vs_change_type)
     valid_types = UPDATE_LOG_TEMPLATE['annotation']['change_types']
     if isinstance(vs_change_type, str):
         if vs_change_type not in valid_types:
             error_msg = f"无效的版本号变更类型: {vs_change_type}，允许的值为: {', '.join(valid_types)}"
-            print(colorfulText(f">>> 错误: {error_msg}", TextColor.RED))
+            print(ctext(f">>> 错误: {error_msg}", TextColor.RED))
             raise Exception(error_msg)
         vs_change_type = f"[{vs_change_type}]"
     elif isinstance(vs_change_type, list):
         if not vs_change_type:
             error_msg = "版本号变更类型列表不能为空"
-            print(colorfulText(f">>> 错误: {error_msg}", TextColor.RED))
+            print(ctext(f">>> 错误: {error_msg}", TextColor.RED))
             raise Exception(error_msg)
         invalid_types = [vct for vct in vs_change_type if vct not in valid_types]
         if invalid_types:
             error_msg = f"无效的版本号变更类型: {', '.join(invalid_types)}，允许的值为: {', '.join(valid_types)}"
-            print(colorfulText(f">>> 错误: {error_msg}", TextColor.RED))
+            print(ctext(f">>> 错误: {error_msg}", TextColor.RED))
             raise Exception(error_msg)
         vs_change_type = ' '.join([f"[{CHANGE_TYPE_MAP[vct] if vct in CHANGE_TYPE_MAP else vct}]" for vct in vs_change_type if vct in valid_types])
     else:
         error_msg = f"无效的版本号变更类型：{type(vs_change_type)}"
-        print(colorfulText(f">>> 错误: {error_msg}", TextColor.RED))
+        print(ctext(f">>> 错误: {error_msg}", TextColor.RED))
         raise Exception(error_msg)
 
+    try:
+        vs_incr_type = IncrementType.from_change_type(vs_cg_tps)
+        print(ctext(f">>> 成功解析版本增量类型: {vs_incr_type}", TextColor.GREEN))
+    except KeyError:
+        print(ctext(">>> 错误: 配置文件缺少'increment_type'字段", TextColor.RED))
+        raise
+    except ValueError as e:
+        print(ctext(f">>> 错误: 无效的版本增量类型: {str(e)}", TextColor.RED))
+        raise
+
+    version = vs_incr_type.increment(*version.values())
+
     vs_desc = version_config.get('vs_desc', '无描述')
-    print(colorfulText(f">>> 版本更新描述: {vs_desc}", TextColor.CYAN))
+    print(ctext(f">>> 版本更新描述: {vs_desc}", TextColor.CYAN))
 
     author = update_log.get('author', '未知作者')
     log_contents = update_log.get('log_contents', [])
     if not isinstance(log_contents, list):
-        print(colorfulText(">>> 错误: 日志内容格式错误 - 'log_contents'必须是列表类型", TextColor.RED))
+        print(ctext(">>> 错误: 日志内容格式错误 - 'log_contents'必须是列表类型", TextColor.RED))
         raise Exception("日志内容格式错误: 'log_contents'必须是列表")
     if not log_contents:
-        print(colorfulText(">>> 警告: 更新日志内容为空", TextColor.YELLOW))
+        print(ctext(">>> 警告: 更新日志内容为空", TextColor.YELLOW))
 
     version_str = get_version_str(version)
-    print(colorfulText(f">>> 处理的版本号: {version_str}", TextColor.CYAN))
+    print(ctext(f">>> 处理的版本号: {version_str}", TextColor.CYAN))
 
     overview_row = (f"| **`{version_str}`** | {date} | {vs_desc} | **{vs_change_type}** | {author} |\n"
                     f"{OVERVIEW_MARKER}")
@@ -235,49 +258,49 @@ def parse_update_config(version: dict) -> tuple[dict, str, str]:
 
     try:
         with open(UPDATE_CONFIG_CACHE_PATH, 'w', encoding='utf-8') as cfc:
-            json.dump(update_config, cfc, indent=2)
-        print(colorfulText(f">>> 已缓存配置文件: {UPDATE_CONFIG_CACHE_PATH}", TextColor.GREEN))
+            json.dump(update_config, cfc, ensure_ascii=False, indent=2)
+        print(ctext(f">>> 已缓存配置文件: {UPDATE_CONFIG_CACHE_PATH}", TextColor.GREEN))
         with open(UPDATE_CONFIG_PATH, 'w', encoding='utf-8') as cf:
             json.dump(UPDATE_LOG_TEMPLATE, cf, indent=2)
-        print(colorfulText(f">>> 已重置配置文件: {UPDATE_CONFIG_PATH}", TextColor.GREEN))
+        print(ctext(f">>> 已重置配置文件: {UPDATE_CONFIG_PATH}", TextColor.GREEN))
     except Exception as e:
-        print(colorfulText(f">>> 错误: 重置配置文件失败: {str(e)}", TextColor.RED))
+        print(ctext(f">>> 错误: 重置配置文件失败: {str(e)}", TextColor.RED))
         raise
 
-    print(colorfulText(">>> 配置文件解析完成", TextColor.CYAN))
+    print(ctext(">>> 配置文件解析完成", TextColor.CYAN))
     return version, overview_row, details
 
 
 def record_update_log(overview_row: str, details: str) -> None:
     """记录更新日志"""
-    print(colorfulText(f'>>> 正在记录更新日志：{LOG_FILE_PATH}', TextColor.CYAN))
+    print(ctext(f'>>> 正在记录更新日志：{LOG_FILE_PATH}', TextColor.CYAN))
     with open(LOG_FILE_PATH, 'r', encoding='utf-8') as lf:
-        print(colorfulText(f'>>> 正在读取更新日志内容...', TextColor.CYAN))
+        print(ctext(f'>>> 正在读取更新日志内容...', TextColor.CYAN))
         log_content = lf.read()
     log_content = log_content.replace(OVERVIEW_MARKER, overview_row)
     log_content = log_content.replace(DETAILS_MARKER, details)
     with open(LOG_FILE_PATH, 'w', encoding='utf-8') as lf:
         lf.write(log_content)
-        print(colorfulText(f'>>> 记录更新日志成功：{LOG_FILE_PATH}', TextColor.GREEN))
+        print(ctext(f'>>> 记录更新日志成功：{LOG_FILE_PATH}', TextColor.GREEN))
 
 
 def auto_version_increment() -> bool:
     """将版本文件中的版本号自动递增"""
     try:
         with open(VERSION_FILE_PATH, 'r', encoding='gb18030') as vf:
-            print(colorfulText(f'>>> 正在读取版本文件：{VERSION_FILE_PATH}', TextColor.CYAN))
+            print(ctext(f'>>> 正在读取版本文件：{VERSION_FILE_PATH}', TextColor.CYAN))
             version_content = vf.read()
         version = parse_version_from_content(version_content)
 
         major_ver = version['MAJOR']
         minor_ver = version['MINOR']
         patch_ver = version['PATCH']
-        print(colorfulText(f'>>> 当前版本号：v{major_ver}.{minor_ver}.{patch_ver}', TextColor.CYAN))
+        print(ctext(f'>>> 当前版本号：v{major_ver}.{minor_ver}.{patch_ver}', TextColor.CYAN))
 
         new_version, overview_row, details = parse_update_config(version)
         record_update_log(overview_row, details)
 
-        print(colorfulText(f'>>> 递增后版本号：v{new_version["MAJOR"]}.{new_version["MINOR"]}.{new_version["PATCH"]}', TextColor.GREEN))
+        print(ctext(f'>>> 递增后版本号：v{new_version["MAJOR"]}.{new_version["MINOR"]}.{new_version["PATCH"]}', TextColor.GREEN))
 
         updated_content = version_content
         for key, value in new_version.items():
@@ -287,15 +310,15 @@ def auto_version_increment() -> bool:
         with open(VERSION_FILE_PATH, 'w', encoding='gb18030') as vf:
             vf.write(updated_content)
 
-        print(colorfulText(f'>>> 版本号已成功更新并保存：{VERSION_FILE_PATH}', TextColor.GREEN))
+        print(ctext(f'>>> 版本号已成功更新并保存：{VERSION_FILE_PATH}', TextColor.GREEN))
         return True
 
     except FileNotFoundError:
-        print(colorfulText(f'>>> 错误：版本文件不存在 - {VERSION_FILE_PATH}', TextColor.RED))
+        print(ctext(f'>>> 错误：版本文件不存在 - {VERSION_FILE_PATH}', TextColor.RED))
     except PermissionError:
-        print(colorfulText(f'>>> 错误：没有权限访问文件 - {VERSION_FILE_PATH}', TextColor.RED))
+        print(ctext(f'>>> 错误：没有权限访问文件 - {VERSION_FILE_PATH}', TextColor.RED))
     except Exception as e:
-        print(colorfulText(f'>>> 错误：处理版本文件时发生错误 - {str(e)}', TextColor.RED))
+        print(ctext(f'>>> 错误：处理版本文件时发生错误 - {str(e)}', TextColor.RED))
 
     return False
 

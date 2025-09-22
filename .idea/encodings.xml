@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
-    <file url="file://$PROJECT_DIR$/include/ra_parser.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/code/include/ra_parser.h" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/code/src/ra_core.cpp" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/code/src/ra_parser.cpp" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/logs/update_logs.md" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/scripts/.env" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/scripts/.env" charset="GB18030" />
     <file url="file://$PROJECT_DIR$/scripts/auto_version_increment.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/scripts/config/update_config.cache.json" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/scripts/config/update_config.json" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/scripts/execute.py" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/scripts/update_config.cache.json" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/scripts/update_config.json" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/src/ra_core.cpp" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/src/ra_parser.cpp" charset="UTF-8" />
   </component>
 </project>

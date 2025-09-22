@@ -56,9 +56,9 @@ namespace base {
     }
 
     std::string RVMSerialHeader::getRVMVersionInfo() {
-        return "RVM version " + std::to_string(VERSION_MAJOR) + "." + std::to_string(VERSION_MINOR) + "."
-               + std::to_string(VERSION_PATCH) + " (on " + std::string(__DATE__) + " at " +
-               std::string(__TIME__) + ")";
+        return "RVM(Rio Virtual Machine) v" + std::to_string(VERSION_MAJOR) + "." + std::to_string(VERSION_MINOR) + "."
+               + std::to_string(VERSION_PATCH) + "\nPublished on " + std::string(__DATE__) + " at " +
+               std::string(__TIME__) + "\nCopyright (C) 2025 RestRegular";
     }
 
     std::string RVMSerialHeader::getRSIVersionInfo(const std::string &path) const {
@@ -73,7 +73,7 @@ namespace base {
 
     RVMSerialHeader rvm_serial_header{};
 
-    const std::string PROGRAM_RVM_DIRECTORY = utils::getWindowsRVMDir();
+    const std::string PROGRAM_RVM_DIRECTORY = utils::getRVMDir();
     const std::string PROGRAM_ENVIRONMENT_DIRECTORY = utils::getWindowsDefaultDir();
     std::stack<std::string> PROGRAM_WORKING_DIRECTORY_STACK {};
 

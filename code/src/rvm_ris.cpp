@@ -773,7 +773,7 @@ namespace ris {
     const RI DELETE{"Delete", -1, exes::ri_delete};
     const RI PUT{"PUT", 2, exes::ri_put};
     const RI COPY{"COPY", 2, exes::ri_copy};
-    const RI ADD{"Add", 3, exes::ri_add};
+    const RI ADD{"ADD", 3, exes::ri_add};
     const RI OPP{"OPP", 2, exes::ri_opp};
     const RI REPEAT{"REPEAT", -1, exes::ri_repeat, true, true}; // repeat 指令：循环执行指令集，重复指定次数，只可接受 1/2 个参数
     const RI END{"END", -1, exes::ri_end};
@@ -1707,7 +1707,7 @@ namespace exes {
                     continue;
                 }
 
-                if (const auto inner_flag = inner_ri_opt.value();
+                if (const auto& inner_flag = inner_ri_opt.value();
                     inner_flag == ris::S_F)
                 {
                     io->flushOutputCache();
@@ -2553,10 +2553,10 @@ namespace exes {
             // 根据 reverse 参数决定使用正向还是反向遍历
             data_space_pool.acquireScope(reverse ? pre_ITER_REV_TRAV : pre_ITER_TRAV);
 
-            const int &container_size = iter_container_data->size();
-            int start = reverse ? container_size - 1 : 0;
-            int end = reverse ? -1 : container_size;
-            int step = reverse ? -1 : 1;
+            const int &container_size = static_cast<int>(iter_container_data->size());
+            const int start = reverse ? container_size - 1 : 0;
+            const int end = reverse ? -1 : container_size;
+            const int step = reverse ? -1 : 1;
             for (int i = start; i != end; i += step) {
                 data_space_pool.updateDataByNameNoLock(iter_elem.getValue(),
                                                        iter_container_data->getDataAt(i)->copy_ptr());
@@ -2946,7 +2946,7 @@ namespace exes {
                     {data::List::typeId.dis_id,         [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
                         const auto data_type = data->getTypeID();
-                        if (data_type != data::Null::typeId && !tools::isIterableData(data_type)) {
+                        if (!data::Null::typeId.fullEqualWith(data_type) && !tools::isIterableData(data_type)) {
                             throw base::errors::ArgTypeMismatchError(unknown_, unknown_, {}, {});
                         }
                         if (data::Null::typeId.fullEqualWith(data_type)) {
@@ -3889,10 +3889,10 @@ namespace exes {
 
     ExecutionStatus ri_loadin(const Ins &ins, size_t &pointer, const StdArgs &args) {
         // 检查参数数量是否合法
-        if (args.size() < 1 || args.size() > 2) {
+        if (args.empty() || args.size() > 2) {
             throw base::errors::ArgumentNumberError(
                     ins.pos.toString(), ins.raw_code, "1 / 2",
-                    args.size(), ins.ri.toString(), {});
+                    static_cast<int>(args.size()), ins.ri.toString(), {});
         }
 
         // 获取并验证第一个参数（文件路径）的类型
@@ -3975,7 +3975,7 @@ namespace exes {
     }
 
     ExecutionStatus ri_exe_rasm(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        std::string rasm_str = "";
+        std::string rasm_str;
         for (const auto &arg: args){
             rasm_str += tools::getArgOriginData(arg)->getValStr();
         }
@@ -4005,7 +4005,7 @@ namespace exes {
             error_arg = args[2];
             data_space_pool.updateDataByNameNoLock(
                     args[2].getValue(), res_data);
-        } catch (base::errors::MemoryError) {
+        } catch (const base::errors::MemoryError&) {
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
                                             {"This error is caused by manipulating memory space that does not exist.",
                                              "Nonexistent Space Name: " + error_arg.toString()},
