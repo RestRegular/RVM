@@ -377,10 +377,10 @@ namespace utils {
     }
 
     void StringManager::parseStringFormat_nret(std::string &result) {
-        if (const auto &[res, str] = isStringFormat(result);
-            res) {
+        if (const auto &[res, str] = isStringFormat(result); res)
+        {
             result = unescape(std::string{result.begin() + 1, result.end() - 1});
-            }
+        }
     }
 
     std::string StringManager::unescape(const std::string &input)
@@ -468,7 +468,7 @@ namespace utils {
         input = std::move(result);
     }
 
-    inline std::pair<bool, std::string> StringManager::isStringFormat(const std::string& str) {
+    std::pair<bool, std::string> StringManager::isStringFormat(const std::string& str) {
         if (str.size() >= 2 && str.front() == '"' && str.back() == '"')
         {
             return {true, "\"" + escape(std::string{str.begin() + 1, str.end() - 1}) + "\""};
@@ -815,10 +815,12 @@ namespace utils {
     }
 
     // Arg具体实现
-    Arg::Arg(Pos pos, const std::string &value) : pos(std::move(pos)) {
+    Arg::Arg(Pos pos, const std::string &value)
+        :pos(std::move(pos)), value(value)
+    {
         this->type = getArgType(value);
         if (this->type == ArgType::string){
-            this->value = std::move(StringManager::unescape(value));
+            StringManager::parseStringFormat_nret(this->value);
         } else {
             this->value = value;
         }

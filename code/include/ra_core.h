@@ -380,7 +380,7 @@ namespace core {
         struct String final : Iterable {
             static id::TypeID typeId;
 
-            explicit String(const std::string& value);
+            explicit String(std::string  value);
 
             [[nodiscard]] std::string getValStr() const override;
 
@@ -671,7 +671,7 @@ namespace core {
             std::unordered_map<std::string, std::shared_ptr<base::RVM_Data>> instFields {}; // 示例字段可以设置默认值
             std::unordered_set<std::string> methodFields {};
 
-            CustomType(std::string className, std::shared_ptr<CustomType> parentType = nullptr);
+            explicit CustomType(std::string className, std::shared_ptr<CustomType> parentType = nullptr);
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
@@ -712,6 +712,8 @@ namespace core {
             bool convertToBool() const override;
 
             [[nodiscard]] std::string getTypeIDString() const;
+
+            [[nodiscard]] std::string getCustomTypeIDString() const;
         };
 
         /*

@@ -2,6 +2,7 @@
 // Created by RestRegular on 2025/1/15.
 //
 
+#include <csignal>
 #include <utility>
 #include "../include/ra_base.h"
 
@@ -76,6 +77,8 @@ namespace base {
     const std::string PROGRAM_RVM_DIRECTORY = utils::getRVMDir();
     const std::string PROGRAM_ENVIRONMENT_DIRECTORY = utils::getWindowsDefaultDir();
     std::stack<std::string> PROGRAM_WORKING_DIRECTORY_STACK {};
+
+    bool PROGRAM_INTERRUPTED = false;
 
     std::unordered_map<std::string, Relational> relationalMap = {
             {"RG",  Relational::RG},
@@ -271,6 +274,7 @@ namespace base {
 
     RVM_IO *RVM_IO::getInstance() {
         if (instance == nullptr) {
+            std::signal(SIGINT, handleSigInt);
             instance = new RVM_IO();
         }
         return instance;
@@ -337,6 +341,15 @@ namespace base {
         }
     }
 
+    void RVM_IO::handleSigInt(const int signal)
+    {
+        if (signal == SIGINT)
+        {
+            PROGRAM_INTERRUPTED = true;
+            std::signal(SIGINT, handleSigInt);
+        }
+    }
+
     RVM_IO::~RVM_IO() {
         flushOutputCache();  // 确保所有数据都被输出
         if (fileStream.is_open()) {
@@ -350,6 +363,10 @@ namespace base {
     void RVM_IO::readLineRaw() {
         std::string line;
         std::getline(std::cin, line);
+        if (PROGRAM_INTERRUPTED)
+        {
+            throw std::runtime_error("Process has been interrupted by ^C.");
+        }
         line = utils::StringManager::escape(line);
         inputCache.push_back(std::move(line));
     }
@@ -377,6 +394,10 @@ namespace base {
     void RVM_IO::readLineAndSplit() {
         std::string line;
         std::getline(std::cin, line);
+        if (PROGRAM_INTERRUPTED)
+        {
+            throw std::runtime_error("Process has been interrupted by ^C.");
+        }
         std::istringstream iss(line);
         std::string word;
         while (iss >> word) {

@@ -720,8 +720,8 @@ namespace core::data {
 
     id::TypeID String::typeId{"String", std::make_shared<id::TypeID>(Iterable::typeId), base::IDType::String, tp_str};
 
-    String::String(const std::string& value) :
-        value(utils::parseStringFormat(value)) {}
+    String::String(std::string  value) :
+        value(std::move(value)) {}
 
     std::string String::getTypeName() const {
         return "String";
@@ -1754,6 +1754,11 @@ namespace core::data {
     }
 
     std::string CustomType::getTypeIDString() const {
+        return "<CustomType::" + typeName + ": " + typeId.getIDString() + ">";
+    }
+
+    std::string CustomType::getCustomTypeIDString() const
+    {
         return typeId.toString(typeName + "@" + instID.getIDString());
     }
 
@@ -1953,7 +1958,7 @@ namespace core::data {
     }
 
     std::string CustomInst::getTypeIDString() const {
-        return customType->getTypeIDString();
+        return customType->getCustomTypeIDString();
     }
 
     void CustomInst::derivedToChildType(const std::shared_ptr<CustomType> &childType) {

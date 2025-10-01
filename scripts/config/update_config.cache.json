@@ -1,15 +1,15 @@
 {
   "validate": true,
   "version": {
-    "vs_desc": "重构 RVM 版本输出信息格式，与 RCC 保持一致",
+    "vs_desc": "修复了 `PUT` 指令执行逻辑不准确的问题",
     "change_type": [
-      "ref"
+      "fix"
     ]
   },
   "update_log": {
     "author": "RestRegular",
     "log_contents": [
-      "将 RVM 的版本输出格式重构为与 RCC 格式一致。"
+      "修复前 `PUT` 指令会将数值类型的原始数据引用存入指定的数据实体中，修复后会创建原始数据的副本再存入指定数据实体中。"
     ]
   },
   "annotation": {

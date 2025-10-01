@@ -548,15 +548,16 @@ namespace core::components {
                     debug_process(insSet[pointer_num]);
                 }
                 resultStatus = insSet[pointer_num]->execute(*pointer);
-                if (resultStatus == ExecutionStatus::Aborted) {
+                if (resultStatus == ExecutionStatus::Aborted || resultStatus == ExecutionStatus::AbortedLoop
+                    || resultStatus == ExecutionStatus::AbortedFunction) {
                     break;
-                }
-                if (resultStatus == ExecutionStatus::ExposedError) {
+                } else if (resultStatus == ExecutionStatus::ExposedError)
+                {
                     if (const auto &se = data_space_pool.findDataByIDNoLock(_SE_SpaceID);
                         se && se->getTypeID().fullEqualWith(data::Error::typeId)) {
                         const auto &seData = static_pointer_cast<data::Error>(se);
                         handleError(pointer, *seData->error);
-                    }
+                        }
                     break;
                 }
                 *pointer += 1;
@@ -1245,7 +1246,7 @@ namespace exes {
             const auto &source_data = tools::getArgOriginData(arg1);
             error_arg = arg2;
             const auto &target_data = tools::getArgOriginData(arg2);
-            return mov(source_data, target_data, arg2.getValue(), false);
+            return mov(source_data, target_data, arg2.getValue(), !tools::isIterableData(source_data->getTypeID()));
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(error_arg.getPos().toString(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
@@ -1490,6 +1491,7 @@ namespace exes {
         auto error_arg = args[0];
 
         std::shared_ptr<FuncType> function = nullptr;
+        std::shared_ptr<memory::RVM_Scope> space = nullptr;
 
         try {
             // 查找函数
@@ -1555,7 +1557,7 @@ namespace exes {
             }
 
             // 绑定参数
-            auto space = data_space_pool.acquireScope(pre_FUNC + function->func_name);
+            space = data_space_pool.acquireScope(pre_FUNC + function->func_name);
             const auto &arg_size = args.size();
             for (size_t i = 0; i < requiredArgCount; ++i) {
                 error_arg = args[i + 1 < arg_size ? i + 1 : arg_size - 1];
@@ -1569,7 +1571,12 @@ namespace exes {
                                              " to defined a named function before calling it."});
         }
         // 调用函数
-        return {function->callSelf(), function};
+        const auto &res = function->callSelf();
+        if (res == ExecutionStatus::AbortedFunction)
+        {
+            data_space_pool.releaseScopeNoLock(space);
+        }
+        return {res, function};
     }
 
     ExecutionStatus ri_call(const Ins &ins, size_t &pointer, const StdArgs &args) {
@@ -1609,7 +1616,7 @@ namespace exes {
         }
         auto [res, func] = executeFunctionCall<data::RetFunction>(ins, pointer, args,
                                                                  data::RetFunction::typeId.toString());
-        if (res > ExecutionStatus::Aborted) {
+        if (res > ExecutionStatus::Aborted && res != ExecutionStatus::AbortedFunction) {
             return res;
         }
         if (func && func->getTypeID() == data::RetFunction::typeId) {
@@ -1645,7 +1652,13 @@ namespace exes {
         while (!compGroup->compare(relation)) {
             if (const ExecutionStatus result = ins.scopeInsSet->execute();
                 result == ExecutionStatus::Aborted)
+            {
                 break;
+            } else if (result > ExecutionStatus::Aborted)
+            {
+                data_space_pool.releaseScopeNoLock(until_scope);
+                return result;
+            }
         }
         data_space_pool.releaseScopeNoLock(until_scope);
         return ExecutionStatus::Success;
@@ -2534,7 +2547,11 @@ namespace exes {
         try{
             const auto &iter_container = tools::getArgOriginData(args[0]);
             const auto &iter_elem = args[1];
+            error_arg = args[1];
+            tools::getArgOriginData(error_arg);
             const auto &iter_index = args[2];
+            error_arg = args[2];
+            tools::getArgOriginData(error_arg);
 
             // 检查迭代容器的类型
             if (!tools::isIterableData(iter_container->getTypeID())) {
@@ -2791,7 +2808,7 @@ namespace exes {
                 case utils::ArgType::identifier: {
                     const auto &op_data = tools::getArgOriginData(op_arg);
                     if (op_data->getTypeID().fullEqualWith(data::CustomType::typeId)) {
-                        type_info = std::make_shared<data::String>(static_pointer_cast<data::CustomType>(op_data)->getTypeIDString());
+                        type_info = std::make_shared<data::String>(std::static_pointer_cast<data::CustomType>(op_data)->getTypeIDString());
                     } else if (op_data->getTypeID().fullEqualWith(data::CustomInst::typeId)) {
                         type_info = std::make_shared<data::String>(static_pointer_cast<data::CustomInst>(op_data)->getTypeIDString());
                     } else {
@@ -3339,7 +3356,7 @@ namespace exes {
                                                      tools::getArgOriginData(error_arg)->toString())},
                                             {"Please use " + ris::TP_ADD_TP_FIELD.toString() + " or " +
                                             ris::TP_ADD_INST_FIELD.toString() + " directive adds field properties"
-                                                                                " to a custom type or entity."});
+                                                                                " to a custom type or instance."});
         }
         return ExecutionStatus::Success;
     }
@@ -3418,7 +3435,7 @@ namespace exes {
                                              "Nonexistent Field Name: '" + error_arg.getValue() + "'"},
                                             {"Please use " + ris::TP_ADD_TP_FIELD.toString() + " or " +
                                              ris::TP_ADD_INST_FIELD.toString() + " directive adds field properties"
-                                                                                 " to a custom type or entity."});
+                                                                                 " to a custom type or instance."});
         }
         return ExecutionStatus::Success;
     }
@@ -3645,7 +3662,7 @@ namespace exes {
             if (args.size() == 1) {
                 data_space_pool.updateDataNoLock(SR_SpaceID, tools::getArgNewData(args[0]));
             }
-            return ri_exit(ins, pointer, args);
+            return ExecutionStatus::AbortedFunction;
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(args[0].getPos().toString(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",

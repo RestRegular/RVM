@@ -24,6 +24,8 @@ namespace core::components {
 
         // 执行中断
         Aborted,                        // 正常中断执行
+        AbortedLoop,                    // 循环中断
+        AbortedFunction,                // 函数中断
         AbortedWithError,               // 异常中断执行，并捕获到异常
         AbortedWithUnknownError,        // 异常中断执行，并捕获到未知异常
 
@@ -340,6 +342,7 @@ namespace ris {
     extern const RI ITER_DEL;       // 删除可迭代数据指定索引处的数据
     extern const RI ITER_INSERT;    // 在可迭代数据指定索引处插入数据
     extern const RI ITER_UNPACK;    // 将可迭代数据拆分为多个数据
+    extern const RI ITER_CONN;      // 连接可迭代数据为字符串
 
     /* 键值对数据操作指令 */
     extern const RI PAIR_SET;       // 设置键值对数据

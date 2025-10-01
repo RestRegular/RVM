@@ -1,0 +1,8 @@
+import(io="io");
+
+for ({var i = 9; i > 0; i --}) {
+    for ({var j = i; j > 0; j --}) {
+        io.sout(j, "*", i, "=", i * j, end="\t")
+    }
+    io.sout()
+}

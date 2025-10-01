@@ -1,7 +1,49 @@
-ALLOT: a, b
-TP_SET: tp-list, a
-TP_SET: tp-list, b
-ITER_APND: 1, 2, 3, a
-ITER_APND: 4, 5, 6, b
-ADD: a, b, b
-SOUT: s-m, s-unpack, b
+TP_DEF: Object
+TP_ADD_INST_FIELD: Object, "name", ""
+TP_ADD_INST_FIELD: Object, "toString", null
+
+FUNI: Object_toString, this
+    ALLOT: name, result
+    TP_SET: tp-str, result
+    TP_GET_FIELD: this, "name", name
+    ITER_APND: "[Object: ", name, "]", result
+    RET: result
+END: Object_toString
+
+FUNI: Object_ctor, name
+    ALLOT: this
+    TP_NEW: Object, this
+    TP_SET_FIELD: this, "name", name
+    TP_SET_FIELD: this, "toString", Object_toString
+    RET: this
+END: Object_ctor
+
+TP_DEF: Person, Object
+
+FUNI: Person_toString, this
+    ALLOT: name, result
+    TP_SET: tp-str, result
+    TP_GET_FIELD: this, "name", name
+    ITER_APND: "[Person: ", name, "]", result
+    RET: result
+END: Person_toString
+
+TP_ADD_INST_FIELD: Person, "toString", null
+
+FUNI: Person_ctor, name
+    ALLOT: this
+    IVOK: Object_ctor, name, this
+    TP_DERIVE: this, Person
+    TP_SET_FIELD: this, "toString", Person_toString
+    RET: this
+END: Person_ctor
+
+FUNC: main
+    ALLOT: p, p_toString, p_toString_result
+    IVOK: Person_ctor, "Alice", p
+    TP_GET_FIELD: p, "toString", p_toString
+    IVOK: p_toString, p, p_toString_result
+    SOUT: s-m, p_toString_result
+END: main
+
+CALL: main

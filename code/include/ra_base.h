@@ -38,6 +38,7 @@ namespace base {
 #define pre_EXT             "EXT-"
 #define pre_DATA            "DATA-"
 #define pre_FUNC            "FUNC-"
+#define pre_FUNI            "FUNI-"
 #define pre_REPEAT          "REPEAT-"
 #define pre_UNTIL           "UNTIL-"
 #define pre_SP_NEW          "SP_NEW-"
@@ -94,13 +95,13 @@ namespace base {
 
         void validate(const std::string &file_path) const;
 
-        utils::SerializationProfile getProfile() const;
+        [[nodiscard]] utils::SerializationProfile getProfile() const;
 
         void setProfile(const utils::SerializationProfile &profile_);
 
         static std::string getRVMVersionInfo();
 
-        std::string getRSIVersionInfo(const std::string &path) const;
+        [[nodiscard]] std::string getRSIVersionInfo(const std::string &path) const;
     };
 
 #pragma pack(pop)
@@ -112,6 +113,8 @@ namespace base {
     extern const std::string PROGRAM_RVM_DIRECTORY; // RVM working directory
     extern const std::string PROGRAM_ENVIRONMENT_DIRECTORY; // Command line working directory
     extern std::stack<std::string> PROGRAM_WORKING_DIRECTORY_STACK; // Program working directory
+
+    extern bool PROGRAM_INTERRUPTED;
 
     enum class IDType;
 
@@ -154,11 +157,11 @@ namespace base {
 
         virtual bool operator==(const RVM_ID &other) const;
 
-        virtual bool equalWith(const RVM_ID &other) const;
+        [[nodiscard]] virtual bool equalWith(const RVM_ID &other) const;
 
-        virtual bool fullEqualWith(const RVM_ID &other) const;
+        [[nodiscard]] virtual bool fullEqualWith(const RVM_ID &other) const;
 
-        virtual std::string getIdentStr() const;
+        [[nodiscard]] virtual std::string getIdentStr() const;
 
         virtual ~RVM_ID() = default;
 
@@ -320,6 +323,8 @@ namespace base {
 
         void flushOutputCache();
 
+        static void handleSigInt(int signal);
+
         void readLineRaw();
 
         void readLineAndSplit();
@@ -350,7 +355,7 @@ namespace base {
         explicit RVM_IO(int threshold_size = 20);
 
         template<typename T>
-        void immediateOutputImpl(std::ostream &os, const T &arg) {
+        static void immediateOutputImpl(std::ostream &os, const T &arg) {
             os << arg;
         }
 
@@ -410,18 +415,18 @@ namespace base {
     namespace errors {
 
         struct ExposedError final : RVM_Error {
-            ExposedError(std::string error_position, std::string error_line,
+            ExposedError(const std::string& error_position, const std::string& error_line,
                          const std::vector<std::string> &error_info)
                     : RVM_Error(ErrorType::CustomError, error_position, error_line,
                                 error_info, {}) {}
         };
 
         struct ModificationError final : RVM_Error {
-            ModificationError(std::string error_position, std::string error_line,
+            ModificationError(const std::string& error_position, const std::string& error_line,
                               const std::vector<std::string> &error_info,
-                              std::vector<std::string> repair_tips)
+                              const std::vector<std::string>& repair_tips)
                     : RVM_Error(ErrorType::CustomError, error_position, error_line,
-                                error_info, {}) {}
+                                error_info, repair_tips) {}
         };
 
         struct DataTypeMismatchError final : RVM_Error {
@@ -447,8 +452,8 @@ namespace base {
         };
 
         struct DuplicateKeyError final : RVM_Error {
-            DuplicateKeyError(std::string error_position, std::string error_line, std::vector<std::string> error_info,
-                              std::vector<std::string> repair_tips) :
+            DuplicateKeyError(const std::string& error_position, const std::string& error_line, std::vector<std::string> error_info,
+                              const std::vector<std::string>& repair_tips) :
                     RVM_Error(base::ErrorType::MemoryError, error_position, error_line,
                               {"This error is caused by allocating memory space with the duplicate name."},
                               repair_tips) {
@@ -457,8 +462,8 @@ namespace base {
         };
 
         struct ArgumentNumberError final : RVM_Error {
-            ArgumentNumberError(std::string error_position, std::string error_line,
-                                std::string arg_num, int supported_num, std::string error_ri,
+            ArgumentNumberError(const std::string& error_position, const std::string& error_line,
+                                const std::string& arg_num, const int supported_num, const std::string& error_ri,
                                 std::vector<std::string> repair_tips) :
                     RVM_Error(base::ErrorType::ArgumentError, error_position, error_line,
                                     {"This error is caused by a mismatch between required and received arguments.",
@@ -470,8 +475,8 @@ namespace base {
         };
 
         struct ArgumentError final : RVM_Error {
-            ArgumentError(std::string error_position, std::string error_line, std::string error_argument_info,
-                          std::vector<std::string> repair_tips) :
+            ArgumentError(const std::string& error_position, const std::string& error_line, std::string error_argument_info,
+                          const std::vector<std::string>& repair_tips) :
                     base::RVM_Error(base::ErrorType::ArgumentError, error_position, error_line,
                                     {"This error is caused by a mismatch between required and received arguments.",
                                      std::move(error_argument_info)},
@@ -479,33 +484,33 @@ namespace base {
         };
 
         struct MemoryError final : RVM_Error {
-            MemoryError(std::string error_position, std::string error_line, std::vector<std::string> error_info,
-                        std::vector<std::string> repair_tips) :
+            MemoryError(const std::string& error_position, const std::string& error_line, const std::vector<std::string>& error_info,
+                        const std::vector<std::string>& repair_tips) :
                     RVM_Error(ErrorType::MemoryError, error_position, error_line,
                               error_info, repair_tips) {}
         };
 
         struct FieldNotFoundError final : RVM_Error {
-            FieldNotFoundError(std::string error_position, std::string error_line, std::string target_tp_or_inst,
-                               std::string undefined_field,
-                               std::vector<std::string> repair_tips) :
+            FieldNotFoundError(const std::string& error_position, const std::string& error_line, const std::string& target_tp_or_inst,
+                               const std::string& undefined_field,
+                               const std::vector<std::string>& repair_tips) :
                     RVM_Error(base::ErrorType::FieldError, error_position, error_line,
                               {"This error is caused by accessing an undefined field.",
                                "Target: " + target_tp_or_inst,
                                "Undefined Field: \"" + undefined_field + "\""}, repair_tips) {}
         };
 
-        struct FileWriteError : public RVM_Error {
-            FileWriteError(std::string error_position, std::string error_line, std::vector<std::string> error_info,
-                           std::vector<std::string> repair_tips) :
-                    RVM_Error(base::ErrorType::FileError, error_position, error_line,
+        struct FileWriteError final : RVM_Error {
+            FileWriteError(const std::string& error_position, const std::string& error_line, const std::vector<std::string>& error_info,
+                           const std::vector<std::string>& repair_tips) :
+                    RVM_Error(ErrorType::FileError, error_position, error_line,
                               error_info, repair_tips) {}
         };
 
-        struct FileReadError : public RVM_Error {
-            FileReadError(std::string error_position, std::string error_line, std::vector<std::string> error_info,
-                          std::vector<std::string> repair_tips) :
-                    RVM_Error(base::ErrorType::FileError, error_position, error_line,
+        struct FileReadError final : RVM_Error {
+            FileReadError(const std::string& error_position, const std::string& error_line, std::vector<std::string> error_info,
+                          const std::vector<std::string>& repair_tips) :
+                    RVM_Error(ErrorType::FileError, error_position, error_line,
                               {"This error is caused by the non - existence or incorrectness"
                                " of the path provided for reading the file."},
                               repair_tips) {
@@ -513,10 +518,10 @@ namespace base {
             }
         };
 
-        struct KeyNotFoundError : public RVM_Error {
-            KeyNotFoundError(std::string error_position, std::string error_line, std::vector<std::string> error_info,
+        struct KeyNotFoundError final : RVM_Error {
+            KeyNotFoundError(const std::string& error_position, const std::string& error_line, std::vector<std::string> error_info,
                              std::vector<std::string> repair_tips)
-                    : RVM_Error(base::ErrorType::KeyError, error_position, error_line,
+                    : RVM_Error(ErrorType::KeyError, error_position, error_line,
                                 {"This error is caused by the specified key not being found."},
                                 {"When accessing a value by key, ensure the key exists and has a corresponding value."}) {
                 this->error_info.insert(this->error_info.end(), error_info.begin(), error_info.end());
@@ -524,12 +529,12 @@ namespace base {
             }
         };
 
-        struct IndexOutOfRangeError : public RVM_Error {
-            IndexOutOfRangeError(std::string error_position,
-                                 std::string error_line,
+        struct IndexOutOfRangeError final : RVM_Error {
+            IndexOutOfRangeError(const std::string& error_position,
+                                 const std::string& error_line,
                                  std::vector<std::string> error_info,
                                  std::vector<std::string> repair_tips)
-                    : RVM_Error(base::ErrorType::RangeError,
+                    : RVM_Error(ErrorType::RangeError,
                                 error_position,
                                 error_line,
                                 {"This error is caused by accessing an invalid index position."},
