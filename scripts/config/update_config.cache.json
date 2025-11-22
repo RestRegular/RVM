@@ -1,15 +1,15 @@
 {
   "validate": true,
   "version": {
-    "vs_desc": "修复了 `IVOK` 指令相关问题",
+    "vs_desc": "增强了其他文件扩展名的解析能力",
     "change_type": [
-      "fix"
+      "opt"
     ]
   },
   "update_log": {
     "author": "RestRegular",
     "log_contents": [
-      "修复了 `IVOK` 指令在读取 `SR` 内置数据实体后未重置导致的问题。"
+      "增强了 RVM 解析不同文件扩展名的能力。"
     ]
   },
   "annotation": {

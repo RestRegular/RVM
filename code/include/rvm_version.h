@@ -6,5 +6,5 @@
 #define RVM_VERSION_H
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 5
-#define VERSION_PATCH 4
+#define VERSION_PATCH 5
 #endif //RVM_VERSION_H//

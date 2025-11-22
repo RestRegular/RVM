@@ -1,15 +1,28 @@
-import(io="io", ds="ds")
+import(io="io", ds="ds", rd="random")
 
-// var times: const int = 100000
-//
-// for ({var i = 0; i < times; i++}) {
-//     io.sout(i, " Hello world!")
-// }
+var List: clas = ds.List
 
-var data: dict = {}
+class Object: List
 
-ds.repeat(10000, (index) -> {
-    data[index] = "Hello world!"
-})
+fun makeRandomIntList(elemNum: int = 10, range: list = [0, 150]): List {
+    var li: List = List()
+    ds.repeat(elemNum, (_) -> {
+        li.append(rd.randomInt(range[0], range[1]))
+    })
+    ret li
+}
 
-io.sout(data)
+fun main(): void {
+    var li: List = makeRandomIntList()
+    io.sout(li.sort().get())
+    io.sout(li \
+        .filter((item: int): bool -> { ret item > 50 }) \
+        .mapper((item: int): int -> { ret item - 10 }) \
+        .get())
+    io.sout(li.find((item, _, _) -> {
+        ret item > 100
+    }))
+    io.sout(li.at(5))
+}
+
+main()

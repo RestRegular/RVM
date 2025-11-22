@@ -179,11 +179,23 @@ int main(const int argc, char *argv[]){
             const auto file_ext = getFileExtFromPath(program_target_file_path_);
             appendProgramWorkingDir(program_target_file_path_);
             std::shared_ptr<InsSet> ins_set;
-            if (file_ext == RSI_EXT) {
+            if (file_ext == RSI_EXT)
+            {
                 ins_set = parse::deserializeExecutableInsFromBinaryFile(
                         program_target_file_path_, env::program_serialization_profile_);
-            } else {
+            } else if (file_ext == RA_EXT)
+            {
                 ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
+            } else
+            {
+                try
+                {
+                    ins_set = parse::deserializeExecutableInsFromBinaryFile(
+                        program_target_file_path_, env::program_serialization_profile_);
+                } catch (...)
+                {
+                    ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
+                }
             }
             env::initialize(ins_set->scope_leader_file, program_working_directory_);
             ins_set->execute();
