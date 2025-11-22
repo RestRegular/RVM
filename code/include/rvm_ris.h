@@ -10,7 +10,8 @@
 
 namespace core::components {
     // 全局变量
-    extern std::unordered_map<std::string, RI> insMap;
+    extern std::unordered_map<int, const RI*> insMap;
+    extern std::unordered_map<std::string, const RI*> insNameMap;
     extern std::vector<RI *> ri_list;
     extern id::DataID SR_SpaceID;
     extern id::DataID _SE_SpaceID;
@@ -61,19 +62,21 @@ namespace core::components {
 
         bool operator==(const RI &other) const;
 
+        bool equalWith(const RI* other) const;
+
         std::string toString() const;
 
         void serialize(std::ostream &os, const utils::SerializationProfile &profile) const;
 
-        static RI deserialize(std::istream &is, const utils::SerializationProfile &profile);
+        static const RI* deserialize(std::istream& is, const utils::SerializationProfile& profile);
 
-        static std::optional<RI> getRIByStr(const std::string &content);
+        static const RI* getRIByStr(const std::string& content);
     };
 
     // Ins类：由RA代码解析出来的可执行指令
     struct Ins {
         utils::Pos pos{}; // 调用Pos的序列化函数和反序列化函数
-        RI ri; // 调用RI的序列化函数和静态反序列化函数
+        const RI *ri; // 调用RI的序列化函数和静态反序列化函数
         InsID insId = core::id::InsID(); // 无需序列化
         StdArgs args; // 调用utils::Arg的序列化函数和反序列化函数，注意vector的序列化
         std::shared_ptr<InsSet> scopeInsSet;
@@ -83,7 +86,7 @@ namespace core::components {
 
         Ins() = default;
 
-        Ins(utils::Pos pos, std::string raw_code, RI ri, StdArgs args, std::string ext);
+        Ins(utils::Pos pos, std::string raw_code, const RI *ri, StdArgs args, std::string ext);
 
         ExecutionStatus execute(size_t &pointer) const;
 
@@ -218,6 +221,8 @@ namespace tools {
     std::pair<bool, std::string> checkExtensionExist(const std::string &extension_path);
 
     bool checkExtensionExistStrict(const std::string &file_path);
+
+
 }
 
 // 指令集
@@ -355,6 +360,8 @@ namespace ris {
     extern const RI DICT_GET;       // 获取字典数据
     extern const RI DICT_SET;       // 设置字典数据
     extern const RI DICT_DEL;       // 删除字典数据
+    extern const RI DICT_KEYS;      // 获取字典所有键列表
+    extern const RI DICT_VALUES;    // 获取字典所有值列表
 
     /* 随机指令 */
     extern const RI RAND_INT;     // 生成随机整数
@@ -386,7 +393,6 @@ namespace ris {
     // TODO: 添加调用 dll 文件函数相关指令
     extern const RI DLL_CALL;
     extern const RI DLL_LOADIN;
-    extern const RI DLL_LINK;
     extern const RI DLL_UNLOAD;
 
     // TODO: 添加网络处理相关指令
@@ -483,6 +489,8 @@ namespace exes {
     ExecutionStatus ri_dict_set(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_dict_get(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_dict_del(const Ins &ins, size_t &pointer, const StdArgs &args);
+    ExecutionStatus ri_dict_keys(const Ins &ins, size_t &pointer, const StdArgs &args);
+    ExecutionStatus ri_dict_values(const Ins &ins, size_t &pointer, const StdArgs &args);
 }
 
 

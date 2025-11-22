@@ -1,49 +1,935 @@
-TP_DEF: Object
-TP_ADD_INST_FIELD: Object, "name", ""
-TP_ADD_INST_FIELD: Object, "toString", null
+; Rio Program & compiled by RCC(Rio Compiler Collection) v1.13.7
+~ Source file: D:\ClionProjects\RVM\test\test.rio:1:1
+~ Target file: D:\ClionProjects\RVM\test\test.ra:1:1
+~ Author: @RestRegular
+~ Time: 2025-11-21 10:32:35
 
-FUNI: Object_toString, this
-    ALLOT: name, result
-    TP_SET: tp-str, result
-    TP_GET_FIELD: this, "name", name
-    ITER_APND: "[Object: ", name, "]", result
-    RET: result
-END: Object_toString
-
-FUNI: Object_ctor, name
-    ALLOT: this
-    TP_NEW: Object, this
-    TP_SET_FIELD: this, "name", name
-    TP_SET_FIELD: this, "toString", Object_toString
-    RET: this
-END: Object_ctor
-
-TP_DEF: Person, Object
-
-FUNI: Person_toString, this
-    ALLOT: name, result
-    TP_SET: tp-str, result
-    TP_GET_FIELD: this, "name", name
-    ITER_APND: "[Person: ", name, "]", result
-    RET: result
-END: Person_toString
-
-TP_ADD_INST_FIELD: Person, "toString", null
-
-FUNI: Person_ctor, name
-    ALLOT: this
-    IVOK: Object_ctor, name, this
-    TP_DERIVE: this, Person
-    TP_SET_FIELD: this, "toString", Person_toString
-    RET: this
-END: Person_ctor
-
-FUNC: main
-    ALLOT: p, p_toString, p_toString_result
-    IVOK: Person_ctor, "Alice", p
-    TP_GET_FIELD: p, "toString", p_toString
-    IVOK: p_toString, p, p_toString_result
-    SOUT: s-m, p_toString_result
-END: main
-
-CALL: main
+FUNC: vid6
+; This is a pure-built-in function: `super`
+PASS: ; Function implementation is encapsulated.
+END: vid6
+FUNC: vid7
+; This is a pure-built-in function: `export`
+PASS: ; Function implementation is encapsulated.
+END: vid7
+FUNI: vid8
+; This is a pure-built-in function: `import`
+PASS: ; Function implementation is encapsulated.
+END: vid8
+; D:\ClionProjects\RVM\test\test.rio:1:1, line 1
+ALLOT: vid11
+TP_SET: tp-list, vid11
+ALLOT: vid12
+PAIR_SET: "ds", "ds", vid12
+ALLOT: vid13
+PAIR_SET: "io", "io", vid13
+ALLOT: vid14
+TP_SET: tp-dict, vid14
+ITER_APND: vid12, vid13, vid14
+; D:\soft\Rio\bin\Lib\builtin\io.rio:15:1, line 15
+ALLOT: vid20
+TP_SET: tp-list, vid20
+ALLOT: vid21
+PAIR_SET: "ds", "ds", vid21
+ALLOT: vid22
+TP_SET: tp-dict, vid22
+ITER_APND: vid21, vid22
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:15:1, line 15
+ALLOT: vid28
+TP_SET: tp-list, vid28
+ALLOT: vid29
+PAIR_SET: "dt", "datatype", vid29
+ALLOT: vid30
+TP_SET: tp-dict, vid30
+ITER_APND: vid29, vid30
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:16:1, line 16
+FUNI: vid36, vid37
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:30:6, line 30, column 6
+PASS: ; The implementation is encapsulated.
+END: vid36
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:33:1, line 33
+FUNC: vid39, vid40, vid41
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:46:6, line 46, column 6
+PASS: ; The implementation is encapsulated.
+END: vid39
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:49:1, line 49
+TP_DEF: vid42
+ALLOT: vid55
+TP_GET: 0, vid55
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:50:9, line 50, column 9
+TP_ADD_TP_FIELD: vid42, "vid43", vid55
+ALLOT: vid56
+TP_GET: 0.01, vid56
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:51:9, line 51, column 9
+TP_ADD_TP_FIELD: vid42, "vid44", vid56
+ALLOT: vid57
+TP_GET: "", vid57
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:52:9, line 52, column 9
+TP_ADD_TP_FIELD: vid42, "vid45", vid57
+FUNI: vid58
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:54:13, line 54, column 13
+ALLOT: vid59
+; No need to set 'tp-any' type.
+PUT: " ", vid59
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:55:13, line 55, column 13
+TP_SET: tp-char, vid59
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:56:13, line 56, column 13
+ALLOT: vid60
+TP_GET: vid59, vid60
+RET: vid60
+END: vid58
+ALLOT: vid61
+PUT: vid58, vid61
+ALLOT: vid62
+IVOK: vid58, vid62
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:53:9, line 53, column 9
+TP_ADD_TP_FIELD: vid42, "vid46", vid62
+ALLOT: vid63
+TP_GET: true, vid63
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:58:9, line 58, column 9
+TP_ADD_TP_FIELD: vid42, "vid47", vid63
+ALLOT: vid64
+TP_SET: tp-list, vid64
+; To generate an empty list does not need to use the [ITER_APND] ri.
+ALLOT: vid65
+TP_GET: vid64, vid65
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:59:9, line 59, column 9
+TP_ADD_TP_FIELD: vid42, "vid48", vid65
+ALLOT: vid66
+TP_SET: tp-dict, vid66
+; To generate an empty list does not need to use the [ITER_APND] ri.
+ALLOT: vid67
+TP_GET: vid66, vid67
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:60:9, line 60, column 9
+TP_ADD_TP_FIELD: vid42, "vid49", vid67
+ALLOT: vid68
+TP_GET: null, vid68
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:61:9, line 61, column 9
+TP_ADD_TP_FIELD: vid42, "vid50", vid68
+ALLOT: vid69
+TP_GET: vid39, vid69
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:62:9, line 62, column 9
+TP_ADD_TP_FIELD: vid42, "vid51", vid69
+ALLOT: vid70
+TP_GET: vid36, vid70
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:63:9, line 63, column 9
+TP_ADD_TP_FIELD: vid42, "vid52", vid70
+FUNI: vid71
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:65:13, line 65, column 13
+ALLOT: vid73
+TP_SET: tp-list, vid73
+; To generate an empty list does not need to use the [ITER_APND] ri.
+ALLOT: vid72
+; No need to set 'tp-any' type.
+PUT: vid73, vid72
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:66:13, line 66, column 13
+TP_SET: tp-series, vid72
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:67:13, line 67, column 13
+ALLOT: vid74
+TP_GET: vid72, vid74
+RET: vid74
+END: vid71
+ALLOT: vid75
+PUT: vid71, vid75
+ALLOT: vid76
+IVOK: vid71, vid76
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:64:9, line 64, column 9
+TP_ADD_TP_FIELD: vid42, "vid53", vid76
+ALLOT: vid78
+TP_GET_FIELD: vid42, "vid48", vid78
+ALLOT: vid80
+TP_GET_FIELD: vid42, "vid49", vid80
+ALLOT: vid82
+TP_GET_FIELD: vid42, "vid45", vid82
+ALLOT: vid84
+TP_GET_FIELD: vid42, "vid53", vid84
+ALLOT: vid85
+TP_SET: tp-list, vid85
+ITER_APND: vid78, vid80, vid82, vid84, vid85
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:70:9, line 70, column 9
+TP_ADD_TP_FIELD: vid42, "vid54", vid85
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:75:1, line 75
+FUNI: vid87, vid88, vid89
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:86:5, line 86, column 5
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:86:5, line 86, column 5
+ALLOT: vid91
+TP_GET: vid89, vid91
+ALLOT: vid93
+TP_GET_FIELD: vid42, "vid48", vid93
+ALLOT: vid94
+CMP: vid91, vid93, vid94
+CREL: vid94, RE, vid94
+JF: vid94, sid95
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:87:9, line 87, column 9
+FUNI: vid97, vid98
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:88:13, line 88, column 13
+PASS: ; The implementation is encapsulated.
+END: vid97
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:90:9, line 90, column 9
+ALLOT: vid100
+ITER_SIZE: vid89, vid100
+ALLOT: vid102
+TP_GET: vid88, vid102
+ALLOT: vid99, vid101
+TP_SET: tp-int, vid99
+PUT: vid100, vid99
+TP_SET: tp-str, vid101
+PUT: vid102, vid101
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:92:9, line 92, column 9
+ALLOT: vid103
+TP_SET: tp-int, vid103
+PUT: 0, vid103
+ALLOT: vid104
+CMP: true, false, vid104
+UNTIL: vid104, RE
+ALLOT: vid105
+CMP: vid103, vid99, vid105
+CREL: vid105, RL, vid105
+JT: vid105, sid106
+EXIT: UNTIL
+SET: sid106
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:93:13, line 93, column 13
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:93:13, line 93, column 13
+ALLOT: vid108
+ITER_GET: vid89, vid103, vid108
+ALLOT: vid109
+CMP: vid101, vid108, vid109
+CREL: vid109, RE, vid109
+JF: vid109, sid110
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:94:17, line 94, column 17
+RET: true
+JMP: sid107
+SET: sid110
+SET: sid107
+ADD: vid103, 1, vid103
+END: UNTIL
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:97:9, line 97, column 9
+RET: false
+JMP: sid90
+SET: sid95
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:98:7, line 98, column 7
+ALLOT: vid111
+TP_GET: vid89, vid111
+ALLOT: vid113
+TP_GET_FIELD: vid42, "vid45", vid113
+ALLOT: vid114
+CMP: vid111, vid113, vid114
+CREL: vid114, RE, vid114
+JF: vid114, sid115
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:99:9, line 99, column 9
+ALLOT: vid116
+TP_GET: vid88, vid116
+ALLOT: vid117
+CMP: vid116, vid89, vid117
+CREL: vid117, RE, vid117
+RET: vid117
+JMP: sid90
+SET: sid115
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:100:7, line 100, column 7
+JF: true, sid118
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:101:9, line 101, column 9
+RET: false
+JMP: sid90
+SET: sid118
+SET: sid90
+END: vid87
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:105:1, line 105
+FUNI: vid120, vid121
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:106:5, line 106, column 5
+FUNI: vid123, vid121
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:107:9, line 107, column 9
+PASS: ; The implementation is encapsulated.
+END: vid123
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:109:5, line 109, column 5
+ALLOT: vid126
+TP_GET_FIELD: vid42, "vid54", vid126
+ALLOT: vid127
+ITER_SIZE: vid126, vid127
+ALLOT: vid124
+TP_SET: tp-int, vid124
+PUT: vid127, vid124
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:110:5, line 110, column 5
+ALLOT: vid129
+TP_GET: vid121, vid129
+ALLOT: vid128
+TP_SET: tp-str, vid128
+PUT: vid129, vid128
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:111:5, line 111, column 5
+ALLOT: vid130
+TP_SET: tp-bool, vid130
+PUT: false, vid130
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:112:5, line 112, column 5
+ALLOT: vid131
+; No need to set 'tp-any' type.
+PUT: 0, vid131
+ALLOT: vid132
+CMP: true, false, vid132
+UNTIL: vid132, RE
+ALLOT: vid133
+CMP: vid131, vid124, vid133
+CREL: vid133, RL, vid133
+JT: vid133, sid134
+EXIT: UNTIL
+SET: sid134
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:113:9, line 113, column 9
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:113:9, line 113, column 9
+ALLOT: vid137
+TP_GET_FIELD: vid42, "vid54", vid137
+ALLOT: vid138
+ITER_GET: vid137, vid131, vid138
+ALLOT: vid139
+CMP: vid128, vid138, vid139
+CREL: vid139, RE, vid139
+JF: vid139, sid140
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:114:20, line 114, column 20
+PUT: true, vid130
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:115:13, line 115, column 13
+EXIT: LOOP
+JMP: sid135
+SET: sid140
+SET: sid135
+ADD: vid131, 1, vid131
+END: UNTIL
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:118:5, line 118, column 5
+RET: vid130
+END: vid120
+; D:\soft\Rio\bin\Lib\builtin\datatype.rio:121:1, line 121
+ALLOT: vid141
+TP_SET: tp-list, vid141
+ITER_APND: vid36, vid39, vid87, vid120, vid42, vid141
+ALLOT: vid142
+TP_SET: tp-dict, vid142
+TP_DEF: vid31
+TP_ADD_TP_FIELD: vid31, "vid42", vid42
+TP_ADD_TP_FIELD: vid31, "vid120", vid120
+TP_ADD_TP_FIELD: vid31, "vid87", vid87
+TP_ADD_TP_FIELD: vid31, "vid39", vid39
+TP_ADD_TP_FIELD: vid31, "vid36", vid36
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:17:1, line 17
+FUNI: vid144, vid145
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:29:5, line 29, column 5
+PASS: ; The implementation is encapsulated.
+END: vid144
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:32:1, line 32
+FUNI: vid147, vid148
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:44:5, line 44, column 5
+PASS: ; The implementation is encapsulated.
+END: vid147
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:47:1, line 47
+FUNI: vid150, vid151
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:60:7, line 60, column 7
+ALLOT: vid153
+TP_GET_FIELD: vid31, "vid39", vid153
+TP_SET: tp-series, vid151
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:61:5, line 61, column 5
+RET: vid151
+END: vid150
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:64:1, line 64
+FUNI: vid155, vid156
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:75:5, line 75, column 5
+ALLOT: vid157
+ITER_SIZE: vid156, vid157
+ALLOT: vid158
+CMP: vid157, 0, vid158
+CREL: vid158, RE, vid158
+RET: vid158
+END: vid155
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:78:1, line 78
+FUNI: vid160, vid161
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:90:5, line 90, column 5
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:90:5, line 90, column 5
+ALLOT: vid163
+IVOK: vid155, vid161, vid163
+JF: vid163, sid164
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:91:9, line 91, column 9
+RET: null
+JMP: sid162
+SET: sid164
+SET: sid162
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:93:5, line 93, column 5
+ALLOT: vid165
+ITER_SIZE: vid161, vid165
+ALLOT: vid166
+OPP: 1, vid166
+ADD: vid165, vid166, vid166
+ALLOT: vid167
+ITER_GET: vid161, vid166, vid167
+RET: vid167
+END: vid160
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:96:1, line 96
+FUNI: vid169, vid170, vid171
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:107:5, line 107, column 5
+ALLOT: vid172
+TP_SET: tp-str, vid172
+PUT: "", vid172
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:108:5, line 108, column 5
+ALLOT: vid173
+TP_SET: tp-int, vid173
+PUT: 0, vid173
+ALLOT: vid174
+CMP: true, false, vid174
+UNTIL: vid174, RE
+ALLOT: vid175
+CMP: vid173, vid171, vid175
+CREL: vid175, RL, vid175
+JT: vid175, sid176
+EXIT: UNTIL
+SET: sid176
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:109:16, line 109, column 16
+ADD: vid172, vid170, vid172
+ADD: vid173, 1, vid173
+END: UNTIL
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:111:5, line 111, column 5
+RET: vid172
+END: vid169
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:114:1, line 114
+FUNI: vid178, vid179, vid180
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:126:5, line 126, column 5
+ALLOT: vid182
+TP_SET: tp-list, vid182
+; To generate an empty list does not need to use the [ITER_APND] ri.
+ALLOT: vid181
+TP_SET: tp-list, vid181
+PUT: vid182, vid181
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:127:5, line 127, column 5
+ALLOT: vid183
+TP_SET: tp-int, vid183
+PUT: 0, vid183
+ALLOT: vid184
+CMP: true, false, vid184
+UNTIL: vid184, RE
+ALLOT: vid185
+CMP: vid183, vid180, vid185
+CREL: vid185, RL, vid185
+JT: vid185, sid186
+EXIT: UNTIL
+SET: sid186
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:128:9, line 128, column 9
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:128:9, line 128, column 9
+ALLOT: vid189
+TP_GET_FIELD: vid31, "vid36", vid189
+ALLOT: vid190
+TP_GET: vid179, vid190
+ALLOT: vid192
+TP_GET_FIELD: vid31, "vid42", vid192
+ALLOT: vid194
+TP_GET_FIELD: vid192, "vid52", vid194
+ALLOT: vid195
+CMP: vid190, vid194, vid195
+CREL: vid195, RE, vid195
+JF: vid195, sid196
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:129:15, line 129, column 15
+ALLOT: vid198
+TP_GET_FIELD: vid31, "vid39", vid198
+; No need to set 'tp-funi' type.
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:130:20, line 130, column 20
+ALLOT: vid199
+IVOK: vid179, vid183, vid199
+ADD: vid181, vid199, vid181
+JMP: sid187
+SET: sid196
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:131:11, line 131, column 11
+JF: true, sid200
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:132:20, line 132, column 20
+ADD: vid181, vid179, vid181
+JMP: sid187
+SET: sid200
+SET: sid187
+ADD: vid183, 1, vid183
+END: UNTIL
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:135:5, line 135, column 5
+RET: vid181
+END: vid178
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:138:1, line 138
+FUNC: vid202, vid203, vid204
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:148:5, line 148, column 5
+PASS: ; The implementation is encapsulated.
+END: vid202
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:151:1, line 151
+FUNC: vid206, vid207, vid208, vid209, vid210
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:168:5, line 168, column 5
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:168:5, line 168, column 5
+ALLOT: vid212
+CMP: vid210, 0, vid212
+CREL: vid212, RE, vid212
+JF: vid212, sid213
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:169:9, line 169, column 9
+FUNC: vid215, vid216, vid208
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:170:13, line 170, column 13
+PASS: ; The implementation is encapsulated.
+END: vid215
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:172:9, line 172, column 9
+ALLOT: vid217
+TP_SET: tp-list, vid217
+ITER_APND: "The sep cannot be 0", vid217
+SOUT: s-l, s-unpack, vid217, "\n"
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:173:9, line 173, column 9
+RET: ;
+JMP: sid211
+SET: sid213
+SET: sid211
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:175:5, line 175, column 5
+ALLOT: vid219
+CMP: vid210, 0, vid219
+CREL: vid219, RG, vid219
+ALLOT: vid218
+TP_SET: tp-bool, vid218
+PUT: vid219, vid218
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:176:5, line 176, column 5
+ALLOT: vid220
+TP_SET: tp-int, vid220
+PUT: 0, vid220
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:177:5, line 177, column 5
+ALLOT: vid221
+TP_SET: tp-int, vid221
+PUT: vid207, vid221
+ALLOT: vid222
+CMP: true, false, vid222
+UNTIL: vid222, RE
+ALLOT: vid223
+CMP: vid221, vid208, vid223
+CREL: vid223, RL, vid223
+JT: vid223, sid224
+EXIT: UNTIL
+SET: sid224
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:178:14, line 178, column 14
+ALLOT: vid225
+ADD: vid221, vid210, vid225
+PUT: vid225, vid220
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:179:9, line 179, column 9
+ALLOT: vid226
+; No need to set 'tp-any' type.
+PUT: false, vid226
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:180:9, line 180, column 9
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:180:9, line 180, column 9
+ALLOT: vid228
+CMP: vid220, vid208, vid228
+CREL: vid228, RG, vid228
+ALLOT: vid229
+CMP: vid218, vid228, vid229
+CREL: vid229, AND, vid229
+ALLOT: vid230
+CMP: vid218, false, vid230
+CREL: vid230, RE, vid230
+ALLOT: vid231
+CMP: vid220, vid208, vid231
+CREL: vid231, RL, vid231
+ALLOT: vid232
+CMP: vid230, vid231, vid232
+CREL: vid232, AND, vid232
+ALLOT: vid233
+CMP: vid229, vid232, vid233
+CREL: vid233, OR, vid233
+JF: vid233, sid234
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:182:19, line 182, column 19
+PUT: true, vid226
+JMP: sid227
+SET: sid234
+SET: sid227
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:184:9, line 184, column 9
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:184:9, line 184, column 9
+ALLOT: vid236
+CMP: vid221, vid207, vid236
+CREL: vid236, RE, vid236
+ALLOT: vid237
+IVOK: vid209, vid221, vid236, vid226, vid237
+ALLOT: vid238
+CMP: vid237, false, vid238
+CREL: vid238, RE, vid238
+JF: vid238, sid239
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:185:13, line 185, column 13
+EXIT: LOOP
+JMP: sid235
+SET: sid239
+SET: sid235
+ADD: vid221, vid210, vid221
+END: UNTIL
+END: vid206
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:190:1, line 190
+FUNC: vid241, vid242, vid243, vid244
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:207:5, line 207, column 5
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:207:5, line 207, column 5
+ALLOT: vid247
+TP_GET_FIELD: vid31, "vid120", vid247
+ALLOT: vid248
+IVOK: vid120, vid242, vid248
+JF: vid248, sid249
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:208:9, line 208, column 9
+ALLOT: vid251
+ITER_SIZE: vid242, vid251
+ALLOT: vid250
+TP_SET: tp-int, vid250
+PUT: vid251, vid250
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:209:9, line 209, column 9
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:209:9, line 209, column 9
+JF: vid244, sid253
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:210:13, line 210, column 13
+ALLOT: vid255
+OPP: 1, vid255
+ADD: vid250, vid255, vid255
+ALLOT: vid254
+; No need to set 'tp-any' type.
+PUT: vid255, vid254
+ALLOT: vid256
+CMP: true, false, vid256
+UNTIL: vid256, RE
+ALLOT: vid257
+CMP: vid254, 0, vid257
+CREL: vid257, RGE, vid257
+JT: vid257, sid258
+EXIT: UNTIL
+SET: sid258
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:211:17, line 211, column 17
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:211:17, line 211, column 17
+ALLOT: vid260
+ITER_GET: vid242, vid254, vid260
+ALLOT: vid262
+OPP: 1, vid262
+ADD: vid250, vid262, vid262
+ALLOT: vid263
+CMP: vid254, vid262, vid263
+CREL: vid263, RE, vid263
+ALLOT: vid265
+CMP: vid254, 0, vid265
+CREL: vid265, RE, vid265
+ALLOT: vid270
+PAIR_SET: "isEnd", vid265, vid270
+ALLOT: vid271
+PAIR_SET: "isStart", vid263, vid271
+ALLOT: vid272
+TP_SET: tp-dict, vid272
+ITER_APND: vid270, vid271, vid272
+ALLOT: vid273
+IVOK: vid243, vid260, vid254, vid250, vid272, vid273
+ALLOT: vid274
+CMP: vid273, false, vid274
+CREL: vid274, RE, vid274
+JF: vid274, sid275
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:213:21, line 213, column 21
+EXIT: LOOP
+JMP: sid259
+SET: sid275
+SET: sid259
+ADD: vid254, -1, vid254
+END: UNTIL
+JMP: sid252
+SET: sid253
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:216:11, line 216, column 11
+JF: true, sid276
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:217:13, line 217, column 13
+ALLOT: vid277
+; No need to set 'tp-any' type.
+PUT: 0, vid277
+ALLOT: vid278
+CMP: true, false, vid278
+UNTIL: vid278, RE
+ALLOT: vid279
+CMP: vid277, vid250, vid279
+CREL: vid279, RL, vid279
+JT: vid279, sid280
+EXIT: UNTIL
+SET: sid280
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:218:17, line 218, column 17
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:218:17, line 218, column 17
+ALLOT: vid282
+ITER_GET: vid242, vid277, vid282
+ALLOT: vid284
+CMP: vid277, 0, vid284
+CREL: vid284, RE, vid284
+ALLOT: vid286
+OPP: 1, vid286
+ADD: vid250, vid286, vid286
+ALLOT: vid287
+CMP: vid277, vid286, vid287
+CREL: vid287, RE, vid287
+ALLOT: vid292
+PAIR_SET: "isEnd", vid287, vid292
+ALLOT: vid293
+PAIR_SET: "isStart", vid284, vid293
+ALLOT: vid294
+TP_SET: tp-dict, vid294
+ITER_APND: vid292, vid293, vid294
+ALLOT: vid295
+IVOK: vid243, vid282, vid277, vid250, vid294, vid295
+ALLOT: vid296
+CMP: vid295, false, vid296
+CREL: vid296, RE, vid296
+JF: vid296, sid297
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:220:21, line 220, column 21
+EXIT: LOOP
+JMP: sid281
+SET: sid297
+SET: sid281
+ADD: vid277, 1, vid277
+END: UNTIL
+JMP: sid252
+SET: sid276
+SET: sid252
+JMP: sid245
+SET: sid249
+SET: sid245
+END: vid241
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:227:1, line 227
+FUNI: vid299, vid300, vid301
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:239:5, line 239, column 5
+ALLOT: vid302
+TP_SET: tp-str, vid302
+PUT: "", vid302
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:240:5, line 240, column 5
+FUNI: vid307, vid303, vid304, vid305, vid306
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:241:16, line 241, column 16
+ADD: vid302, vid303, vid302
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:242:9, line 242, column 9
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:242:9, line 242, column 9
+ALLOT: vid309
+OPP: 1, vid309
+ADD: vid305, vid309, vid309
+ALLOT: vid310
+CMP: vid304, vid309, vid310
+CREL: vid310, RL, vid310
+JF: vid310, sid311
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:243:20, line 243, column 20
+ADD: vid302, vid301, vid302
+JMP: sid308
+SET: sid311
+SET: sid308
+RET: null
+END: vid307
+ALLOT: vid312
+PUT: vid307, vid312
+CALL: vid241, vid300, vid312, false
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:246:5, line 246, column 5
+RET: vid302
+END: vid299
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:249:1, line 249
+FUNI: vid314, vid315, vid316
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:261:5, line 261, column 5
+ALLOT: vid317
+IVOK: vid299, vid315, vid316, vid317
+RET: vid317
+END: vid314
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:264:1, line 264
+FUNC: vid319, vid320, vid321
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:278:5, line 278, column 5
+PASS: ; The implementation is encapsulated.
+END: vid319
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:281:1, line 281
+FUNC: vid323, vid324, vid325
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:293:5, line 293, column 5
+PASS: ; The implementation is encapsulated.
+END: vid323
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:296:1, line 296
+FUNC: vid327, vid328, vid329
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:311:5, line 311, column 5
+ALLOT: vid332
+TP_GET_FIELD: vid31, "vid36", vid332
+ALLOT: vid333
+TP_GET: vid328, vid333
+ALLOT: vid330
+; No need to set 'tp-any' type.
+PUT: vid333, vid330
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:312:5, line 312, column 5
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:312:5, line 312, column 5
+ALLOT: vid336
+TP_GET_FIELD: vid31, "vid120", vid336
+ALLOT: vid337
+IVOK: vid120, vid328, vid337
+JF: vid337, sid338
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:313:9, line 313, column 9
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:313:9, line 313, column 9
+ALLOT: vid341
+TP_GET_FIELD: vid31, "vid42", vid341
+ALLOT: vid343
+TP_GET_FIELD: vid341, "vid48", vid343
+ALLOT: vid344
+CMP: vid330, vid343, vid344
+CREL: vid344, RE, vid344
+ALLOT: vid346
+TP_GET_FIELD: vid31, "vid42", vid346
+ALLOT: vid348
+TP_GET_FIELD: vid346, "vid45", vid348
+ALLOT: vid349
+CMP: vid330, vid348, vid349
+CREL: vid349, RE, vid349
+ALLOT: vid350
+CMP: vid344, vid349, vid350
+CREL: vid350, OR, vid350
+JF: vid350, sid351
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:314:13, line 314, column 13
+ITER_DEL: vid328, vid329
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:315:13, line 315, column 13
+RET: ;
+JMP: sid339
+SET: sid351
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:316:11, line 316, column 11
+ALLOT: vid353
+TP_GET_FIELD: vid31, "vid42", vid353
+ALLOT: vid355
+TP_GET_FIELD: vid353, "vid49", vid355
+ALLOT: vid356
+CMP: vid330, vid355, vid356
+CREL: vid356, RE, vid356
+JF: vid356, sid357
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:317:13, line 317, column 13
+DICT_DEL: vid328, vid329
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:318:13, line 318, column 13
+RET: ;
+JMP: sid339
+SET: sid357
+SET: sid339
+JMP: sid334
+SET: sid338
+SET: sid334
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:321:5, line 321, column 5
+FUNC: vid359, vid360, vid361
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:322:9, line 322, column 9
+PASS: ; The implementation is encapsulated.
+END: vid359
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:324:5, line 324, column 5
+ALLOT: vid362
+TP_SET: tp-list, vid362
+ITER_APND: "Invalid iterable data type: ", vid330, vid362
+SOUT: s-l, s-unpack, vid362, "\n"
+END: vid327
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:327:1, line 327
+FUNI: vid364, vid365
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:340:5, line 340, column 5
+PASS: ; The implementation is encapsulated.
+END: vid364
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:343:1, line 343
+FUNI: vid367, vid368
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:356:5, line 356, column 5
+PASS: ; The implementation is encapsulated.
+END: vid367
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:359:1, line 359
+FUNI: vid370, vid371, vid372
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:374:5, line 374, column 5
+ALLOT: vid373
+TP_SET: tp-bool, vid373
+PUT: false, vid373
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:375:5, line 375, column 5
+FUNI: vid376, vid374, vid375, vid375, vid375
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:376:9, line 376, column 9
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:376:9, line 376, column 9
+ALLOT: vid378
+CMP: vid374, vid372, vid378
+CREL: vid378, RE, vid378
+JF: vid378, sid379
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:377:20, line 377, column 20
+PUT: true, vid373
+JMP: sid377
+SET: sid379
+SET: sid377
+RET: null
+END: vid376
+ALLOT: vid380
+PUT: vid376, vid380
+CALL: vid241, vid371, vid380, false
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:380:5, line 380, column 5
+RET: vid373
+END: vid370
+; D:\soft\Rio\bin\Lib\builtin\ds.rio:383:1, line 383
+ALLOT: vid381
+TP_SET: tp-list, vid381
+ITER_APND: vid144, vid147, vid150, vid155, vid160, vid169, vid178, vid202, vid206, vid299, vid314, vid241, vid319, vid323, vid327, vid364, vid367, vid370, vid381
+ALLOT: vid382
+TP_SET: tp-dict, vid382
+TP_DEF: vid23
+TP_ADD_TP_FIELD: vid23, "vid364", vid364
+TP_ADD_TP_FIELD: vid23, "vid327", vid327
+TP_ADD_TP_FIELD: vid23, "vid323", vid323
+TP_ADD_TP_FIELD: vid23, "vid319", vid319
+TP_ADD_TP_FIELD: vid23, "vid241", vid241
+TP_ADD_TP_FIELD: vid23, "vid314", vid314
+TP_ADD_TP_FIELD: vid23, "vid370", vid370
+TP_ADD_TP_FIELD: vid23, "vid144", vid144
+TP_ADD_TP_FIELD: vid23, "vid150", vid150
+TP_ADD_TP_FIELD: vid23, "vid147", vid147
+TP_ADD_TP_FIELD: vid23, "vid155", vid155
+TP_ADD_TP_FIELD: vid23, "vid367", vid367
+TP_ADD_TP_FIELD: vid23, "vid206", vid206
+TP_ADD_TP_FIELD: vid23, "vid169", vid169
+TP_ADD_TP_FIELD: vid23, "vid178", vid178
+TP_ADD_TP_FIELD: vid23, "vid202", vid202
+TP_ADD_TP_FIELD: vid23, "vid160", vid160
+TP_ADD_TP_FIELD: vid23, "vid299", vid299
+; D:\soft\Rio\bin\Lib\builtin\io.rio:17:1, line 17
+FUNC: vid384, vid385, vid386
+; D:\soft\Rio\bin\Lib\builtin\io.rio:29:5, line 29, column 5
+PASS: ; The implementation is encapsulated.
+END: vid384
+; D:\soft\Rio\bin\Lib\builtin\io.rio:32:1, line 32
+FUNC: vid388, vid389, vid390, vid391
+; D:\soft\Rio\bin\Lib\builtin\io.rio:45:5, line 45, column 5
+ALLOT: vid393
+TP_GET_FIELD: vid23, "vid299", vid393
+ALLOT: vid394
+IVOK: vid299, vid389, vid391, vid394
+ALLOT: vid395
+TP_SET: tp-list, vid395
+ITER_APND: vid394, vid395
+SOUT: s-l, s-unpack, vid395, vid390
+END: vid388
+; D:\soft\Rio\bin\Lib\builtin\io.rio:48:1, line 48
+FUNI: vid397, vid398
+; D:\soft\Rio\bin\Lib\builtin\io.rio:60:5, line 60, column 5
+PASS: ; The implementation is encapsulated.
+END: vid397
+; D:\soft\Rio\bin\Lib\builtin\io.rio:63:1, line 63
+FUNI: vid400, vid401
+; D:\soft\Rio\bin\Lib\builtin\io.rio:64:5, line 64, column 5
+ALLOT: vid402
+SOUT: s-l, vid401
+SIN: s-m, vid402
+RET: vid402
+END: vid400
+; D:\soft\Rio\bin\Lib\builtin\io.rio:67:1, line 67
+ALLOT: vid403
+TP_SET: tp-list, vid403
+ITER_APND: vid384, vid388, vid397, vid400, vid403
+ALLOT: vid404
+TP_SET: tp-dict, vid404
+TP_DEF: vid15
+TP_ADD_TP_FIELD: vid15, "vid400", vid400
+TP_ADD_TP_FIELD: vid15, "vid397", vid397
+TP_ADD_TP_FIELD: vid15, "vid384", vid384
+TP_ADD_TP_FIELD: vid15, "vid388", vid388
+ALLOT: vid405
+PUT: vid23, vid405
+; D:\ClionProjects\RVM\test\test.rio:9:1, line 9
+ALLOT: vid407
+TP_SET: tp-dict, vid407
+; To generate an empty list does not need to use the [ITER_APND] ri.
+ALLOT: vid406
+TP_SET: tp-dict, vid406
+PUT: vid407, vid406
+; D:\ClionProjects\RVM\test\test.rio:11:1, line 11
+FUNI: vid409, vid408
+; D:\ClionProjects\RVM\test\test.rio:12:17, line 12, column 17
+ALLOT: vid410
+ITER_GET: vid406, vid408, vid410
+PUT: "Hello world!", vid410
+RET: null
+END: vid409
+ALLOT: vid411
+PUT: vid409, vid411
+ALLOT: vid413
+TP_GET_FIELD: vid405, "vid202", vid413
+ALLOT: vid414
+ALLOT: vid415
+ALLOT: vid416
+REPEAT: 10000, vid414
+IVOK: vid411, vid414, vid415
+CMP: vid415, false, vid416
+CREL: vid416, RE, vid416
+JF: vid416, sl45
+EXIT: REPEAT
+SET: sl45
+END: REPEAT
+; D:\ClionProjects\RVM\test\test.rio:15:1, line 15
+ALLOT: vid418
+TP_GET_FIELD: vid15, "vid384", vid418
+ALLOT: vid419
+TP_SET: tp-list, vid419
+ITER_APND: vid406, vid419
+SOUT: s-l, s-unpack, vid419, "\n"

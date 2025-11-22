@@ -9,48 +9,48 @@ namespace cc {
     bool enableColorfulOutput = true;
 
     // TextColor静态常量定义
-    const std::string TextColor::RED = "\033[31m";
-    const std::string TextColor::GREEN = "\033[32m";
-    const std::string TextColor::YELLOW = "\033[33m";
-    const std::string TextColor::BLUE = "\033[34m";
-    const std::string TextColor::PURPLE = "\033[35m";
-    const std::string TextColor::CYAN = "\033[36m";
-    const std::string TextColor::GRAY = "\033[37m";
-    const std::string TextColor::DARK_GRAY = "\033[90m";
-    const std::string TextColor::LIGHT_RED = "\033[91m";
-    const std::string TextColor::LIGHT_GREEN = "\033[92m";
-    const std::string TextColor::LIGHT_YELLOW = "\033[93m";
-    const std::string TextColor::LIGHT_BLUE = "\033[94m";
-    const std::string TextColor::LIGHT_PURPLE = "\033[95m";
-    const std::string TextColor::LIGHT_CRAY = "\033[96m";
-    const std::string TextColor::LIGHT_GRAY = "\033[97m";
+    constexpr std::string TextColor::RED = "\033[31m";
+    constexpr std::string TextColor::GREEN = "\033[32m";
+    constexpr std::string TextColor::YELLOW = "\033[33m";
+    constexpr std::string TextColor::BLUE = "\033[34m";
+    constexpr std::string TextColor::PURPLE = "\033[35m";
+    constexpr std::string TextColor::CYAN = "\033[36m";
+    constexpr std::string TextColor::GRAY = "\033[37m";
+    constexpr std::string TextColor::DARK_GRAY = "\033[90m";
+    constexpr std::string TextColor::LIGHT_RED = "\033[91m";
+    constexpr std::string TextColor::LIGHT_GREEN = "\033[92m";
+    constexpr std::string TextColor::LIGHT_YELLOW = "\033[93m";
+    constexpr std::string TextColor::LIGHT_BLUE = "\033[94m";
+    constexpr std::string TextColor::LIGHT_PURPLE = "\033[95m";
+    constexpr std::string TextColor::LIGHT_CRAY = "\033[96m";
+    constexpr std::string TextColor::LIGHT_GRAY = "\033[97m";
 
     // BackgroundColor静态常量定义
-    const std::string BackgroundColor::BLACK = "\033[40m";
-    const std::string BackgroundColor::RED = "\033[41m";
-    const std::string BackgroundColor::GREEN = "\033[42m";
-    const std::string BackgroundColor::YELLOW = "\033[43m";
-    const std::string BackgroundColor::BLUE = "\033[44m";
-    const std::string BackgroundColor::PURPLE = "\033[45m";
-    const std::string BackgroundColor::CYAN = "\033[46m";
-    const std::string BackgroundColor::GRAY = "\033[47m";
+    constexpr std::string BackgroundColor::BLACK = "\033[40m";
+    constexpr std::string BackgroundColor::RED = "\033[41m";
+    constexpr std::string BackgroundColor::GREEN = "\033[42m";
+    constexpr std::string BackgroundColor::YELLOW = "\033[43m";
+    constexpr std::string BackgroundColor::BLUE = "\033[44m";
+    constexpr std::string BackgroundColor::PURPLE = "\033[45m";
+    constexpr std::string BackgroundColor::CYAN = "\033[46m";
+    constexpr std::string BackgroundColor::GRAY = "\033[47m";
 
     // Decoration静态常量定义
-    const std::string Decoration::BOLD = "\033[1m";
-    const std::string Decoration::ITALIC = "\033[3m";
-    const std::string Decoration::LIGHT_UNDERLINE = "\033[4m";
-    const std::string Decoration::REVERSE = "\033[7m";
-    const std::string Decoration::THROUGH_LINE = "\033[9m";
-    const std::string Decoration::BOLD_UNDERLINE = "\033[21m";
+    constexpr std::string Decoration::BOLD = "\033[1m";
+    constexpr std::string Decoration::ITALIC = "\033[3m";
+    constexpr std::string Decoration::LIGHT_UNDERLINE = "\033[4m";
+    constexpr std::string Decoration::REVERSE = "\033[7m";
+    constexpr std::string Decoration::THROUGH_LINE = "\033[9m";
+    constexpr std::string Decoration::BOLD_UNDERLINE = "\033[21m";
 
     // 彩色文本函数实现
     std::string
     colorfulText(const std::string &text, const std::string &color, const std::vector<std::string> &decorations,
-                 bool reset) {
+                 const bool reset) {
         std::string result = text;
         if (enableColorfulOutput) {
             for (const auto &deco: decorations) {
-                result = deco + result;
+                result.insert(0, deco);
             }
             if (!color.empty()) {
                 result = color + result;

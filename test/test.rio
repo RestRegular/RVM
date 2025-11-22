@@ -1,8 +1,15 @@
-import(io="io");
+import(io="io", ds="ds")
 
-for ({var i = 9; i > 0; i --}) {
-    for ({var j = i; j > 0; j --}) {
-        io.sout(j, "*", i, "=", i * j, end="\t")
-    }
-    io.sout()
-}
+// var times: const int = 100000
+//
+// for ({var i = 0; i < times; i++}) {
+//     io.sout(i, " Hello world!")
+// }
+
+var data: dict = {}
+
+ds.repeat(10000, (index) -> {
+    data[index] = "Hello world!"
+})
+
+io.sout(data)

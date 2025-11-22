@@ -108,7 +108,7 @@ namespace parser {
 
     // 运行环境必要函数实现
     namespace env {
-        utils::SerializationProfile __program_serialization_profile__ = utils::SerializationProfile::Debug;
+        utils::SerializationProfile program_serialization_profile_ = utils::SerializationProfile::Debug;
 
         bool precompiled_link_option {false};
 
@@ -154,7 +154,7 @@ namespace parser {
             data_space_pool.main_scope_name = pre_SRC + main_space_name;
         }
 
-        void addIns(const utils::Pos &pos, const std::string &raw_code, const RI &ri, const StdArgs &args, const std::string &ext) {
+        void addIns(const utils::Pos &pos, const std::string &raw_code, const RI *ri, const StdArgs &args, const std::string &ext) {
             components::INS_SET->addIns(std::make_shared<Ins>(pos, raw_code, ri, args, ext));
         }
 
@@ -346,21 +346,21 @@ namespace parser {
                     insPos = fixed_pos.value();
                 }
                 const auto ri_opt = RI::getRIByStr(instruction);
-                if (bool is_success = ri_opt.has_value(); !is_success) {
+                if (bool is_success = ri_opt; !is_success) {
                     throw base::RVM_Error(base::ErrorType::SyntaxError, insPos.toString(), line,
                                           {"This error is caused by using an undefined instruction.",
                                            "Unknown RI: [RI: " + instruction + "]"},
                                           {"Please refer to the official instruction documentation for help."});
                 }
-                const auto &ri = ri_opt.value();
+                const auto &ri = ri_opt;
                 auto ins_ptr = std::make_shared<Ins>(
                         insPos, line, ri, args, ext);
                 auto &topInsSet = insSetStack.top();
-                if (ri.hasScope) {
+                if (ri->hasScope) {
                     topInsSet->addIns(ins_ptr);
                     insSetStack.push(ins_ptr->scopeInsSet);
-                    insSetStack.top()->scope_prefix = ri.name + "-";
-                    insSetStack.top()->is_delayed_release_scope = ri.isDelayedReleaseScope;
+                    insSetStack.top()->scope_prefix = ri->name + "-";
+                    insSetStack.top()->is_delayed_release_scope = ri->isDelayedReleaseScope;
                     insSetStack.top()->setScopeLeader(ins_ptr->raw_code);
                     insSetStack.top()->setScopeLeaderPos(ins_ptr->pos);
                 } else if (instruction == "END") {
@@ -400,7 +400,7 @@ namespace parser {
                             serializeExecutableInsToBinaryFile(fullPath.string(),
                                                                getLinkedInsSet(*ins_ptr.get(),
                                                                                false),
-                                                               env::__program_serialization_profile__);
+                                                               env::program_serialization_profile_);
                         }
                         if (linked_ins_set) {
                             topInsSet->insertInsSet(linked_ins_set);
@@ -409,7 +409,7 @@ namespace parser {
                                                   {"This error is caused by an error encountered while statically linking other files.",
                                                    "Error Linking File: " +
                                                    utils::getObjectFormatString("File", ins_ptr->args[0].getValue())},
-                                                  {"The " + ins_ptr->ri.toString() +
+                                                  {"The " + ins_ptr->ri->toString() +
                                                    " requires a argument to specify the path of the file to be linked. ",
                                                    "Only 'RA' and 'RSI' files are supported."});
                         }
@@ -420,7 +420,7 @@ namespace parser {
                                                                                       tools::getArgOriginData(
                                                                                               ins_ptr->args[0])->toString()),
                                                           {"Please check that the argument of this instruction are used correctly.",
-                                                           "The " + ins_ptr->ri.toString() +
+                                                           "The " + ins_ptr->ri->toString() +
                                                            " requires an argument to specify the path of the file to be linked. ",
                                                            "Only 'RA' and 'RSI' files are supported."});
                     }
@@ -473,8 +473,8 @@ namespace parser {
             return ins_set;
         }
 
-        std::shared_ptr<InsSet> getLinkedInsSet(const Ins &link_ins, bool check_exist, const std::string &path) {
-            if (link_ins.ri != ris::LINK){
+        std::shared_ptr<InsSet> getLinkedInsSet(const Ins &link_ins, const bool check_exist, const std::string &path) {
+            if (!ris::LINK.equalWith(link_ins.ri)){
                 throw std::runtime_error("The instruction is not a link instruction.");
             }
             const auto &link_path = utils::getAbsolutePath(
@@ -482,19 +482,19 @@ namespace parser {
                     base::PROGRAM_WORKING_DIRECTORY_STACK.top());
             const auto &link_file_type = utils::getFileExtFromPath(link_path);
             if (check_exist){
-                const auto &check_result = tools::checkExtensionExist(link_path);
-                if (check_result.first) {
+                const auto & [isExist, extPath] = tools::checkExtensionExist(link_path);
+                if (isExist) {
                     return nullptr;
                 }
-                loadedExtensions.emplace(check_result.second, nullptr);
+                loadedExtensions.emplace(extPath, nullptr);
             }
             if (link_file_type == "ra") {
-                return parse::parseCodeFromPath(link_path, false);
-            } else if (link_file_type == "rsi") {
-                return parse::deserializeExecutableInsFromBinaryFile(link_path);
-            } else {
-                throw base::errors::ArgumentError(unknown_, unknown_, unknown_, {});
+                return parseCodeFromPath(link_path, false);
             }
+            if (link_file_type == "rsi") {
+                return deserializeExecutableInsFromBinaryFile(link_path);
+            }
+            throw base::errors::ArgumentError(unknown_, unknown_, unknown_, {});
         }
     }
 }

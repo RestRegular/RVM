@@ -330,6 +330,8 @@ namespace core {
 
             explicit Char(char value);
 
+            bool updateData(const std::shared_ptr<RVM_Data>& newData) override;
+
             [[nodiscard]] std::string getValStr() const override;
 
             [[nodiscard]] std::string getTypeName() const override;
@@ -495,7 +497,7 @@ namespace core {
 
             explicit Dict();
 
-            Dict (std::unordered_map<std::string, std::shared_ptr<KeyValuePair>> dataDict,
+            Dict(std::unordered_map<std::string, std::shared_ptr<KeyValuePair>> dataDict,
                   std::vector<std::string> keyList);
 
             explicit Dict (const std::shared_ptr<List>& list);
@@ -547,6 +549,10 @@ namespace core {
             void splice(const std::shared_ptr<Iterable>& other) override;
 
             bool contains(const std::shared_ptr<RVM_Data>& data) override;
+
+            std::shared_ptr<List> getKeyDataList() const;
+
+            std::shared_ptr<List> getValueDataList() const;
 
         private:
             std::unordered_map<std::string, std::shared_ptr<KeyValuePair>> dataDict{};

@@ -8,8 +8,8 @@
 #include <iostream>
 #include "ra_base.h"
 #include "ra_core.h"
-#include "lib/ra_utils.h"
 #include "rvm_ris.h"
+#include "lib/ra_utils.h"
 
 namespace parser {
     using namespace core::components;
@@ -58,7 +58,7 @@ namespace parser {
     namespace env {
         using namespace core::components;
 
-        extern utils::SerializationProfile __program_serialization_profile__;
+        extern utils::SerializationProfile program_serialization_profile_;
 
         extern bool precompiled_link_option;
 
@@ -66,7 +66,7 @@ namespace parser {
 
         void initialize(const std::string &executed_file_path, const std::string &working_directory);
 
-        void addIns(const utils::Pos &pos, const std::string& raw_code, const RI &ri, const StdArgs &args);
+        void addIns(const utils::Pos &pos, const std::string& raw_code, const RI *ri, const StdArgs &args);
 
         void serializeLinkedExtensions(std::ostream &out);
 

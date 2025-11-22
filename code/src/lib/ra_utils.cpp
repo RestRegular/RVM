@@ -241,16 +241,11 @@ namespace utils {
     }
 
     // 将double转换为字符串
-    std::string doubleToString(double value) {
-        std::array<char, 64> buffer{}; // 使用固定大小的缓冲区
-        // 使用 std::to_chars 进行转换
-        auto result = std::to_chars(buffer.data(),
-                                    buffer.data() + buffer.size(), value,
-                                    std::chars_format::general);
-        if (result.ec == std::errc()) {
-            return {buffer.data(), result.ptr}; // 返回转换后的字符串
-        }
-        throw std::runtime_error("Conversion error");
+    std::string doubleToString(const double value)
+    {
+        std::ostringstream oss;
+        oss << value;
+        return oss.str();
     }
 
     // 判断字符串是否为字符串格式
@@ -1338,11 +1333,11 @@ namespace utils {
     }
 
     // 生成格式化的帮助字符串
-    std::string ProgArgParser::getHelpString(size_t lineWidth, size_t optionIndent, size_t descriptionIndent) const {
+    std::string ProgArgParser::getHelpString(const size_t lineWidth, const size_t optionIndent, const size_t descriptionIndent) const {
         std::ostringstream oss;
 
         oss << "Usage:\n";
-        oss << "  RVM.exe [options]\n\n";
+        oss << "  RVM.exe [<flags>] [<options>]\n\n";
         oss << "Flags:\n";
 
         // 添加标志参数的帮助信息

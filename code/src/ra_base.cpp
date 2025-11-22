@@ -59,7 +59,7 @@ namespace base {
     std::string RVMSerialHeader::getRVMVersionInfo() {
         return "RVM(Rio Virtual Machine) v" + std::to_string(VERSION_MAJOR) + "." + std::to_string(VERSION_MINOR) + "."
                + std::to_string(VERSION_PATCH) + "\nPublished on " + std::string(__DATE__) + " at " +
-               std::string(__TIME__) + "\nCopyright (C) 2025 RestRegular";
+               std::string(__TIME__) + "\nCopyright (C) 2025 RestRegular\n";
     }
 
     std::string RVMSerialHeader::getRSIVersionInfo(const std::string &path) const {
@@ -367,11 +367,10 @@ namespace base {
         {
             throw std::runtime_error("Process has been interrupted by ^C.");
         }
-        line = utils::StringManager::escape(line);
         inputCache.push_back(std::move(line));
     }
 
-    std::vector<std::string> RVM_IO::nextStrings(size_t count) {
+    std::vector<std::string> RVM_IO::nextStrings(const size_t count) {
         std::vector<std::string> result;
         for (size_t i = 0; i < count && !inputCache.empty(); ++i) {
             result.push_back(inputCache.front());
@@ -401,7 +400,7 @@ namespace base {
         std::istringstream iss(line);
         std::string word;
         while (iss >> word) {
-            inputCache.push_back(utils::StringManager::escape(word));
+            inputCache.push_back(word);
         }
     }
 

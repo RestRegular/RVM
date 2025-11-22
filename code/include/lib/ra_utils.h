@@ -156,10 +156,10 @@ namespace utils {
         Arg(Pos  pos, const std::string &value);
         explicit Arg(const std::string& value);
         [[nodiscard]] const Pos &getPos() const;
-        [[nodiscard]] utils::ArgType getType() const;
+        [[nodiscard]] ArgType getType() const;
         [[nodiscard]] const std::string &getValue() const;
         [[nodiscard]] std::string toString() const;
-        std::string getPosStr() const;
+        [[nodiscard]] std::string getPosStr() const;
         void serialize(std::ostream& out, const SerializationProfile &profile) const;
         void deserialize(std::istream& in, const SerializationProfile &profile);
     private:
@@ -206,8 +206,8 @@ namespace utils {
             setupOptionSetter(name, var, aliases, description);
         }
         void parse(int argc, char* argv[]);
-        std::string getOptionDescription(const std::string& name) const;
-        std::string getHelpString(size_t lineWidth = 80, size_t optionIndent = 2, size_t descriptionIndent = 6) const;
+        [[nodiscard]] std::string getOptionDescription(const std::string& name) const;
+        [[nodiscard]] std::string getHelpString(size_t lineWidth = 80, size_t optionIndent = 2, size_t descriptionIndent = 6) const;
     private:
         struct FlagInfo {
             std::string name;

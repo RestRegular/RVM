@@ -7,13 +7,13 @@
 #include "../include/ra_base.h"
 #include "../include/ra_core.h"
 #include "../include/ra_parser.h"
-#include "../include/lib/ra_utils.h"
 #include "../include/lib/newrcc.h"
+#include "../include/lib/ra_utils.h"
 
 using namespace base;
 using namespace core;
-using namespace parser;
 using namespace utils;
+using namespace parser;
 
 ProgArgParser argParser{};
 
@@ -31,6 +31,7 @@ bool program_help_option_;
 bool program_version_option_;
 bool program_vs_check_option_;
 bool program_rvm_work_directory_;
+bool program_get_ris_;
 
 void initializeArgumentParser() {
     argParser.addFlag("help", &program_help_option_, false, true,
@@ -74,13 +75,16 @@ void initializeArgumentParser() {
                       "code into the RSI file. When using this flag, the '--precomp-link-dir' option is required to specify "
                       "the folder path where the pre-compiled files are stored.",
                       {"pcl", "pl"});
+    argParser.addFlag("get-ris", &program_get_ris_, false, true,
+                      "This flag is used to get the hole RI names.",
+                      {"ris", "gr"});
 
     argParser.addOption<std::string>("help-option", &program_help_option_name_,
                                                      "",
                                                      "Specifies the name of the help option. "
                                                      "This option is used to customize the name of the help option displayed in the help message.",
                                                      {"ho"});
-    argParser.addOption<SerializationProfile>("comp-level", &env::__program_serialization_profile__,
+    argParser.addOption<SerializationProfile>("comp-level", &env::program_serialization_profile_,
                                                      SerializationProfile::Debug,
                                                      "Specifies the compilation level for the operation. "
                                                      "Determines the optimization and debugging information included in the output. "
@@ -123,18 +127,18 @@ void initializeArgumentParser() {
     argParser.addMutuallyExclusive("run", "comp", ProgArgParser::CheckDir::BiDir);
     argParser.addMutuallyExclusive("rvm-work-directory", "work-directory",
                                    ProgArgParser::CheckDir::BiDir);
-    argParser.addMutuallyExclusive(std::vector<std::string>{"help", "version"},
-                                   std::vector<std::string>{"run", "comp", "debug",
-                                                            "target", "comp-level", "archive",
-                                                            "vs-check", "working-dir", "time-info"},
+    argParser.addMutuallyExclusive(std::vector<std::string>{"help", "version", "get-ris"},
+                                   std::vector<std::string>{
+                                       "run", "comp", "debug",
+                                       "target", "comp-level", "archive",
+                                       "vs-check", "working-dir", "time-info"},
                                    ProgArgParser::CheckDir::BiDir);
-    argParser.addMutuallyExclusive("help", std::vector<std::string>{"version", "vs-check"},
-                                   ProgArgParser::CheckDir::BiDir);
-    argParser.addMutuallyExclusive("version", std::vector<std::string>{"help", "vs-check"},
-                                   ProgArgParser::CheckDir::BiDir);
-    argParser.addMutuallyExclusive("vs-check", std::vector<std::string>{"run", "comp", "debug",
+    argParser.addMutuallyExclusive("help", std::vector<std::string>{"version", "get-ris"}, ProgArgParser::CheckDir::BiDir);
+    argParser.addMutuallyExclusive("version", "get-ris", ProgArgParser::CheckDir::BiDir);
+    argParser.addMutuallyExclusive("vs-check", std::vector<std::string>{"run", "comp", "debug", "get-ris",
                                                                         "comp-level", "archive", "time-info"},
                                    ProgArgParser::CheckDir::BiDir);
+
     argParser.addDependent("help-option", "help", ProgArgParser::CheckDir::UniDir);
     argParser.addDependent(std::vector<std::string>{"run", "comp"}, "target",
                            ProgArgParser::CheckDir::UniDir);
@@ -167,9 +171,9 @@ int main(const int argc, char *argv[]){
             env::initialize(program_target_file_path_, program_working_directory_);
             const auto ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
             parse::serializeExecutableInsToBinaryFile(program_archive_file_path_, ins_set,
-                                                      env::__program_serialization_profile__);
+                                                      env::program_serialization_profile_);
             *io << "[RVM Msg] >> Compilation finished with ["
-                << getSerializationProfileName(env::__program_serialization_profile__) << "] profile.";
+                << getSerializationProfileName(env::program_serialization_profile_) << "] profile.";
         }
         if (program_run_executable_) {
             const auto file_ext = getFileExtFromPath(program_target_file_path_);
@@ -177,7 +181,7 @@ int main(const int argc, char *argv[]){
             std::shared_ptr<InsSet> ins_set;
             if (file_ext == RSI_EXT) {
                 ins_set = parse::deserializeExecutableInsFromBinaryFile(
-                        program_target_file_path_, env::__program_serialization_profile__);
+                        program_target_file_path_, env::program_serialization_profile_);
             } else {
                 ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
             }
@@ -199,11 +203,11 @@ int main(const int argc, char *argv[]){
             try {
                 const auto &binary_file_path = getAbsolutePath(program_target_file_path_);
                 std::ifstream binary_file(binary_file_path, std::ios::binary);
-                rvm_serial_header.deserialize(binary_file, env::__program_serialization_profile__,
+                rvm_serial_header.deserialize(binary_file, env::program_serialization_profile_,
                                                     binary_file_path, false);
                 env::deserializeLinkedExtensions(binary_file);
                 binary_file.close();
-                if (auto version_info = rvm_serial_header.getRSIVersionInfo(program_target_file_path_);
+                if (const auto version_info = rvm_serial_header.getRSIVersionInfo(program_target_file_path_);
                     version_info.empty()) {
                     *io += "[RVM Error] >> No version information found in the target RSI file.";
                 } else {
@@ -216,6 +220,13 @@ int main(const int argc, char *argv[]){
                                "This may be caused by file corruption or the use of a compilation mode that excludes "
                                "version details during the build process.", 80, 15);
                 *io += "\n[RVM Error] >> " + std::string(e.what());
+            }
+        }
+        if (program_get_ris_)
+        {
+            for (const auto& riName: insNameMap | std::views::keys)
+            {
+                *io << riName << " ";
             }
         }
         if (program_run_time_info_option_) {

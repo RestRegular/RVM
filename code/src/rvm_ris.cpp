@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <utility>
 #include "../include/rvm_ris.h"
 #include "../include/ra_parser.h"
 #include "../include/lib/newrcc.h"
@@ -12,7 +13,8 @@ core::memory::RVM_Memory &data_space_pool = core::memory::RVM_Memory::getInstanc
 base::RVM_IO *io{base::RVM_IO::getInstance()};
 
 namespace core::components {
-    std::unordered_map<std::string, RI> insMap{};
+    std::unordered_map<int, const RI*> insMap{};
+    std::unordered_map<std::string, const RI*> insNameMap{};
     id::DataID SR_SpaceID{};
     id::DataID _SE_SpaceID{};
 
@@ -29,77 +31,75 @@ namespace core::components {
         auto upper_name = this->name;
         std::ranges::transform(upper_name, upper_name.begin(),
                                [](const unsigned char c) { return std::toupper(c); });
-        insMap[upper_name] = *this;
+        insMap.insert({id.dis_id, this});
+        insNameMap.insert({upper_name, this});
     }
 
     bool RI::operator==(const RI &other) const {
         return this->id == other.id;
     }
 
+    bool RI::equalWith(const RI* other) const
+    {
+        return this->id == other->id;
+    }
+
     std::string RI::toString() const {
         return "[RI: " + this->name + "]";
     }
 
-    // 序列化函数：只序列化 ri_index
+    // 序列化函数：序列化 id
     void RI::serialize(std::ostream &os, const utils::SerializationProfile &profile) const {
-        const size_t nameLength = name.size();
-        os.write(reinterpret_cast<const char *>(&nameLength), sizeof(nameLength));
-        if (nameLength > 0) {
-            os.write(name.c_str(), nameLength);
-        }
+        os.write(reinterpret_cast<const char *>(&id.dis_id), sizeof(id.dis_id));
     }
 
-    // 反序列化函数：通过 ri_index 从 ri_list 获取对象
-    RI RI::deserialize(std::istream &is, const utils::SerializationProfile &profile)
+    // 反序列化函数：通过 id 从 insMap 获取对象
+    const RI* RI::deserialize(std::istream& is, const utils::SerializationProfile& profile)
     {
-        std::string name {};
-        size_t nameLength;
-        is.read(reinterpret_cast<char *>(&nameLength), sizeof(nameLength));
-        if (nameLength > 0) {
-            name.resize(nameLength);
-            is.read(&name[0], nameLength);
-        } else {
-            name.clear();
-        }
-        if (const auto &it = insMap.find(name);
-            it != insMap.end()) {
+        int riid{};
+        is.read(reinterpret_cast<char *>(&riid), sizeof(riid));
+    
+        if (const auto &it = insMap.find(riid);
+            it != insMap.end())
+        {
             return it->second;
         }
-        throw std::runtime_error("Invalid RI: " + name);
+        throw std::runtime_error("Invalid RI id: " + std::to_string(riid));
     }
 
-    std::optional<RI> RI::getRIByStr(const std::string &content) {
+    const RI* RI::getRIByStr(const std::string& content) {
         // 将输入内容转换为大写以实现大小写不敏感匹配
         std::string upperContent = content;
         std::ranges::transform(upperContent, upperContent.begin(),
                                [](const unsigned char c) { return std::toupper(c); });
         // 查找指令映射表
-        auto it = insMap.find(upperContent);
-        if (it != insMap.end()) {
-            return {it->second};
+        if (const auto &it = insNameMap.find(upperContent);
+            it != insNameMap.end()) {
+            return it->second;
         }
-        return std::nullopt;
+        return nullptr;
     }
 
     // Ins具体实现
-    Ins::Ins(utils::Pos pos, std::string raw_code, RI ri, StdArgs args,
+    Ins::Ins(utils::Pos pos, std::string raw_code, const RI *ri, StdArgs args,
              std::string ext)
-            : pos(pos), ri(std::move(ri)), args(std::move(args)),
-              scopeInsSet(std::make_shared<InsSet>(ri.name)), raw_code(std::move(raw_code)),
+            : pos(std::move(pos)), ri(ri), args(std::move(args)),
+              scopeInsSet(std::make_shared<InsSet>(ri->name)), raw_code(std::move(raw_code)),
               ext(std::move(ext)){
-        if (this->ri.arity != -1 && static_cast<int>(this->args.size()) != this->ri.arity) {
+        if (this->ri->arity != -1 && static_cast<int>(this->args.size()) != this->ri->arity) {
             throw base::errors::ArgumentNumberError(this->pos.toString(), this->raw_code,
-                                                    std::to_string(this->ri.arity), this->args.size(),
-                                                    this->ri.name, {});
+                                                    std::to_string(this->ri->arity),
+                                                    static_cast<int>(this->args.size()),
+                                                    this->ri->name, {});
         }
     }
 
     ExecutionStatus Ins::execute(size_t &pointer) const {
-        return this->ri.executor(*this, pointer, args);
+        return this->ri->executor(*this, pointer, args);
     }
 
     void Ins::addIns(std::shared_ptr<Ins> ins) const {
-        if (this->ri.hasScope) {
+        if (this->ri->hasScope) {
             this->scopeInsSet->addIns(std::move(ins));
         } else {
             throw base::RVM_Error(base::ErrorType::RuntimeError, ins->pos.toString(), ins->raw_code,
@@ -115,7 +115,7 @@ namespace core::components {
         pos.serialize(os, profile);
 
         // 序列化 RI
-        ri.serialize(os, profile);
+        ri->serialize(os, profile);
 
         // 序列化 StdArgs (std::vector<utils::Arg>)
         const size_t argsSize = args.size();
@@ -125,7 +125,7 @@ namespace core::components {
         }
 
         // 序列化 scopeInsSet
-        const bool hasScopeInsSet = ri.hasScope;
+        const bool hasScopeInsSet = ri->hasScope;
         os.write(reinterpret_cast<const char *>(&hasScopeInsSet), sizeof(hasScopeInsSet));
         if (hasScopeInsSet) {
             scopeInsSet->serialize(os, profile);
@@ -137,7 +137,7 @@ namespace core::components {
             const size_t codeLength = raw_code.size();
             os.write(reinterpret_cast<const char *>(&codeLength), sizeof(codeLength));
             if (codeLength > 0) {
-                os.write(raw_code.c_str(), codeLength);
+                os.write(raw_code.c_str(), static_cast<int>(codeLength));
             }
         }
 
@@ -148,7 +148,7 @@ namespace core::components {
         const size_t extLength = ext.size();
         os.write(reinterpret_cast<const char *>(&extLength), sizeof(extLength));
         if (extLength > 0) {
-            os.write(ext.c_str(), extLength);
+            os.write(ext.c_str(), static_cast<long long>(extLength));
         }
     }
 
@@ -186,7 +186,7 @@ namespace core::components {
             is.read(reinterpret_cast<char *>(&codeLength), sizeof(codeLength));
             if (codeLength > 0) {
                 raw_code.resize(codeLength);
-                is.read(&raw_code[0], codeLength);
+                is.read(&raw_code[0], static_cast<long long>(codeLength));
             } else {
                 raw_code.clear();
             }
@@ -200,7 +200,7 @@ namespace core::components {
         is.read(reinterpret_cast<char *>(&extLength), sizeof(extLength));
         if (extLength > 0) {
             ext.resize(extLength);
-            is.read(&ext[0], extLength);
+            is.read(&ext[0], static_cast<long long>(extLength));
         } else {
             ext.clear();
         }
@@ -262,7 +262,7 @@ namespace core::components {
         return utils::getObjectFormatString("File", code_name);
     }
 
-    const auto &debug_command_help = cc::colorfulText(R"(Debug Command Info:
+    const auto debug_command_help = cc::colorfulText(R"(Debug Command Info:
     /?   -help              :打印此帮助信息
     /p   -print             :打印数据池信息
     /e   -exit              :退出debug环境
@@ -551,13 +551,14 @@ namespace core::components {
                 if (resultStatus == ExecutionStatus::Aborted || resultStatus == ExecutionStatus::AbortedLoop
                     || resultStatus == ExecutionStatus::AbortedFunction) {
                     break;
-                } else if (resultStatus == ExecutionStatus::ExposedError)
+                }
+                if (resultStatus == ExecutionStatus::ExposedError)
                 {
                     if (const auto &se = data_space_pool.findDataByIDNoLock(_SE_SpaceID);
                         se && se->getTypeID().fullEqualWith(data::Error::typeId)) {
                         const auto &seData = static_pointer_cast<data::Error>(se);
                         handleError(pointer, *seData->error);
-                        }
+                    }
                     break;
                 }
                 *pointer += 1;
@@ -853,6 +854,8 @@ namespace ris {
     const RI DICT_SET{"DICT_SET", 3, exes::ri_dict_set};
     const RI DICT_GET{"DICT_GET", 3, exes::ri_dict_get};
     const RI DICT_DEL{"DICT_DEL", -1, exes::ri_dict_del};
+    const RI DICT_KEYS{"DICT_KEYS", 2, exes::ri_dict_keys};
+    const RI DICT_VALUES{"DICT_VALUES", 2, exes::ri_dict_values};
     // ToDo: 添加迭代器相关指令
 }
 
@@ -1070,7 +1073,7 @@ namespace tools {
                            const int &argIndex, const bool retTargetTypeData = false) {
         if (!arg_data->getTypeID().fullEqualWith(ExpectedType::typeId)) {
             const std::string expectedTypeName = ExpectedType::typeId.toString();
-            const std::string instructionName = ins.ri.toString();
+            const std::string instructionName = ins.ri->toString();
             throw base::errors::DataTypeMismatchError(
                     arg.getPosStr(),
                     ins.raw_code,
@@ -1093,11 +1096,58 @@ namespace tools {
         return nullptr;
     }
 
+    base::RVM_ID checkArgumentDataType(const std::shared_ptr<base::RVM_Data>& arg_data,
+                                      const components::Ins& ins, const utils::Arg& arg,
+                                      const int& argIndex, const std::unordered_set<id::TypeID*>& allowedTypeIds)
+    {
+        // 检查数据指针是否有效
+        if (!arg_data) {
+            throw base::errors::DataTypeMismatchError(
+                arg.getPosStr(), ins.raw_code,
+                {"Argument at position " + std::to_string(argIndex) + " is null."},
+                {"Ensure the argument at position " + std::to_string(argIndex) + " is properly initialized."}
+            );
+        }
+
+        // 检查实际类型是否在允许的类型集合中
+        if (const auto& actualTypeId = arg_data->getTypeID();
+            !std::ranges::any_of(allowedTypeIds, [&](const auto &item)
+            {
+                return item->fullEqualWith(actualTypeId);
+            })) {
+            // 构建允许的类型列表字符串
+            std::string allowedTypesStr;
+            for (const auto& typeId : allowedTypeIds) {
+                if (!allowedTypesStr.empty()) {
+                    allowedTypesStr += ", ";
+                }
+                allowedTypesStr += typeId->toString();
+            }
+
+            // 最后一个逗号替换为"或"，使错误信息更自然
+            size_t lastCommaPos = allowedTypesStr.find_last_of(',');
+            if (lastCommaPos != std::string::npos) {
+                allowedTypesStr.replace(lastCommaPos, 2, " or");
+            }
+
+            // 抛出类型不匹配异常
+            throw base::errors::DataTypeMismatchError(
+                arg.getPosStr(), ins.raw_code,
+                {"Argument at position " + std::to_string(argIndex) + " of " + ins.ri->toString() +
+                 " has incorrect type. Expected: " + allowedTypesStr +
+                 ", got: " + actualTypeId.toString() + "."},
+                {"Check that argument " + std::to_string(argIndex) + " of " + ins.ri->toString() +
+                 " is one of the allowed types: " + allowedTypesStr + "."}
+            );
+        }
+        return arg_data->getTypeID();
+    }
+
     void checkArgumentType(const components::Ins& ins,
         const utils::Arg& arg, const int &argIndex,
         const std::unordered_set<utils::ArgType> &expectedArgTypes) {
         if (!expectedArgTypes.contains(arg.getType())) {
-            std::string expectedTypeName = "";
+            std::string expectedTypeName;
             for (int i = 0;
                 const auto &type : expectedArgTypes) {
                 expectedTypeName += utils::getTypeFormatString(type);
@@ -1106,7 +1156,7 @@ namespace tools {
                 }
                 i++;
             }
-            const std::string instructionName = ins.ri.toString();
+            const std::string instructionName = ins.ri->toString();
             throw base::errors::ArgTypeMismatchError(
                 arg.getPosStr(), ins.raw_code, {
                     "The target arg type of argument " + std::to_string(argIndex) +
@@ -1119,6 +1169,20 @@ namespace tools {
                     + instructionName + " is a valid " + expectedTypeName + " arg type."
                 });
         }
+    }
+
+    template <typename T>
+        std::shared_ptr<T> check_arg_data_type(const components::Ins &ins, const utils::Arg &check_arg,
+                                               const std::shared_ptr<base::RVM_Data> check_data) {
+        if (!check_data->getTypeID().fullEqualWith(T::typeId)){
+            throw base::errors::DataTypeMismatchError(
+                    check_arg.getPosStr(), ins.raw_code,
+                    {"The type of the target argument of the " + ins.ri->toString() +
+                     " must be " + T::typeId.toString() + "."},
+                    {"Check whether the target data of the " + ins.ri->toString() +
+                     " is of " + T::typeId.toString() + "."});
+        }
+        return std::static_pointer_cast<T>(check_data);
     }
 
 }
@@ -1189,10 +1253,10 @@ namespace exes {
                 if (arg.getType() != utils::ArgType::identifier) {
                     throw base::errors::ArgTypeMismatchError(arg.getPos().toString(), ins.raw_code,
                                                           {"The type of the target argument of the " +
-                                                           ins.ri.toString() +
+                                                           ins.ri->toString() +
                                                            " cannot be " + getTypeFormatString(arg.getType()) + ".",
                                                            "Error Arg: " + arg.toString()},
-                                                          {"The " + ins.ri.toString() + " can only operate "
+                                                          {"The " + ins.ri->toString() + " can only operate "
                                                                                         "on arguments of " +
                                                            getTypeFormatString(utils::ArgType::identifier) + "."});
                     return ExecutionStatus::FailedWithError;
@@ -1235,10 +1299,10 @@ namespace exes {
             if (arg2.getType() == utils::ArgType::number || arg2.getType() == utils::ArgType::string) {
                 throw base::errors::ArgTypeMismatchError(arg2.getPos().toString(), ins.raw_code,
                                                       {"The type of the target argument of the " +
-                                                       ins.ri.toString() +
+                                                       ins.ri->toString() +
                                                        " cannot be an immutable argument type.",
                                                        "Error Arg: " + arg2.toString()},
-                                                      {"Check whether the target data of the " + ins.ri.toString() +
+                                                      {"Check whether the target data of the " + ins.ri->toString() +
                                                        " instruction is of mutable type.",
                                                        "Mutable argument types include, but are not limited to 'identifier', 'keyword'."});
             }
@@ -1263,10 +1327,10 @@ namespace exes {
             if (args[1].getType() == utils::ArgType::number || args[1].getType() == utils::ArgType::string) {
                 throw base::errors::ArgTypeMismatchError(args[1].getPos().toString(), ins.raw_code,
                                                       {"The type of the target argument of the " +
-                                                       ins.ri.toString() +
+                                                       ins.ri->toString() +
                                                        " cannot be an immutable argument type.",
                                                        "Error Arg: " + args[1].toString()},
-                                                      {"Check whether the target data of the " + ins.ri.toString() +
+                                                      {"Check whether the target data of the " + ins.ri->toString() +
                                                        " instruction is of mutable type.",
                                                        "Mutable argument types include, but are not limited to 'identifier', 'keyword'."});
             }
@@ -1341,7 +1405,7 @@ namespace exes {
                             ins.raw_code,
                             {"Error Arg: " + utils::getSpaceFormatString(error_arg.getValue(), error_data->toString()),
                              "Target Data Type: " + data::Numeric::typeId.toString() + " or " + data::Iterable::typeId.toString()},
-                            {"The " + ins.ri.toString() + " requires that "
+                            {"The " + ins.ri->toString() + " requires that "
                                                           "arguments be either both " +
                              data::Numeric::typeId.toString() + " or at least one " +
                              data::Iterable::typeId.toString() + "."});
@@ -1412,16 +1476,22 @@ namespace exes {
             return ExecutionStatus::FailedWithError;
         }
         const auto &repeatScope = data_space_pool.acquireScope(pre_REPEAT);
+        ExecutionStatus result = ExecutionStatus::Success;
         for (int i = 0; i < repeat_times; i++) {
             if (repeated_index && !repeated_index->updateData(std::make_shared<data::Int>(i))){
                 throw std::runtime_error("Invalid argument type: " + repeated_index->getTypeID().toString());
             }
-            if (ins.scopeInsSet->execute() == ExecutionStatus::Aborted) {
+            if (const auto &insResult = ins.scopeInsSet->execute();
+                insResult == ExecutionStatus::Aborted) {
+                break;
+            } else if (insResult > ExecutionStatus::Aborted)
+            {
+                result = insResult;
                 break;
             }
         }
         data_space_pool.releaseScopeNoLock(repeatScope);
-        return ExecutionStatus::Success;
+        return result;
     }
 
     ExecutionStatus ri_end(const Ins &ins, size_t &pointer, const StdArgs &args) {
@@ -1472,13 +1542,13 @@ namespace exes {
             if (arg.getType() != utils::ArgType::identifier && arg.getType() != utils::ArgType::keyword) {
                 throw base::errors::ArgTypeMismatchError(arg.getPosStr(), ins.raw_code,
                                                       {"The target type of the first argument to the " +
-                                                       ins.ri.toString() + " is " +
+                                                       ins.ri->toString() + " is " +
                                                        getTypeFormatString(utils::ArgType::identifier) +
                                                        " or " + getTypeFormatString(utils::ArgType::keyword) +
                                                        ", not " + getTypeFormatString(arg.getType()) + ".",
                                                        "Error Arg: " + utils::getTypeFormatString(arg.getType())},
                                                       {"Make sure that the target function argument invoked by " +
-                                                       ins.ri.toString() + " is of " + utils::getTypeFormatString(
+                                                       ins.ri->toString() + " is of " + utils::getTypeFormatString(
                                                               utils::ArgType::identifier) + " or " +
                                                        utils::getTypeFormatString(utils::ArgType::keyword) +
                                                        "."});
@@ -1507,14 +1577,14 @@ namespace exes {
             if (!func->getTypeID().fullEqualWith(FuncType::typeId)) {
                 throw base::errors::DataTypeMismatchError(error_arg.getPosStr(), ins.raw_code,
                                                           {"The target type of the first argument to the " +
-                                                              ins.ri.toString() +
+                                                              ins.ri->toString() +
                                                               " is " + FuncType::typeId.toString() + ", not " +
                                                               func->getTypeID().toString() + ".",
                                                               "Error Data: " +
                                                               utils::getSpaceFormatString(func_name,
                                                                   func->toString())},
                                                           {"Make sure that the data type of the first argument to the " +
-                                                              ins.ri.toString() + " is " +
+                                                              ins.ri->toString() + " is " +
                                                               FuncType::typeId.toString() + "."});
             }
 
@@ -1580,20 +1650,20 @@ namespace exes {
     }
 
     ExecutionStatus ri_call(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        auto [res, _] = executeFunctionCall<data::Function>(
-                ins, pointer, args, data::Function::typeId.toString());
-        return res;
+        executeFunctionCall<data::Function>(
+            ins, pointer, args, data::Function::typeId.toString());
+        return ExecutionStatus::Success;
     }
 
     ExecutionStatus ri_ivok(const Ins &ins, size_t &pointer, const StdArgs &args) {
         if (args.size() < 2) {
             throw base::RVM_Error(base::ErrorType::ArgumentError, args[0].getPosStr(), ins.raw_code,
                                   {"This error is caused by a mismatch in the number of arguments passed in when invoking the func.",
-                                   "Details: The " + ins.ri.toString() + " requires 2+ arguments, but " +
+                                   "Details: The " + ins.ri->toString() + " requires 2+ arguments, but " +
                                    std::to_string(args.size())
                                    + " is received."},
                                   {"Check that the argument passed into the invoking func match the " +
-                                   ins.ri.toString() + " defined by the func."});
+                                   ins.ri->toString() + " defined by the func."});
         }
         // 检查最后一个参数是否为合法类型
         auto &ret_name_arg = args[args.size() - 1];
@@ -1601,7 +1671,7 @@ namespace exes {
             ret_name_arg.getType() != utils::ArgType::keyword) {
             throw base::errors::ArgTypeMismatchError(ret_name_arg.getPosStr(), ins.raw_code,
                                                   {"The target type of the last argument to the " +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    " is " + getTypeFormatString(utils::ArgType::identifier) +
                                                    " or " +
                                                    getTypeFormatString(utils::ArgType::keyword) + ", not " +
@@ -1609,7 +1679,7 @@ namespace exes {
                                                    "Error Arg: " +
                                                    utils::getTypeFormatString(ret_name_arg.getType())},
                                                   {"Make sure that the target func argument invoked by " +
-                                                   ins.ri.toString() + " is of " +
+                                                   ins.ri->toString() + " is of " +
                                                    utils::getTypeFormatString(utils::ArgType::identifier)
                                                    + " or " + utils::getTypeFormatString(utils::ArgType::keyword) +
                                                    "."});
@@ -1623,6 +1693,7 @@ namespace exes {
             try {
                 data_space_pool.updateDataByNameNoLock(ret_name_arg.getValue(),
                                                        data_space_pool.findDataByIDNoLock(SR_SpaceID)->copy_ptr());
+                data_space_pool.updateDataByIDNoLock(SR_SpaceID, data::nullInstance.copy_ptr());
             } catch (const base::errors::MemoryError &) {
                 throw base::errors::MemoryError(ret_name_arg.getPosStr(), ins.raw_code,
                                                 {"This error is caused by accessing memory space that does not exist.",
@@ -1649,19 +1720,20 @@ namespace exes {
         }
         const auto relation = base::stringToRelational(args[1].getValue());
         const auto &until_scope = data_space_pool.acquireScope(pre_UNTIL);
+        ExecutionStatus result = ExecutionStatus::Success;
         while (!compGroup->compare(relation)) {
-            if (const ExecutionStatus result = ins.scopeInsSet->execute();
-                result == ExecutionStatus::Aborted)
+            if (const ExecutionStatus insResult = ins.scopeInsSet->execute();
+                insResult == ExecutionStatus::Aborted)
             {
                 break;
-            } else if (result > ExecutionStatus::Aborted)
+            } else if (insResult > ExecutionStatus::Aborted)
             {
-                data_space_pool.releaseScopeNoLock(until_scope);
-                return result;
+                result = insResult;
+                break;
             }
         }
         data_space_pool.releaseScopeNoLock(until_scope);
-        return ExecutionStatus::Success;
+        return result;
     }
 
     ExecutionStatus ri_exit(const Ins &ins, size_t &pointer, const StdArgs &args) {
@@ -1686,21 +1758,21 @@ namespace exes {
                                   {"This error was caused by using a parameter of the wrong type.",
                                    "Error Arg: " + args[0].toString(),
                                    "Expected Type: " + getTypeFormatString(utils::ArgType::keyword)},
-                                  {"The first argument of " + ins.ri.toString() +
+                                  {"The first argument of " + ins.ri->toString() +
                                    " requires the output mode keyword argument.",
                                    "Output mode keywords include 's-l' and 's-m'."});
         }
         const auto ri_opt = RI::getRIByStr(args[0].getValue());
-        const bool is_success = ri_opt.has_value();
-        const auto &flag = ri_opt.value();
+        const bool is_success = ri_opt;
+        const auto &flag = ri_opt;
         std::string end_sign;
         if (!is_success) {
             throw std::runtime_error("Invalid argument type: " + args[0].toString());
             return ExecutionStatus::FailedWithError;
         }
-        if (flag == ris::S_L) {
+        if (ris::S_L.equalWith(flag)) {
             end_sign = "";
-        } else if (flag == ris::S_M) {
+        } else if (ris::S_M.equalWith(flag)) {
             end_sign = "\n";
         }
         int error_pointer = 0;
@@ -1715,19 +1787,19 @@ namespace exes {
                 }
 
                 const auto inner_ri_opt = RI::getRIByStr(arg.getValue());
-                if (!inner_ri_opt.has_value()) {
+                if (!inner_ri_opt) {
                     *io << tools::getArgOriginData(arg)->getValStr() << end_sign;
                     continue;
                 }
 
-                if (const auto& inner_flag = inner_ri_opt.value();
-                    inner_flag == ris::S_F)
+                if (const auto& inner_flag = inner_ri_opt;
+                    ris::S_F.equalWith(inner_flag))
                 {
                     io->flushOutputCache();
-                } else if (inner_flag == ris::S_N)
+                } else if (ris::S_N.equalWith(inner_flag))
                 {
                     *io << "\n";
-                } else if (inner_flag == ris::S_UNPACK && error_pointer + 1 < args.size())
+                } else if (ris::S_UNPACK.equalWith(inner_flag) && error_pointer + 1 < args.size())
                 {
                     arg = args[++error_pointer];
                     if (const auto &argData = tools::getArgOriginData(arg);
@@ -1768,7 +1840,7 @@ namespace exes {
                     {"This error was caused by using an argument of the wrong type.",
                      "Error Arg: " + args[0].toString(),
                      "Expected Type: " + utils::getTypeFormatString(utils::ArgType::keyword)},
-                    {"The first argument of " + ins.ri.toString() +
+                    {"The first argument of " + ins.ri->toString() +
                      " requires the input mode keyword argument.",
                      "Input mode keyword argument contains 's-l' and 's-m'."}
             );
@@ -1776,9 +1848,8 @@ namespace exes {
         }
         // 类型正确，尝试解析参数值
         const auto ri_opt = RI::getRIByStr(args[0].getValue());
-        const bool is_success = ri_opt.has_value();
-        const auto &flag = ri_opt.value();
-        if (!is_success) {
+        const auto &flag = ri_opt;
+        if (!flag) {
             throw base::RVM_Error(
                     base::ErrorType::SyntaxError,
                     args[0].getPos().toString(),
@@ -1786,14 +1857,14 @@ namespace exes {
                     {"This error was caused by an invalid keyword argument value.",
                      "Error Arg: " + args[0].toString(),
                      "Failed to parse as a valid input mode keyword."},
-                    {"The keyword argument for " + ins.ri.toString() +
+                    {"The keyword argument for " + ins.ri->toString() +
                      " must be 's-l' or 's-m'.",
                      "Ensure the keyword format matches supported input modes."}
             );
             return ExecutionStatus::FailedWithError;
         }
         // 检查解析后的值是否在允许范围内
-        if (flag != ris::S_L && flag != ris::S_M) {
+        if (!ris::S_L.equalWith(flag) && !ris::S_M.equalWith(flag)) {
             throw base::RVM_Error(
                     base::ErrorType::SyntaxError,
                     args[0].getPos().toString(),
@@ -1801,7 +1872,7 @@ namespace exes {
                     {"This error was caused by using an unsupported keyword argument.",
                      "Error Arg: " + args[0].toString(),
                      "Expected RI: " + ris::S_L.toString() + " or " + ris::S_M.toString()},
-                    {"The first argument of " + ins.ri.toString() +
+                    {"The first argument of " + ins.ri->toString() +
                      " only accepts 's-l' or 's-m' as input modes.",
                      "Check the documentation for valid input mode keywords."}
             );
@@ -1880,8 +1951,8 @@ namespace exes {
                     break;
                 }
                 case utils::ArgType::keyword: {
-                    if (const auto opt = RI::getRIByStr(arg.getValue()); opt.has_value()) {
-                        if (const auto inner_flag = opt.value(); inner_flag == ris::S_F) {
+                    if (const auto opt = RI::getRIByStr(arg.getValue()); opt) {
+                        if (const auto inner_flag = opt; ris::S_F.equalWith(inner_flag)) {
                             io->flashInputCache();
                         } else {
                             throw std::runtime_error("Invalid argument type: " + arg.toString());
@@ -1904,7 +1975,7 @@ namespace exes {
         };
         int error_pointer = 0;
         try {
-            if (flag == ris::S_L) {
+            if (ris::S_L.equalWith(flag)) {
                 for (error_pointer = 1; error_pointer < args.size(); error_pointer++) {
                     if (!io->hasNextString())
                     {
@@ -1912,7 +1983,7 @@ namespace exes {
                     }
                     inputData(args[error_pointer], false);
                 }
-            } else if (flag == ris::S_M) {
+            } else if (ris::S_M.equalWith(flag)) {
                 for (error_pointer = 1; error_pointer < args.size(); error_pointer++) {
                     inputData(args[error_pointer], true);
                 }
@@ -2253,7 +2324,7 @@ namespace exes {
                 throw base::errors::ArgTypeMismatchError(args[0].getPosStr(), ins.raw_code,
                                                       {"Error Type: " + cmp->getTypeID().toString(),
                                                        "Expected Type: " + data::CompareGroup::typeId.toString()},
-                                                      {"The first argument of " + ins.ri.toString() + " must be " +
+                                                      {"The first argument of " + ins.ri->toString() + " must be " +
                                                        data::CompareGroup::typeId.toString() + "."});
             }
             const auto &cmp_data = static_pointer_cast<data::CompareGroup>(cmp);
@@ -2301,20 +2372,20 @@ namespace exes {
             if (arg_size < 2) {
                 throw base::errors::ArgumentNumberError(ins.pos.toString(), ins.raw_code,
                                                         "2+", arg_size,
-                                                        ins.ri.name, {});
+                                                        ins.ri->name, {});
             }
             const auto &target_arg = args[arg_size - 1];
             error_arg = target_arg;
             if (target_arg.getType() != utils::ArgType::identifier &&
                 target_arg.getType() != utils::ArgType::keyword) {
                 throw base::errors::ArgTypeMismatchError(target_arg.getPos().toString(), ins.raw_code,
-                                                      {"The last arg of the " + ins.ri.toString() + " must be " +
+                                                      {"The last arg of the " + ins.ri->toString() + " must be " +
                                                        getTypeFormatString(utils::ArgType::identifier)
                                                        + " or " + getTypeFormatString(utils::ArgType::keyword) +
                                                        ".",
                                                        "Error Arg: " + target_arg.toString()},
                                                       {"Check the last arg type for which the " +
-                                                       ins.ri.toString() +
+                                                       ins.ri->toString() +
                                                        " acts."});
             }
             const auto &target_data = tools::getArgOriginData(target_arg);
@@ -2362,23 +2433,23 @@ namespace exes {
             if (args[3].getType() != utils::ArgType::identifier && args[3].getType() != utils::ArgType::keyword) {
                 throw base::errors::ArgTypeMismatchError(args[3].getPos().toString(), ins.raw_code,
                                                       {"The type of the target argument of the " +
-                                                       ins.ri.toString() +
+                                                       ins.ri->toString() +
                                                        " cannot be an immutable argument type.",
                                                        "Error Arg: " + args[3].toString()},
-                                                      {"Check whether the target data of the " + ins.ri.toString() +
+                                                      {"Check whether the target data of the " + ins.ri->toString() +
                                                        " instruction is of mutable type."});
             }
             error_arg = args[0];
             const auto &target = tools::getArgOriginData(args[0]);
             if (!tools::isIterableData(target->getTypeID())) {
                 throw base::errors::ArgTypeMismatchError(args[0].getPos().toString(), ins.raw_code,
-                                                      {"The target data of the " + ins.ri.toString() +
+                                                      {"The target data of the " + ins.ri->toString() +
                                                        " must be " + data::Iterable::typeId.toString() + ".",
                                                        "Error Data: " +
                                                        utils::getSpaceFormatString(args[0].getValue(),
                                                                                    target->toString())},
                                                       {"Check the target data type for which the " +
-                                                       ins.ri.toString() +
+                                                       ins.ri->toString() +
                                                        " acts."});
             }
             const auto &target_data = std::static_pointer_cast<data::Iterable>(target);
@@ -2389,7 +2460,7 @@ namespace exes {
                         throw base::errors::DataTypeMismatchError(arg.getPosStr(), ins.raw_code,
                                                               {"The type of the " + std::to_string(argIndex) +
                                                                "-th argument of the " +
-                                                               ins.ri.toString() + " must be " +
+                                                               ins.ri->toString() + " must be " +
                                                                data::Int::typeId.toString() + ".",
                                                                "Error Data: " +
                                                                utils::getSpaceFormatString(arg.getValue(),
@@ -2397,7 +2468,7 @@ namespace exes {
                                                               },
                                                               {"Check the type of the " +
                                                                std::to_string(argIndex) +
-                                                               "-th argument for which the " + ins.ri.toString() +
+                                                               "-th argument for which the " + ins.ri->toString() +
                                                                " acts."});
                     }
                     return std::static_pointer_cast<data::Int>(index)->getValue();
@@ -2431,10 +2502,10 @@ namespace exes {
         if (args[1].getType() != utils::ArgType::identifier && args[1].getType() != utils::ArgType::keyword) {
             throw base::errors::ArgTypeMismatchError(args[1].getPos().toString(), ins.raw_code,
                                                   {"The type of the target argument of the " +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    " cannot be an immutable argument type.",
                                                    "Error Arg: " + args[1].toString()},
-                                                  {"Check whether the target data of the " + ins.ri.toString() +
+                                                  {"Check whether the target data of the " + ins.ri->toString() +
                                                    " instruction is of mutable type."});
         }
         auto error_arg = args[0];
@@ -2443,12 +2514,12 @@ namespace exes {
             if (!tools::isIterableData(data->getTypeID())) {
                 throw base::errors::ArgTypeMismatchError(args[0].getPosStr(), ins.raw_code,
                                                       {"The type of the target argument of the " +
-                                                       ins.ri.toString() +
+                                                       ins.ri->toString() +
                                                        " must be " + data::Iterable::typeId.toString() + ".",
                                                        "Error Data: " +
                                                        utils::getSpaceFormatString(args[0].getValue(),
                                                                                    data->toString())},
-                                                      {"Check whether the target data of the " + ins.ri.toString() +
+                                                      {"Check whether the target data of the " + ins.ri->toString() +
                                                        " instruction is of iterable type."});
             }
             error_arg = args[1];
@@ -2473,10 +2544,10 @@ namespace exes {
         if (targetArg.getType() != utils::ArgType::identifier && targetArg.getType() != utils::ArgType::keyword) {
             throw base::errors::ArgTypeMismatchError(
                     targetArg.getPos().toString(), ins.raw_code,
-                    {"The type of the target argument of the " + ins.ri.toString() +
+                    {"The type of the target argument of the " + ins.ri->toString() +
                      " cannot be an immutable argument type.",
                      "Error Arg: " + targetArg.toString()},
-                    {"Check whether the target data of the " + ins.ri.toString() +
+                    {"Check whether the target data of the " + ins.ri->toString() +
                      " instruction is of mutable type."});
         }
 
@@ -2486,10 +2557,10 @@ namespace exes {
         if (!tools::isIterableData(iterData->getTypeID())) {
             throw base::errors::ArgTypeMismatchError(
                     iterArg.getPosStr(), ins.raw_code,
-                    {"The type of the target argument of the " + ins.ri.toString() +
+                    {"The type of the target argument of the " + ins.ri->toString() +
                      " must be " + data::Iterable::typeId.toString() + ".",
                      "Error Data: " + utils::getSpaceFormatString(iterArg.getValue(), iterData->toString())},
-                    {"Check whether the target data of the " + ins.ri.toString() +
+                    {"Check whether the target data of the " + ins.ri->toString() +
                      " instruction is of " + data::Iterable::typeId.toString() + "."});
         }
         const auto &iter = std::static_pointer_cast<data::Iterable>(iterData);
@@ -2511,10 +2582,10 @@ namespace exes {
                 if (!indexData->getTypeID().fullEqualWith(data::Int::typeId)) {
                     throw base::errors::ArgTypeMismatchError(
                             indexArg.getPosStr(), ins.raw_code,
-                            {"The type of the index argument of the " + ins.ri.toString() +
+                            {"The type of the index argument of the " + ins.ri->toString() +
                              " must be " + data::Int::typeId.toString() + ".",
                              "Error Data: " + utils::getSpaceFormatString(indexArg.getValue(), indexData->toString())},
-                            {"Check whether the target data of the " + ins.ri.toString() +
+                            {"Check whether the target data of the " + ins.ri->toString() +
                              " instruction is of " + data::Int::typeId.toString() + "."});
                 }
                 // 检查索引范围
@@ -2522,7 +2593,7 @@ namespace exes {
                 if (index->getValue() >= iter->size() || index->getValue() < 0) {
                     throw base::RVM_Error(
                             base::ErrorType::RangeError, indexArg.getPosStr(), ins.raw_code,
-                            {"The index of the " + ins.ri.toString() + " instruction is out of range.",
+                            {"The index of the " + ins.ri->toString() + " instruction is out of range.",
                              "Index: " + std::to_string(index->getValue()),
                              "Size: " + std::to_string(iter->size())},
                             {"Check whether the specified index value is out of the range."});
@@ -2557,11 +2628,11 @@ namespace exes {
             if (!tools::isIterableData(iter_container->getTypeID())) {
                 throw base::errors::ArgTypeMismatchError(
                         args[0].getPosStr(), ins.raw_code,
-                        {"The type of the target argument of the " + ins.ri.toString() +
+                        {"The type of the target argument of the " + ins.ri->toString() +
                          " must be " + data::Iterable::typeId.toString() + ".",
                          "Error Data: " + utils::getSpaceFormatString(args[0].getValue(),
                                                                       iter_container->toString())},
-                        {"Check whether the target data of the " + ins.ri.toString() +
+                        {"Check whether the target data of the " + ins.ri->toString() +
                          " is of " + data::Iterable::typeId.toString() + "."});
             }
 
@@ -2607,11 +2678,11 @@ namespace exes {
         if (!tools::isIterableData(iter_container->getTypeID())) {
             throw base::errors::ArgTypeMismatchError(
                     args[0].getPosStr(), ins.raw_code,
-                    {"The type of the target argument of the " + ins.ri.toString() +
+                    {"The type of the target argument of the " + ins.ri->toString() +
                      " must be " + data::Iterable::typeId.toString() + ".",
                      "Error Data: " + utils::getSpaceFormatString(args[0].getValue(),
                                                                   iter_container->toString())},
-                    {"Check whether the target data of the " + ins.ri.toString() +
+                    {"Check whether the target data of the " + ins.ri->toString() +
                      " is of " + data::Iterable::typeId.toString() + "."});
         }
         const auto &iter_container_data = std::static_pointer_cast<data::Iterable>(iter_container);
@@ -2620,11 +2691,11 @@ namespace exes {
         if (index->getTypeID() != data::Int::typeId) {
             throw base::errors::ArgTypeMismatchError(
                     args[1].getPosStr(), ins.raw_code,
-                    {"The type of the index argument of the " + ins.ri.toString() +
+                    {"The type of the index argument of the " + ins.ri->toString() +
                      " must be " + data::Int::typeId.toString() + ".",
                      "Error Data: " + utils::getSpaceFormatString(args[1].getValue(),
                                                                   index->toString())},
-                    {"Check whether the target data of the " + ins.ri.toString() +
+                    {"Check whether the target data of the " + ins.ri->toString() +
                      " is of " + data::Int::typeId.toString() + "."});
         }
         const auto &index_data = std::static_pointer_cast<data::Int>(index)->getValue();
@@ -2635,18 +2706,18 @@ namespace exes {
     ExecutionStatus ri_iter_del(const Ins &ins, size_t &pointer, const StdArgs &args) {
         if (args.size() < 2) {
             throw base::errors::ArgumentNumberError(ins.pos.toString(), ins.raw_code,
-                                                    "2+", args.size(), ins.ri.toString(),
+                                                    "2+", args.size(), ins.ri->toString(),
                                                     {"Add more index arg to fix this error."});
         }
         const auto &iter_container = tools::getArgOriginData(args[0]);
         if (!tools::isIterableData(iter_container->getTypeID())) {
             throw base::errors::ArgTypeMismatchError(
                     args[0].getPosStr(), ins.raw_code,
-                    {"The type of the target argument of the " + ins.ri.toString() +
+                    {"The type of the target argument of the " + ins.ri->toString() +
                      " must be " + data::Iterable::typeId.toString() + ".",
                      "Error Data: " + utils::getSpaceFormatString(args[0].getValue(),
                                                                   iter_container->toString())},
-                    {"Check whether the target data of the " + ins.ri.toString() +
+                    {"Check whether the target data of the " + ins.ri->toString() +
                      " is of " + data::Iterable::typeId.toString() + "."});
         }
         const auto &iter_container_data = std::static_pointer_cast<data::Iterable>(iter_container);
@@ -2655,9 +2726,9 @@ namespace exes {
             if (index->getTypeID() != data::Int::typeId) {
                 throw base::errors::ArgTypeMismatchError(
                         args[i].getPosStr(), ins.raw_code,
-                        {"The type of the index argument of the " + ins.ri.toString() +
+                        {"The type of the index argument of the " + ins.ri->toString() +
                          " must be " + data::Int::typeId.toString() + "."},
-                        {"Check whether the target data of the " + ins.ri.toString() +
+                        {"Check whether the target data of the " + ins.ri->toString() +
                          " is of " + data::Int::typeId.toString() + "."});
             }
             iter_container_data->eraseDataAt(std::static_pointer_cast<data::Int>(index)->getValue() - i + 1);
@@ -2670,11 +2741,11 @@ namespace exes {
         if (!tools::isIterableData(iter_container->getTypeID())) {
             throw base::errors::ArgTypeMismatchError(
                     args[0].getPosStr(), ins.raw_code,
-                    {"The type of the target argument of the " + ins.ri.toString() +
+                    {"The type of the target argument of the " + ins.ri->toString() +
                      " must be " + data::Iterable::typeId.toString() + ".",
                      "Error Data: " + utils::getSpaceFormatString(args[0].getValue(),
                                                                   iter_container->toString())},
-                    {"Check whether the target data of the " + ins.ri.toString() +
+                    {"Check whether the target data of the " + ins.ri->toString() +
                      " is of " + data::Iterable::typeId.toString() + "."});
         }
         const auto &iter_container_data = std::static_pointer_cast<data::Iterable>(iter_container);
@@ -2682,9 +2753,9 @@ namespace exes {
         if (index->getTypeID() != data::Int::typeId) {
             throw base::errors::ArgTypeMismatchError(
                     args[1].getPosStr(), ins.raw_code,
-                    {"The type of the index argument of the " + ins.ri.toString() +
+                    {"The type of the index argument of the " + ins.ri->toString() +
                      " must be " + data::Int::typeId.toString() + "."},
-                    {"Check whether the target data of the " + ins.ri.toString() +
+                    {"Check whether the target data of the " + ins.ri->toString() +
                      " is of " + data::Int::typeId.toString() + "."});
         }
         const auto &data = tools::getArgOriginData(args[2]);
@@ -2700,13 +2771,13 @@ namespace exes {
             if (!tools::isIterableData(iter_container->getTypeID())) {
                 throw base::errors::ArgTypeMismatchError(
                         args[0].getPosStr(), ins.raw_code,
-                        {"The type of the target argument of the " + ins.ri.toString() +
+                        {"The type of the target argument of the " + ins.ri->toString() +
                          " must be " + data::Iterable::typeId.toString() + ".",
                          args[0].getType() == utils::ArgType::identifier ?
                          "Error Space: " + utils::getSpaceFormatString(
                                  args[0].getValue(),iter_container->toString())
                                                                          :"Error Data: " + iter_container->toString()},
-                        {"Check whether the target data of the " + ins.ri.toString() +
+                        {"Check whether the target data of the " + ins.ri->toString() +
                          " is of " + data::Iterable::typeId.toString() + "."});
             }
             const auto &iter_container_data = std::static_pointer_cast<data::Iterable>(iter_container);
@@ -2717,7 +2788,7 @@ namespace exes {
                                        "Iterable Data: " + iter_container_data->toString(),
                                        "Required Arg Number: " + std::to_string(iter_container_data->size()),
                                        "Supported Arg Number: " + std::to_string(args.size() - 1)},
-                                      {"Check that the argument passed into the " + ins.ri.toString() + " match the "
+                                      {"Check that the argument passed into the " + ins.ri->toString() + " match the "
                                                                                                         "number of arguments required by the iterable data."});
             }
             for (int i = 0; i < args.size() - 1; i++)
@@ -2745,42 +2816,55 @@ namespace exes {
         }
         return ExecutionStatus::Success;
     }
-    template <typename T>
-    std::shared_ptr<T> check_arg_data_type(const Ins &ins, const utils::Arg &check_arg,
-                                           const std::shared_ptr<base::RVM_Data> check_data) {
-        if (!check_data->getTypeID().fullEqualWith(T::typeId)){
-            throw base::errors::DataTypeMismatchError(
-                    check_arg.getPosStr(), ins.raw_code,
-                    {"The type of the target argument of the " + ins.ri.toString() +
-                     " must be " + T::typeId.toString() + "."},
-                    {"Check whether the target data of the " + ins.ri.toString() +
-                     " is of " + T::typeId.toString() + "."});
-        }
-        return std::static_pointer_cast<T>(check_data);
-    }
 
     ExecutionStatus ri_rand_int(const Ins &ins, size_t &pointer, const StdArgs &args) {
         const auto &min = tools::getArgOriginData(args[0]);
-        const auto &min_data = check_arg_data_type<data::Int>(ins, args[0], min);
+        const auto &min_data = tools::check_arg_data_type<data::Int>(ins, args[0], min);
         const auto &max = tools::getArgOriginData(args[1]);
-        const auto &max_data = check_arg_data_type<data::Int>(ins, args[1], max);
+        const auto &max_data = tools::check_arg_data_type<data::Int>(ins, args[1], max);
         data_space_pool.updateDataByNameNoLock(args[2].getValue(),
                                                std::make_shared<data::Int>(utils::getRandomInt(min_data->getValue(), max_data->getValue())));
         return ExecutionStatus::Success;
     }
 
     ExecutionStatus ri_rand_float(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        const auto &min = tools::getArgOriginData(args[0]);
-        const auto &min_data = check_arg_data_type<data::Float>(ins, args[0], min);
-        const auto &max = tools::getArgOriginData(args[1]);
-        const auto &max_data = check_arg_data_type<data::Float>(ins, args[1], max);
+        // 提取通用函数，用于获取参数的数值
+        const auto& getArgumentValue = [&](const auto& arg_data, const auto& type_id)
+        {
+            if (type_id == data::Int::typeId) {
+                return static_cast<double>(std::static_pointer_cast<data::Int>(arg_data)->getValue());
+            } else {
+                return std::static_pointer_cast<data::Float>(arg_data)->getValue();
+            }
+        };
+
+        // 定义允许的数据类型集合，避免重复构造
+        const auto &allowed_types = std::unordered_set {
+            &data::Int::typeId,
+            &data::Float::typeId,
+            &data::Bool::typeId,
+            &data::Char::typeId
+        };
+
+        // 处理min参数
+        const auto& min = tools::getArgOriginData(args[0]);
+        const auto& min_type_id = tools::checkArgumentDataType(
+            min, ins, args[0], 1, allowed_types);
+        double min_data = getArgumentValue(min, min_type_id);
+
+        // 处理max参数
+        const auto& max = tools::getArgOriginData(args[1]);
+        const auto& max_type_id = tools::checkArgumentDataType(
+            max, ins, args[1], 2, allowed_types);
+        double max_data = getArgumentValue(max, max_type_id);
+
         const auto &decimal_places = tools::getArgOriginData(args[2]);
-        const auto &decimal_places_data = check_arg_data_type<data::Int>(ins, args[2], decimal_places);
+        const auto &decimal_places_data = tools::check_arg_data_type<data::Int>(ins, args[2], decimal_places);
         data_space_pool.updateDataByNameNoLock(
                 args[3].getValue(),
                 std::make_shared<data::Float>(
-                        utils::getRandomFloat(min_data->getValue(),
-                                              max_data->getValue(),
+                        utils::getRandomFloat(min_data,
+                                              max_data,
                                               decimal_places_data->getValue()))
         );
         return ExecutionStatus::Success;
@@ -2792,10 +2876,10 @@ namespace exes {
         if (target_arg.getType() != utils::ArgType::identifier && target_arg.getType() != utils::ArgType::keyword) {
             throw base::errors::ArgTypeMismatchError(target_arg.getPos().toString(), ins.raw_code,
                                                   {"The type of the target argument of the " +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    " cannot be an immutable argument type.",
                                                    "Error Arg: " + target_arg.toString()},
-                                                  {"Check whether the target data of the " + ins.ri.toString() +
+                                                  {"Check whether the target data of the " + ins.ri->toString() +
                                                    " instruction is of mutable type.",
                                                    "Mutable argument types include, but are not limited to 'identifier', 'keyword'."});
         }
@@ -2817,9 +2901,9 @@ namespace exes {
                 }
                     break;
                 case utils::ArgType::keyword: {
-                    if (const auto ri_opt = RI::getRIByStr(op_arg.getValue()); ri_opt.has_value()) {
-                        const auto &ri = ri_opt.value();
-                        type_info = std::make_shared<data::String>(ri.id.toString());
+                    if (const auto ri_opt = RI::getRIByStr(op_arg.getValue()); ri_opt) {
+                        const auto &ri = ri_opt;
+                        type_info = std::make_shared<data::String>(ri->id.toString());
                     } else {
                         const auto &op_data = tools::getArgOriginData(op_arg);
                         type_info = std::make_shared<data::String>(op_data->getTypeID().toString());
@@ -2843,10 +2927,7 @@ namespace exes {
     }
 
     ExecutionStatus ri_div(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        if (args[2].getType() != utils::ArgType::identifier) {
-            throw std::runtime_error("Third argument must be an identifier");
-            return ExecutionStatus::FailedWithError;
-        }
+        tools::checkArgumentType(ins, args[2], 2, {utils::ArgType::identifier, utils::ArgType::keyword});
         auto [data1, data2] = [&args]() -> std::pair<std::shared_ptr<data::Numeric>, std::shared_ptr<data::Numeric>> {
             const auto d1 = tools::getArgNewData(args[0]);
             const auto d2 = tools::getArgNewData(args[1]);
@@ -2902,13 +2983,17 @@ namespace exes {
                 throw base::errors::ArgumentError(error_arg.getPosStr(), ins.raw_code,
                                                   "Error Arg: " + utils::getSpaceFormatString(error_arg.getValue(), type->toString()),
                                                   {"Please check that the argument of this instruction are used correctly.",
-                                                   "The " + ins.ri.toString() +
+                                                   "The " + ins.ri->toString() +
                                                    " requires the first argument to be " + data::DType::typeId.toString() + " type."});
             }
             error_arg = args[1];
             const auto &data = tools::getArgOriginData(args[1]);
             const auto &data_val_str = data->getValStr();
-            const auto data_val = utils::stringToNumber(data_val_str == null_ ? "0" : data_val_str);
+            auto data_val = utils::stringToNumber(data_val_str == null_ ? "0" : data_val_str);
+            if (data->getTypeID().fullEqualWith(data::Char::typeId))
+            {
+                data_val = utils::Number(std::static_pointer_cast<const data::Char>(data)->getValue());
+            }
 
             static const std::unordered_map<int, std::function<void(const std::shared_ptr<base::RVM_Data> &,
                                                                             const StdArgs &,
@@ -2916,8 +3001,9 @@ namespace exes {
                     {data::Int::typeId.dis_id,          [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
                         updateDataSpace(args[1].getValue(), std::make_shared<data::Int>(
-                                data_val.type == utils::NumType::int_type ?
-                                data_val.int_value : static_cast<int>(data_val.double_value)));
+                                data_val.type == utils::NumType::int_type
+                                ? data_val.int_value : data_val.type == utils::NumType::double_type
+                                ? static_cast<int>(data_val.double_value) : 0));
                     }},
                     {data::Float::typeId.dis_id,        [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
@@ -3004,15 +3090,15 @@ namespace exes {
                                 {"When the target data type is 'tp-dict', the data to be converted "
                                  "must be of 'tp-null' type or 'tp-list', 'tp-series', 'tp-str'."});
                         }
-                        if (data_type == data::Null::typeId) {
+                        if (data_type.fullEqualWith(data::Null::typeId)) {
                             updateDataSpace(args[1].getValue(), std::make_shared<data::Dict>());
-                        } else if (data_type == data::List::typeId) {
+                        } else if (data_type.fullEqualWith(data::List::typeId)) {
                             updateDataSpace(args[1].getValue(), std::make_shared<data::Dict>(
                                     static_pointer_cast<data::List>(data)));
-                        } else if (data_type == data::Series::typeId) {
+                        } else if (data_type.fullEqualWith(data::Series::typeId)) {
                             updateDataSpace(args[1].getValue(), std::make_shared<data::Dict>(
                                     static_pointer_cast<data::Series>(data)));
-                        } else if (data_type == data::String::typeId) {
+                        } else if (data_type.fullEqualWith(data::String::typeId)) {
                             updateDataSpace(args[1].getValue(), std::make_shared<data::Dict>(
                                     static_pointer_cast<data::String>(data)->trans_to_list()));
                         }
@@ -3073,7 +3159,7 @@ namespace exes {
     ExecutionStatus ri_tp_def(const Ins &ins, size_t &pointer, const StdArgs &args) {
         if (args.size() > 2 || args.size() < 1) {
             throw base::errors::ArgumentNumberError(args[0].getPosStr(), ins.raw_code, "1 / 2", args.size(),
-                                                    ins.ri.toString(), {});
+                                                    ins.ri->toString(), {});
         }
         auto tp_name = args[0].getValue();
         if (const auto arg_data = tools::getArgOriginDataNoError(args[0])) {
@@ -3082,7 +3168,7 @@ namespace exes {
                                                       {"Error Arg: " + utils::getSpaceFormatString(
                                                               args[0].getValue(), arg_data->toString()),
                                                        "Target Type: " + data::String::typeId.toString()},
-                                                      {"The target type of " + ins.ri.toString() + " is " +
+                                                      {"The target type of " + ins.ri->toString() + " is " +
                                                        data::String::typeId.toString() + "."});
             }
             tp_name = arg_data->getValStr();
@@ -3101,7 +3187,7 @@ namespace exes {
                                                       {"Error Arg: " + args[1].toString(),
                                                        "Target Type: " + data::CustomType::typeId.toString()},
                                                       {"The target argument type of the " +
-                                                       ins.ri.toString() + " can only be the " +
+                                                       ins.ri->toString() + " can only be the " +
                                                        data::CustomType::typeId.toString() + "."});
             }
         }
@@ -3120,7 +3206,7 @@ namespace exes {
                                                   {"Error Arg: " + args[0].toString(),
                                                    "Target Type: " + data::CustomType::typeId.toString()},
                                                   {"The target argument type of the " +
-                                                   ins.ri.toString() + " can only be the " +
+                                                   ins.ri->toString() + " can only be the " +
                                                    data::CustomType::typeId.toString()
                                                   });
         }
@@ -3142,7 +3228,7 @@ namespace exes {
     ExecutionStatus ri_tp_add_tp_field(const Ins &ins, size_t &pointer, const StdArgs &args) {
         if (args.size() > 3 || args.size() < 2) {
             throw base::errors::ArgumentNumberError(args[0].getPosStr(), ins.raw_code, "2 / 3", args.size(),
-                                                    ins.ri.toString(), {});
+                                                    ins.ri->toString(), {});
         }
         auto arg_data = tools::getArgOriginData(args[0]);
         if (arg_data->getTypeID() != data::CustomType::typeId) {
@@ -3150,7 +3236,7 @@ namespace exes {
                                                   {"Error Arg: " + args[0].toString(),
                                                    "Target Type: " + data::CustomType::typeId.toString()},
                                                   {"The target argument type of the " +
-                                                   ins.ri.toString() + " can only be the " +
+                                                   ins.ri->toString() + " can only be the " +
                                                    data::CustomType::typeId.toString() + "."});
         }
         const auto ct = static_pointer_cast<data::CustomType>(arg_data);
@@ -3163,7 +3249,7 @@ namespace exes {
                                                                                                      arg_data->toString()),
                                                        "Target Type: " + data::String::typeId.toString()},
                                                       {"The target argument type of the " +
-                                                       ins.ri.toString() + " can only be the " +
+                                                       ins.ri->toString() + " can only be the " +
                                                        data::String::typeId.toString() + "."});
             }
             field_name = arg_data->getValStr();
@@ -3186,7 +3272,7 @@ namespace exes {
     ExecutionStatus ri_tp_add_inst_field(const Ins &ins, size_t &pointer, const StdArgs &args) {
         if (args.size() > 3 || args.size() < 2) {
             throw base::errors::ArgumentNumberError(args[0].getPosStr(), ins.raw_code, "2 / 3", args.size(),
-                                                    ins.ri.toString(), {});
+                                                    ins.ri->toString(), {});
         }
         auto field_name = args[1].getValue();
         auto arg_data = tools::getArgOriginDataNoError(args[1]);
@@ -3197,7 +3283,7 @@ namespace exes {
                                                                                                      arg_data->toString()),
                                                        "Target Type: " + data::String::typeId.toString()},
                                                       {"The target argument type of the " +
-                                                       ins.ri.toString() + " can only be the " +
+                                                       ins.ri->toString() + " can only be the " +
                                                        data::String::typeId.toString() + "."});
             }
             field_name = arg_data->getValStr();
@@ -3218,7 +3304,7 @@ namespace exes {
                                                       {"Error Arg: " + args[0].toString(),
                                                        "Target Type: " + data::CustomType::typeId.toString()},
                                                       {"The target argument type of the " +
-                                                       ins.ri.toString() + " can only be the " +
+                                                       ins.ri->toString() + " can only be the " +
                                                        data::CustomType::typeId.toString() + "."});
             }
         } catch ([[maybe_unused]] base::errors::DuplicateKeyError &e) {
@@ -3232,7 +3318,7 @@ namespace exes {
                                              "Error Space: " + utils::getSpaceFormatString(args[error_index].getValue(),
                                                                                            arg_data->toString())},
                                             { "Check the memory space provided for " +
-                                                         ins.ri.toString() + " has been allocate by " + ris::ALLOT.toString() + "."});
+                                                         ins.ri->toString() + " has been allocate by " + ris::ALLOT.toString() + "."});
         }
         return ExecutionStatus::Success;
     }
@@ -3251,7 +3337,7 @@ namespace exes {
                                                                                                      arg_data->toString()),
                                                        "Target Type: " + data::String::typeId.toString()},
                                                       {"The target argument type of the " +
-                                                       ins.ri.toString() + " can only be the " +
+                                                       ins.ri->toString() + " can only be the " +
                                                        data::String::typeId.toString() + "."});
             }
             field_name = arg_data->getValStr();
@@ -3279,7 +3365,7 @@ namespace exes {
                                                        "Target Type: " + data::CustomType::typeId.toString() +
                                                        " / " + data::CustomInst::typeId.toString()},
                                                       {"The target argument type of the " +
-                                                       ins.ri.toString() + " can only be the " +
+                                                       ins.ri->toString() + " can only be the " +
                                                        data::CustomType::typeId.toString() + " / " +
                                                        data::CustomInst::typeId.toString() + "."});
             }
@@ -3296,7 +3382,7 @@ namespace exes {
                                             {"This error is caused by using an non-existent memory space.",
                                              "Error Arg: " + args[current_arg_index].toString()},
                                             {"Check the memory space provided for " +
-                                             ins.ri.toString() + " has been allocated by " + ris::ALLOT.toString() +
+                                             ins.ri->toString() + " has been allocated by " + ris::ALLOT.toString() +
                                              "."});
         } catch (const std::exception &e) {
             // 捕获其他异常时也使用当前参数索引
@@ -3321,7 +3407,7 @@ namespace exes {
                                                                                                          arg_data->toString()),
                                                            "Target Type: " + data::String::typeId.toString()},
                                                           {"The target argument type of the " +
-                                                           ins.ri.toString() + " can only be the " +
+                                                           ins.ri->toString() + " can only be the " +
                                                            data::String::typeId.toString() + "."});
                 }
                 field_name = arg_data->getValStr();
@@ -3342,7 +3428,7 @@ namespace exes {
                                                        "Target Type: " + data::CustomType::typeId.toString() +
                                                        " or " + data::CustomInst::typeId.toString()},
                                                       {"The target argument type of the " +
-                                                       ins.ri.toString() + " can only be the " +
+                                                       ins.ri->toString() + " can only be the " +
                                                        data::CustomType::typeId.toString() + " or " +
                                                        data::CustomInst::typeId.toString() + "."});
             }
@@ -3373,7 +3459,7 @@ namespace exes {
                                                       {"Error Space: " + utils::getSpaceFormatString(parent_type_name,
                                                                                                      arg_data->toString()),
                                                        "Target Type: " + data::CustomType::typeId.toString()},
-                                                      {"The parent type argument of the " + ins.ri.toString() +
+                                                      {"The parent type argument of the " + ins.ri->toString() +
                                                        " can only be the " +
                                                        data::CustomType::typeId.toString() + "."});
             }
@@ -3389,7 +3475,7 @@ namespace exes {
                                                                                                          arg_data->toString()),
                                                            "Target Type: " + data::String::typeId.toString()},
                                                           {"The field name argument of the " +
-                                                           ins.ri.toString() + " can only be the " +
+                                                           ins.ri->toString() + " can only be the " +
                                                            data::String::typeId.toString() + "."});
                 }
                 field_name = arg_data->getValStr();
@@ -3408,7 +3494,7 @@ namespace exes {
                                                        utils::getSpaceFormatString(args[0].getValue(),
                                                                                    arg_data->toString()),
                                                        "Target Type: " + data::CustomInst::typeId.toString()},
-                                                     {"The target argument type of the " + ins.ri.toString() + " can only be the " +
+                                                     {"The target argument type of the " + ins.ri->toString() + " can only be the " +
                                                       data::CustomInst::typeId.toString() + "."});
             } else if (arg_data->getTypeID() == data::CustomInst::typeId) {
                 const auto &inst_data = static_pointer_cast<data::CustomInst>(arg_data);
@@ -3421,7 +3507,7 @@ namespace exes {
                                                        "Target Type: " + data::CustomType::typeId.toString() +
                                                        " or " + data::CustomInst::typeId.toString()},
                                                       {"The target argument type of the " +
-                                                       ins.ri.toString() + " can only be the " +
+                                                       ins.ri->toString() + " can only be the " +
                                                        data::CustomType::typeId.toString() + " or " +
                                                        data::CustomInst::typeId.toString() + "."});
             }
@@ -3448,7 +3534,7 @@ namespace exes {
                 throw base::errors::ArgTypeMismatchError(args[0].getPosStr(), ins.raw_code,
                                                       {"Error Arg: " + args[0].toString(),
                                                        "Expected Type: " + data::CustomInst::typeId.toString()},
-                                                      {"Check whether the first data of the " + ins.ri.toString() +
+                                                      {"Check whether the first data of the " + ins.ri->toString() +
                                                        " is of " + data::CustomInst::typeId.toString() + "."});
             }
             const auto &inst_data = static_pointer_cast<data::CustomInst>(inst);
@@ -3458,7 +3544,7 @@ namespace exes {
                 throw base::errors::ArgTypeMismatchError(args[1].getPosStr(), ins.raw_code,
                                                       {"Error Arg: " + args[1].toString(),
                                                        "Expected Type: " + data::CustomType::typeId.toString()},
-                                                      {"Check whether the second data of the " + ins.ri.toString() +
+                                                      {"Check whether the second data of the " + ins.ri->toString() +
                                                        " is of " + data::CustomType::typeId.toString() + "."});
             }
             inst_data->derivedToChildType(static_pointer_cast<data::CustomType>(derive_type));
@@ -3479,7 +3565,7 @@ namespace exes {
                                                    "Expected Type: " +
                                                    getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri.toString() +
+                                                  {"Check whether the first data of the " + ins.ri->toString() +
                                                    " is of " + getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " +
                                                    getTypeFormatString(utils::ArgType::identifier) + "."});
@@ -3505,7 +3591,7 @@ namespace exes {
                                                    "Expected Type: " +
                                                    getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri.toString() +
+                                                  {"Check whether the first data of the " + ins.ri->toString() +
                                                    " is of " + getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " +
                                                    getTypeFormatString(utils::ArgType::identifier) + "."});
@@ -3516,7 +3602,7 @@ namespace exes {
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(args[0].getPos().toString(), ins.raw_code,
                                             {"This error is caused by the fact that the target scope of the " +
-                                             ins.ri.toString() + " does not exist.",
+                                             ins.ri->toString() + " does not exist.",
                                              "Nonexistent Scope ID: " + args[0].toString()},
                                             {"Before setting the scope, ensure that the ID of the target scope "
                                              "exists and is correct."});
@@ -3531,7 +3617,7 @@ namespace exes {
                                                    "Expected Type: " +
                                                    getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri.toString() +
+                                                  {"Check whether the first data of the " + ins.ri->toString() +
                                                    " is of " + getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " +
                                                    getTypeFormatString(utils::ArgType::identifier) + "."});
@@ -3558,7 +3644,7 @@ namespace exes {
                                                    "Expected Type: " +
                                                    getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri.toString() +
+                                                  {"Check whether the first data of the " + ins.ri->toString() +
                                                    " is of " + getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " +
                                                    getTypeFormatString(utils::ArgType::identifier) + "."});
@@ -3583,7 +3669,7 @@ namespace exes {
                                                    "Expected Type: " +
                                                    getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri.toString() +
+                                                  {"Check whether the first data of the " + ins.ri->toString() +
                                                    " is of " + getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " +
                                                    getTypeFormatString(utils::ArgType::identifier) + "."});
@@ -3620,7 +3706,7 @@ namespace exes {
                                                    "Expected Type: " +
                                                    getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the second data of the " + ins.ri.toString() +
+                                                  {"Check whether the second data of the " + ins.ri->toString() +
                                                    " is of " + getTypeFormatString(utils::ArgType::keyword) +
                                                    " or " +
                                                    getTypeFormatString(utils::ArgType::identifier) + "."});
@@ -3637,7 +3723,7 @@ namespace exes {
                                                       {"Error Arg: " + args[1].toString(),
                                                        "Expected Type: " + data::Quote::typeId.toString()},
                                                       {"Check whether the first data of the " +
-                                                       ins.ri.toString() + " is of " +
+                                                       ins.ri->toString() + " is of " +
                                                        data::Quote::typeId.toString()
                                                        + "."});
             }
@@ -3656,7 +3742,7 @@ namespace exes {
         if (args.size() > 1) {
             throw base::errors::ArgumentNumberError(
                 args[args.size() - 1].getPosStr(), ins.raw_code, "0 / 1",
-                args.size(), ins.ri.toString(), {});
+                args.size(), ins.ri->toString(), {});
         }
         try {
             if (args.size() == 1) {
@@ -3681,7 +3767,7 @@ namespace exes {
                                                    getTypeFormatString(utils::ArgType::identifier) +
                                                    " or " + getTypeFormatString(utils::ArgType::keyword)},
                                                   {"Check the type of the target argument of the " +
-                                                   ins.ri.toString() + "."});
+                                                   ins.ri->toString() + "."});
             return ExecutionStatus::FailedWithError;
         }
         const auto &data1 = tools::getArgNewData(args[0]);
@@ -3692,7 +3778,7 @@ namespace exes {
                                                                                                 data1->toString()),
                                                    "Expected Type: " + data::Numeric::typeId.toString()},
                                                   {"Check the type of the arguments of the " +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    "."});
         }
         if (!tools::isNumericData(data2)) {
@@ -3701,7 +3787,7 @@ namespace exes {
                                                                                                 data2->toString()),
                                                    "Expected Type: " + data::Numeric::typeId.toString()},
                                                   {"Check the type of the arguments of the" +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    "."});
         }
         try {
@@ -3726,7 +3812,7 @@ namespace exes {
                                                    getTypeFormatString(utils::ArgType::identifier) +
                                                    " or " + getTypeFormatString(utils::ArgType::keyword)},
                                                   {"Check the type of the target argument of the " +
-                                                   ins.ri.toString() + "."});
+                                                   ins.ri->toString() + "."});
             return ExecutionStatus::FailedWithError;
         }
         const auto &data1 = tools::getArgNewData(args[0]);
@@ -3737,7 +3823,7 @@ namespace exes {
                                                                                                 data1->toString()),
                                                    "Expected Type: " + data::Numeric::typeId.toString()},
                                                   {"Check the type of the arguments of the " +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    "."});
         }
         if (!tools::isNumericData(data2)) {
@@ -3746,7 +3832,7 @@ namespace exes {
                                                                                                 data2->toString()),
                                                    "Expected Type: " + data::Numeric::typeId.toString()},
                                                   {"Check the type of the arguments of the" +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    "."});
         }
         try {
@@ -3771,7 +3857,7 @@ namespace exes {
                                                    getTypeFormatString(utils::ArgType::identifier) +
                                                    " or " + getTypeFormatString(utils::ArgType::keyword)},
                                                   {"Check the type of the target argument of the " +
-                                                   ins.ri.toString() + "."});
+                                                   ins.ri->toString() + "."});
             return ExecutionStatus::FailedWithError;
         }
         const auto &data1 = tools::getArgNewData(args[0]);
@@ -3782,7 +3868,7 @@ namespace exes {
                                                                                                 data1->toString()),
                                                    "Expected Type: " + data::Numeric::typeId.toString()},
                                                   {"Check the type of the arguments of the " +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    "."});
         }
         if (!tools::isNumericData(data2)) {
@@ -3791,7 +3877,7 @@ namespace exes {
                                                                                                 data2->toString()),
                                                    "Expected Type: " + data::Numeric::typeId.toString()},
                                                   {"Check the type of the arguments of the" +
-                                                   ins.ri.toString() +
+                                                   ins.ri->toString() +
                                                    "."});
         }
         try {
@@ -3817,7 +3903,7 @@ namespace exes {
 
         // 遍历指令集
         for (const auto &inner_ins: ins.scopeInsSet->getInsSet()) {
-            if (inner_ins->ri == ris::DETECT) {
+            if (ris::DETECT.equalWith(inner_ins->ri)) {
                 // 如果是 DETECT 指令
                 if (!has_detect) {
                     has_detect = true; // 标记已进入 DETECT 块
@@ -3882,7 +3968,7 @@ namespace exes {
                                                                                                 argData->toString()),
                                                    "Expected Type: " + data::CustomInst::typeId.toString()},
                                                   {"Check the type of the arguments of the " +
-                                                   ins.ri.toString() + "."});
+                                                   ins.ri->toString() + "."});
         }
         auto expose_inst = static_pointer_cast<data::CustomInst>(argData);
         auto error_data = std::make_shared<data::Error>(
@@ -3909,7 +3995,7 @@ namespace exes {
         if (args.empty() || args.size() > 2) {
             throw base::errors::ArgumentNumberError(
                     ins.pos.toString(), ins.raw_code, "1 / 2",
-                    static_cast<int>(args.size()), ins.ri.toString(), {});
+                    static_cast<int>(args.size()), ins.ri->toString(), {});
         }
 
         // 获取并验证第一个参数（文件路径）的类型
@@ -3919,7 +4005,7 @@ namespace exes {
                                                   {"Error Data: " + utils::getSpaceFormatString(args[0].getValue(),
                                                                                                 filePathData->toString()),
                                                    "Expected Type: " + data::String::typeId.toString()},
-                                                  {"Check the type of the arguments of the " + ins.ri.toString() + "."});
+                                                  {"Check the type of the arguments of the " + ins.ri->toString() + "."});
         }
 
         // 构建完整文件路径
@@ -3987,7 +4073,7 @@ namespace exes {
     }
 
     ExecutionStatus ri_link(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        throw std::runtime_error(ins.ri.toString() + "unable to be executed directly.");
+        throw std::runtime_error(ins.ri->toString() + "unable to be executed directly.");
         return ExecutionStatus::FailedWithError;
     }
 
@@ -4111,7 +4197,7 @@ namespace exes {
     }
 
     ExecutionStatus ri_dict_get(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        tools::checkArgumentType(ins, args[1], 2,
+        tools::checkArgumentType(ins, args[2], 3,
             {utils::ArgType::identifier, utils::ArgType::keyword});
         const auto &dict_data = tools::checkArgumentDataTypeAndRet<data::Dict>(
                 tools::getArgOriginData(args[0]),
@@ -4119,7 +4205,17 @@ namespace exes {
         const auto &key_data = tools::getArgNewData(args[1]);
         if (const auto &value_data = dict_data->getDataAt(key_data->toEscapedString());
             !tools::getArgOriginData(args[1])->updateData(value_data)) {
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(), value_data);
+            try
+            {
+                data_space_pool.updateDataByNameNoLock(args[2].getValue(), value_data);
+            } catch (const base::errors::MemoryError &)
+            {
+                throw base::errors::MemoryError(args[2].getPosStr(), ins.raw_code,
+                                                {"This error is caused by manipulating memory space that does not exist.",
+                                                 "Nonexistent Space Name: " + args[2].toString()},
+                                                {"Use the " + ris::ALLOT.toString() +
+                                                 " to manually allocate a named memory space before manipulating it."});
+            }
         }
         return ExecutionStatus::Success;
     }
@@ -4135,4 +4231,43 @@ namespace exes {
         return ExecutionStatus::Success;
     }
 
+    ExecutionStatus ri_dict_keys(const Ins& ins, size_t& pointer, const StdArgs& args)
+    {
+        const auto &dictData = tools::checkArgumentDataTypeAndRet<data::Dict>(
+            tools::getArgOriginData(args[0]),
+            ins, args[0], 1, true);
+        try
+        {
+            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+               dictData->getKeyDataList());
+        } catch (const base::errors::MemoryError &)
+        {
+            throw base::errors::MemoryError(args[1].getPosStr(), ins.raw_code,
+                                            {"This error is caused by manipulating memory space that does not exist.",
+                                             "Nonexistent Space Name: " + args[1].toString()},
+                                            {"Use the " + ris::ALLOT.toString() +
+                                             " to manually allocate a named memory space before manipulating it."});
+        }
+        return ExecutionStatus::Success;
+    }
+
+    ExecutionStatus ri_dict_values(const Ins& ins, size_t& pointer, const StdArgs& args)
+    {
+        const auto &dictData = tools::checkArgumentDataTypeAndRet<data::Dict>(
+            tools::getArgOriginData(args[0]),
+            ins, args[0], 1, true);
+        try
+        {
+            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+               dictData->getValueDataList());
+        } catch (const base::errors::MemoryError &)
+        {
+            throw base::errors::MemoryError(args[1].getPosStr(), ins.raw_code,
+                                            {"This error is caused by manipulating memory space that does not exist.",
+                                             "Nonexistent Space Name: " + args[1].toString()},
+                                            {"Use the " + ris::ALLOT.toString() +
+                                             " to manually allocate a named memory space before manipulating it."});
+        }
+        return ExecutionStatus::Success;
+    }
 }

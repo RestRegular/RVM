@@ -350,7 +350,7 @@ namespace core::data {
         if (!other) {
             throw std::runtime_error("Null operand");
         }
-        if (other->getTypeID() == Float::typeId) {
+        if (other->getTypeID().fullEqualWith(Float::typeId)) {
             return executeOperator(other, [](auto a, auto b) {
                 if (b == 0) {
                     throw std::runtime_error("Division by zero");
@@ -358,8 +358,8 @@ namespace core::data {
                 return a / b;
             }, "/");
         }
-        if (other->getTypeID() == typeId || other->getTypeID() == Char::typeId ||
-                   other->getTypeID() == Bool::typeId) {
+        if (other->getTypeID().fullEqualWith(typeId) || other->getTypeID().fullEqualWith(Char::typeId) ||
+                   other->getTypeID().fullEqualWith(Bool::typeId)) {
             const auto otherInt = dynamic_pointer_cast<const Int>(other);
             if (otherInt->value == 0) {
                 throw std::runtime_error("Division by zero");
@@ -589,19 +589,19 @@ namespace core::data {
         return std::make_shared<Float>(Float(value));
     }
 
-    bool Float::compare(const std::shared_ptr<base::RVM_Data> &other, const base::Relational &relational) const {
+    bool Float::compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const {
         double otherValue{};
         bool isNumeric = false;
-        if (other->getTypeID() == Int::typeId) {
+        if (other->getTypeID().fullEqualWith(Int::typeId)) {
             otherValue = static_pointer_cast<const Int>(other)->getValue();
             isNumeric = true;
-        } else if (other->getTypeID() == Float::typeId) {
+        } else if (other->getTypeID().fullEqualWith(typeId)) {
             otherValue = static_pointer_cast<const Float>(other)->getValue();
             isNumeric = true;
         }
         if (!isNumeric) {
-            bool thisBool = convertToBool();
-            bool otherBool = other->convertToBool();
+            const bool thisBool = convertToBool();
+            const bool otherBool = other->convertToBool();
             switch (relational) {
                 case base::Relational::RE: return false;
                 case base::Relational::RNE: return true;
@@ -624,25 +624,28 @@ namespace core::data {
     }
 
     std::shared_ptr<Numeric> Float::pow(const std::shared_ptr<Numeric> &other) const {
-        if (other->getTypeID() == Int::typeId || other->getTypeID() == Char::typeId || other->getTypeID() == Bool::typeId){
+        if (other->getTypeID().fullEqualWith(Int::typeId) || other->getTypeID().fullEqualWith(Char::typeId) || other->getTypeID().fullEqualWith(Bool::typeId))
+        {
             return std::make_shared<Float>(std::pow(value, static_pointer_cast<const Int>(other)->getValue()));
-        } else if (other->getTypeID() == Float::typeId){
-            return std::make_shared<Float>(std::pow(value, static_pointer_cast<const Float>(other)->getValue()));
-        } else {
-            throw std::runtime_error("Type mismatch");
         }
+        if (other->getTypeID().fullEqualWith(typeId))
+        {
+            return std::make_shared<Float>(std::pow(value, static_pointer_cast<const Float>(other)->getValue()));
+        }
+        throw std::runtime_error("Type mismatch");
         return nullptr;
     }
 
     std::shared_ptr<Numeric> Float::root(const std::shared_ptr<Numeric> &other) const {
-        if (other->getTypeID() == Int::typeId || other->getTypeID() == Char::typeId || other->getTypeID() == Bool::typeId){
+        if (other->getTypeID().fullEqualWith(Int::typeId) || other->getTypeID().fullEqualWith(Char::typeId) || other->getTypeID().fullEqualWith(Bool::typeId))
+        {
             return std::make_shared<Float>(std::pow(value, 1.0 / static_pointer_cast<const Int>(other)->getValue()));
-        } else if (other->getTypeID() == Float::typeId){
-            return std::make_shared<Float>(std::pow(value, 1.0 / static_pointer_cast<const Float>(other)->getValue()));
-        } else {
-            throw std::runtime_error("Type mismatch");
         }
-        return nullptr;
+        if (other->getTypeID().fullEqualWith(typeId))
+        {
+            return std::make_shared<Float>(std::pow(value, 1.0 / static_pointer_cast<const Float>(other)->getValue()));
+        }
+        throw std::runtime_error("Type mismatch");
     }
 
     bool Float::convertToBool() const {
@@ -651,14 +654,14 @@ namespace core::data {
 
     id::TypeID Bool::typeId{"Bool", std::make_shared<id::TypeID>(Int::typeId), base::IDType::Bool, tp_bool};
 
-    Bool::Bool(bool value) : Int(value ? 1 : 0) {}
+    Bool::Bool(const bool value) : Int(value ? 1 : 0) {}
 
     std::string Bool::getTypeName() const {
         return "Bool";
     }
 
     id::TypeID &Bool::getTypeID() const {
-        return Bool::typeId;
+        return typeId;
     }
 
     std::string Bool::getValStr() const {
@@ -674,8 +677,8 @@ namespace core::data {
     }
 
     bool Bool::updateData(const std::shared_ptr<RVM_Data> &newData) {
-        const auto &newTypeID = newData->getTypeID();
-        if (newTypeID.fullEqualWith(Bool::typeId)) {
+        if (const auto &newTypeID = newData->getTypeID();
+            newTypeID.fullEqualWith(typeId)) {
             this->value = static_pointer_cast<const Bool>(newData)->getValue();
             return true;
         }
@@ -684,18 +687,28 @@ namespace core::data {
 
     id::TypeID Char::typeId{"Char", std::make_shared<id::TypeID>(Int::typeId), base::IDType::Char, tp_char};
 
-    Char::Char(char value) : Int(value) {}
+    Char::Char(const char value) : Int(value) {}
+
+    bool Char::updateData(const std::shared_ptr<RVM_Data>& newData)
+    {
+        if (typeId.fullEqualWith(newData->getTypeID()))
+        {
+            value = std::static_pointer_cast<const Char>(newData)->getValue();
+            return true;
+        }
+        return false;
+    }
 
     std::string Char::getTypeName() const {
         return "Char";
     }
 
     id::TypeID &Char::getTypeID() const {
-        return Char::typeId;
+        return typeId;
     }
 
     std::string Char::getValStr() const {
-        return {1, static_cast<char>(this->getValue())};
+        return std::string(1, static_cast<char>(this->getValue()));
     }
 
     std::string Char::toEscapedString() const {
@@ -765,21 +778,26 @@ namespace core::data {
             return false;
         }
         switch (relational) {
-            case base::Relational::RE:{
-                return value == static_pointer_cast<const String>(other)->value;
-            }
-            case base::Relational::RNE:{
-                return value != static_pointer_cast<const String>(other)->value;
-            }
-            case base::Relational::AND:{
-                return convertToBool() && other->convertToBool();
-            }
-            case base::Relational::OR:{
-                return convertToBool() || other->convertToBool();
-            }
-            default:{
-                throw std::runtime_error("Type mismatch");
-            }
+            case base::Relational::RE:
+                {
+                    return value == static_pointer_cast<const String>(other)->value;
+                }
+            case base::Relational::RNE:
+                {
+                    return value != static_pointer_cast<const String>(other)->value;
+                }
+            case base::Relational::AND:
+                {
+                    return convertToBool() && other->convertToBool();
+                }
+            case base::Relational::OR:
+                {
+                    return convertToBool() || other->convertToBool();
+                }
+            default:
+                {
+                    throw std::runtime_error("Type mismatch");
+                }
         }
         return false;
     }
@@ -844,9 +862,9 @@ namespace core::data {
     }
 
     std::shared_ptr<List> String::trans_to_list() const {
-        return std::make_shared<List>(
-                [this]() {
-                    std::vector<std::shared_ptr<base::RVM_Data>> dataList;
+        return std::make_shared<List>([this]
+                {
+                    std::vector<std::shared_ptr<RVM_Data>> dataList;
                     dataList.reserve(value.size());
                     for (const auto &ch : value) {
                         dataList.emplace_back(std::make_shared<Char>(ch));
@@ -1263,14 +1281,15 @@ namespace core::data {
         if (!list) {
             throw std::invalid_argument("List pointer is null");
         }
-        size_t size = list->size();
+        const size_t size = list->size();
         dataDict.reserve(size);
         keyList.reserve(size);
         for (size_t i = 0; i < size; ++i) {
-            const std::string key = "\"" + std::to_string(i) + "\"";
-            dataDict[key] = std::make_shared<KeyValuePair>(
-                std::make_shared<String>(key), list->getDataAt(i));
-            keyList.push_back(key);
+            const auto &key = std::make_shared<Int>(i);
+            const auto &keyStr = key->toEscapedString();
+            dataDict[keyStr] = std::make_shared<KeyValuePair>(
+                key, list->getDataAt(i));
+            keyList.push_back(keyStr);
         }
     }
 
@@ -1341,6 +1360,26 @@ namespace core::data {
             }
         }
         return false;
+    }
+
+    std::shared_ptr<List> Dict::getKeyDataList() const
+    {
+        std::vector<std::shared_ptr<RVM_Data>> keyListData {};
+        for (const auto& kvp : dataDict | std::views::values)
+        {
+            keyListData.push_back(kvp->getKey());
+        }
+        return std::make_shared<List>(keyListData);
+    }
+
+    std::shared_ptr<List> Dict::getValueDataList() const
+    {
+        std::vector<std::shared_ptr<RVM_Data>> valueListData {};
+        for (const auto &kvp : dataDict | std::views::values)
+        {
+            valueListData.push_back(kvp->getValue());
+        }
+        return std::make_shared<List>(valueListData);
     }
 
     id::TypeID Series::typeId{"Series", std::make_shared<id::TypeID>(data::Iterable::typeId), base::IDType::Series, tp_series};
@@ -1597,8 +1636,8 @@ namespace core::data {
     }
 
     bool CompareGroup::convertToBool() const {
-        auto leftData = memory::data_space_pool.findDataByIDNoLock(*compLeft);
-        auto rightData = memory::data_space_pool.findDataByIDNoLock(*compRight);
+        const auto leftData = memory::data_space_pool.findDataByIDNoLock(*compLeft);
+        const auto rightData = memory::data_space_pool.findDataByIDNoLock(*compRight);
         return leftData->convertToBool() && rightData->convertToBool();
     }
 
