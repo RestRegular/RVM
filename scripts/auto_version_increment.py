@@ -23,7 +23,7 @@ UPDATE_LOG_TEMPLATE = {
     "validate": False,
     "version": {
         "vs_desc": "...",
-        "change_type": ["Feature"]
+        "change_type": ["fix"]
     },
     "update_log": {
         "author": "RestRegular",
@@ -88,7 +88,7 @@ class IncrementType(Enum):
                 return type_
         raise ValueError(f'无效的版本号自增类型：{type_int}')
 
-    def increment(self, major: int, minor: int, patch: int) -> dict:
+    def increment(self, major: int, minor: int, patch: int) -> dict[str, int] | None:
         """根据递增类型更新版本号"""
         if self == IncrementType.MAJOR:
             return {'MAJOR': major + 1, 'MINOR': 0, 'PATCH': 0}
@@ -96,6 +96,7 @@ class IncrementType(Enum):
             return {'MAJOR': major, 'MINOR': minor + 1, 'PATCH': 0}
         elif self == IncrementType.PATCH:
             return {'MAJOR': major, 'MINOR': minor, 'PATCH': patch + 1}
+        return None
 
     @staticmethod
     def from_change_type(change_types: List[str]) -> 'IncrementType':

@@ -95,7 +95,7 @@ namespace utils {
     std::string getFileFromPath(const std::string &path);
     std::string getFileDirFromPath(const std::string &path);
     std::string getRVMDir();
-    std::string getWindowsDefaultDir();
+    std::string getDefaultDir();
     std::string getAbsolutePath(const std::string& path, const std::string &dir_path = "");
     std::string getEscapedPathFormatString(const std::string& path);
     void setProgramEnvDir(const std::string &dir_path);

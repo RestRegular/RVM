@@ -1,15 +1,17 @@
 {
   "validate": true,
   "version": {
-    "vs_desc": "增强了其他文件扩展名的解析能力",
+    "vs_desc": "适配Linux平台并修复部分符号错误",
     "change_type": [
-      "opt"
+      "feat",
+      "fix"
     ]
   },
   "update_log": {
     "author": "RestRegular",
     "log_contents": [
-      "增强了 RVM 解析不同文件扩展名的能力。"
+      "新增适配Linux平台功能。",
+      "修复了部分符号静态初始化的错误。"
     ]
   },
   "annotation": {

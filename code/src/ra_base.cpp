@@ -4,11 +4,19 @@
 
 #include <csignal>
 #include <utility>
-#include "../include/ra_base.h"
-
 #include <cstring>
 #include <ranges>
 
+#ifdef __linux__
+#include <unistd.h>   // 用于 gethostname()
+#include <sys/utsname.h>  // 用于 uname() 获取系统信息
+#endif
+#ifdef _WIN32
+#include <windows.h>
+#include <tchar.h>
+#endif
+
+#include "../include/ra_base.h"
 #include "../include/lib/ra_utils.h"
 
 namespace base {
@@ -56,10 +64,85 @@ namespace base {
         this->profile = static_cast<uint16_t>(profile_);
     }
 
-    std::string RVMSerialHeader::getRVMVersionInfo() {
-        return "RVM(Rio Virtual Machine) v" + std::to_string(VERSION_MAJOR) + "." + std::to_string(VERSION_MINOR) + "."
-               + std::to_string(VERSION_PATCH) + "\nPublished on " + std::string(__DATE__) + " at " +
-               std::string(__TIME__) + "\nCopyright (C) 2025 RestRegular\n";
+    std::string RVMSerialHeader::getRVMVersionInfo()
+    {
+        std::ostringstream oss;
+        std::string platform;
+        std::string arch;
+        std::string compiler;
+
+        // 1. 填充平台信息
+#ifdef _WIN32
+        platform = "Windows";
+        // 获取 Windows 系统版本（简化版，如需详细可扩展）
+        OSVERSIONINFOEX osvi = {0};
+        osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+        if (GetVersionEx((OSVERSIONINFO*)&osvi)) {
+            oss << platform << " [" << osvi.dwMajorVersion << "." << osvi.dwMinorVersion << "]";
+            if (osvi.wProductType == VER_NT_WORKSTATION) oss << " (Workstation)";
+            else if (osvi.wProductType == VER_NT_SERVER) oss << " (Server)";
+            platform = oss.str();
+            oss.str(""); // 清空流
+        }
+        // 获取架构（32/64位）
+#ifdef _WIN64
+        arch = "x86_64";
+#else
+        arch = "x86";
+#endif
+
+#elif __linux__
+        platform = "Linux";
+        struct utsname uts;
+        if (uname(&uts) == 0) {
+            // 系统名称 + 内核版本 + 主机名
+            oss << platform << " [" << uts.sysname << "] " << uts.release;
+            platform = oss.str();
+            oss.str("");
+        }
+        // 获取架构
+#ifdef __x86_64__
+        arch = "x86_64";
+#elif __i386__
+        arch = "x86";
+#elif __aarch64__
+        arch = "ARM64";
+#elif __arm__
+        arch = "ARMv" + std::to_string(__ARM_ARCH__);
+#else
+        arch = "Unknown";
+#endif
+
+#else
+        platform = "Unknown Platform";
+        arch = "Unknown Architecture";
+#endif
+
+        // 2. 填充编译器信息（增强可读性）
+#ifdef __GNUC__
+        compiler = "GCC " + std::to_string(__GNUC__) + "." + std::to_string(__GNUC_MINOR__) + "." + std::to_string(__GNUC_PATCHLEVEL__);
+#elif __clang__
+        compiler = "Clang " + std::to_string(__clang_major__) + "." + std::to_string(__clang_minor__) + "." + std::to_string(__clang_patchlevel__);
+#elif _MSC_VER
+        compiler = "MSVC " + std::to_string(_MSC_VER / 100) + "." + std::to_string((_MSC_VER % 100) / 10);
+#else
+        compiler = "Unknown Compiler";
+#endif
+
+        // 3. 构建完整版本信息字符串
+        oss << "======================================================\n";
+        oss << "RVM (Rio Virtual Machine) Version Info\n";
+        oss << "======================================================\n";
+        oss << "Version:        v" << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_PATCH;
+        oss << "\n";
+        oss << "Platform:       " << platform << "\n";
+        oss << "Architecture:   " << arch << "\n";
+        oss << "Compiler:       " << compiler << "\n";
+        oss << "Build Time:     " << __DATE__ << " " << __TIME__ << "\n";
+        oss << "Copyright (C):  2025 RestRegular. All rights reserved.\n";
+        oss << "======================================================\n";
+
+        return oss.str();
     }
 
     std::string RVMSerialHeader::getRSIVersionInfo(const std::string &path) const {
@@ -75,7 +158,7 @@ namespace base {
     RVMSerialHeader rvm_serial_header{};
 
     const std::string PROGRAM_RVM_DIRECTORY = utils::getRVMDir();
-    const std::string PROGRAM_ENVIRONMENT_DIRECTORY = utils::getWindowsDefaultDir();
+    const std::string PROGRAM_ENVIRONMENT_DIRECTORY = utils::getRVMDir();
     std::stack<std::string> PROGRAM_WORKING_DIRECTORY_STACK {};
 
     bool PROGRAM_INTERRUPTED = false;
