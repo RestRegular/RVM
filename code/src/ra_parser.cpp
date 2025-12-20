@@ -125,9 +125,9 @@ namespace parser {
                     utils::getAbsolutePath(working_directory.empty() || working_directory == undefined_ ?
                     utils::getFileDirFromPath(executed_file_path) : working_directory));
             auto [SR_id, _1] = data_space_pool.addGlobalData("SR", std::make_shared<data::Null>());
-            SR_SpaceID = SR_id;
+            SR_SPACE_ID = SR_id;
             auto [SE_id_, _2] = data_space_pool.addGlobalData("_SE", std::make_shared<data::Null>());
-            _SE_SpaceID = SE_id_;
+            SE_SPACE_ID = SE_id_;
             data_space_pool.addGlobalDataBatch({
                     {"SN", std::make_shared<data::Null>()},
                     {"SE", std::make_shared<data::Null>()},
@@ -230,7 +230,8 @@ namespace parser {
                     size_t semicolonPos = std::string::npos;
                     bool inQuotes = false;
                     for (size_t i = 0; i < currentLine.length(); ++i) {
-                        if (i > 0 && currentLine[i - 1] == '\\') {
+                        if (currentLine[i] == '\\') {
+                            i ++;
                             continue;
                         }
                         if (currentLine[i] == '"') {
@@ -386,7 +387,7 @@ namespace parser {
                     }
                     ins_ptr->is_delayed_release_scope = topInsSet->is_delayed_release_scope;
                 } else if (instruction == "SET") {
-                    topInsSet->setLabel(args[0].getValue(), int(topInsSet->getInsSet().size()));
+                    topInsSet->setLabel(args[0].getValue(), static_cast<int>(topInsSet->getInsSet().size()));
                     topInsSet->addIns(ins_ptr);
                 } else if (instruction == "LINK") {
                     try {
@@ -416,7 +417,7 @@ namespace parser {
                     } catch (const base::errors::ArgumentError &_) {
                         throw base::errors::ArgumentError(ins_ptr->args[0].getPos().toString(), ins_ptr->raw_code,
                                                           "Error Arg: " +
-                                                          utils::getSpaceFormatString(ins_ptr->args[0].getValue(),
+                                                          utils::getEntityFormatString(ins_ptr->args[0].getValue(),
                                                                                       tools::getArgOriginData(
                                                                                               ins_ptr->args[0])->toString()),
                                                           {"Please check that the argument of this instruction are used correctly.",

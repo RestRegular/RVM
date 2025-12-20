@@ -22,6 +22,7 @@ std::string program_archive_file_path_;
 std::string program_help_option_name_;
 std::string program_environment_directory_;
 std::string program_output_redirect_;
+std::string program_input_redirect_;
 std::string program_working_directory_;
 bool program_run_executable_;
 bool program_serialize_;
@@ -109,6 +110,10 @@ void initializeArgumentParser() {
                                      "console",
                                      "Specifies the output redirect place for the operation.",
                                      {"or"});
+    argParser.addOption<std::string>("input-redirect", &program_input_redirect_,
+                                     "console",
+                                     "Specifies the input redirect place for the operation.",
+                                     {"ir"});
     argParser.addOption<std::string>("precomp-link-dir", &env::precompiled_link_dir_path,
                                      R"(D:\ClionProjects\RVM\lib)",
                                      "Specifies the path to the precompiled RSI file. "
@@ -153,12 +158,17 @@ int main(const int argc, char *argv[]){
         argParser.parse(argc, argv);
         setProgramEnvDir(program_rvm_work_directory_ ?
                                 PROGRAM_RVM_DIRECTORY : program_environment_directory_);
+        program_target_file_path_ = getAbsolutePath(program_target_file_path_, getDefaultDir());
         if (env::precompiled_link_option) {
             env::precompiled_link_dir_path = getAbsolutePath(env::precompiled_link_dir_path);
         }
         if (program_output_redirect_ != "console") {
             io->setOutputToConsole(false);
             io->setOutputToFile(program_output_redirect_);
+        }
+        if (program_input_redirect_ != "console")
+        {
+            io->setInputFromFile(program_input_redirect_);
         }
         if (program_debug_option_) {
             if (program_output_redirect_ != "console") {

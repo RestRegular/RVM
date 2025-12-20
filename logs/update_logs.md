@@ -40,12 +40,26 @@
 | **`v1.5.4`**  | 2025-11-22 |              修复了 `IVOK` 指令相关问题              |       **[BugFix]**       | RestRegular |
 | **`v1.5.5`**  | 2025-11-22 |               增强了其他文件扩展名的解析能力               |      **[Optimize]**      | RestRegular |
 | **`v1.6.0`** | 2025-11-28 | 适配Linux平台并修复部分符号错误 | **[Feature] [BugFix]** | RestRegular |
+| **`v1.7.0`** | 2025-12-07 | 优化了并新增了错误处理相关功能 | **[Optimize] [Feature]** | RestRegular |
 <!-- Add Version Overview -->
 
 ---
 ## 详细日志
 
 <!-- Add Version Details -->
+
+---
+### 版本号 `v1.7.0` (2025-12-07)
+- **类型**：**[Optimize] [Feature]**
+- **作者**：RestRegular
+- **更新时间**：2025/12/07 00:32
+- **更新内容**：
+  - 统一内存空间ID命名风格，使用全大写命名规范。
+  - 扩展 `DetectBlock` 构造函数以支持内置类型检测。
+  - 调整 `DETECT` 指令参数数量限制并增强类型检查。
+  - 改进 `EXPOSE` 指令错误数据传递逻辑。
+  - 优化 `SR_SPACE_ID` 和 `SE_SPACE_ID` 的引用一致性。
+  - 完善文件写入异常抛出逻辑结构。
 
 ---
 ### 版本号 `v1.6.0` (2025-11-28)

@@ -1,28 +1,6 @@
-import(io="io", ds="ds", rd="random")
+var a: int = 10
 
-var List: clas = ds.List
-
-class Object: List
-
-fun makeRandomIntList(elemNum: int = 10, range: list = [0, 150]): List {
-    var li: List = List()
-    ds.repeat(elemNum, (_) -> {
-        li.append(rd.randomInt(range[0], range[1]))
-    })
-    ret li
+if true {
+    var a = "Hello world!"
 }
 
-fun main(): void {
-    var li: List = makeRandomIntList()
-    io.sout(li.sort().get())
-    io.sout(li \
-        .filter((item: int): bool -> { ret item > 50 }) \
-        .mapper((item: int): int -> { ret item - 10 }) \
-        .get())
-    io.sout(li.find((item, _, _) -> {
-        ret item > 100
-    }))
-    io.sout(li.at(5))
-}
-
-main()

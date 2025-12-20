@@ -25,7 +25,7 @@ namespace core::id {
     }
 
     std::string TypeID::toString() const {
-        return RVM_ID::toString(type_name);
+        return "<Type: " + type_name + ">";
     }
 
     bool TypeID::operator==(const base::RVM_ID &other) const {
@@ -720,7 +720,7 @@ namespace core::data {
     }
 
     std::string Char::toString() const {
-        return "[Data(Char): '" + getValStr() + "']";
+        return "<Char: '" + getValStr() + "'@" + instID.getIDString() + ">";
     }
 
     id::TypeID Iterable::typeId{"Iterable", base::IDType::Iterable, undefined_};
@@ -775,7 +775,11 @@ namespace core::data {
 
     bool String::compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const {
         if (other->getTypeID() != typeId){
-            return false;
+            if (relational == base::Relational::RNE || relational == base::Relational::RE)
+            {
+                return relational == base::Relational::RNE;
+            }
+            throw std::runtime_error("Type mismatch");
         }
         switch (relational) {
             case base::Relational::RE:
@@ -893,7 +897,7 @@ namespace core::data {
     }
 
     std::string String::toString() const {
-        return "[Data(String): " + toEscapedString() + "]";
+        return "<String: " + toEscapedString() + "@" + instID.getIDString() + ">";
     }
 
     bool String::convertToBool() const {
@@ -1019,7 +1023,7 @@ namespace core::data {
     }
 
     std::string List::getValStr() const {
-        return getValStdStr(this->instID);
+        return getValStdStr(this->instID, "[", "]");
     }
 
     std::string List::getTypeName() const {
@@ -1057,18 +1061,18 @@ namespace core::data {
     }
 
     std::string List::toEscapedString() const {
-        return this->getValStdStr(this->getInstID());
+        return this->getValStdStr(this->getInstID(), "[", "]");
     }
 
     const std::vector<std::shared_ptr<base::RVM_Data>> &List::getDataList() const {
         return dataList;
     }
 
-    List::List(const std::vector<std::shared_ptr<RVM_Data>> &dataList): dataList(std::move(dataList)) {}
+    List::List(const std::vector<std::shared_ptr<RVM_Data>> &dataList): dataList(dataList) {}
 
     void List::insertDataAt(int index, const std::shared_ptr<RVM_Data> &data) {
         if (index < 0){
-            index += dataList.size();
+            index += static_cast<int>(dataList.size());
         }
         if (index > dataList.size()){
             throw base::errors::IndexOutOfRangeError(unknown_, unknown_, {}, {});
@@ -1445,7 +1449,7 @@ namespace core::data {
 
     Series::Series(const std::shared_ptr<RVM_Data>& list) {
         if (list->getTypeID().fullEqualWith(List::typeId)){
-            dataList = std::move(static_pointer_cast<List>(list)->getDataList());
+            dataList = static_pointer_cast<List>(list)->getDataList();
         } else {
             throw base::errors::DataTypeMismatchError(unknown_, unknown_, {}, {});
         }
@@ -1538,12 +1542,12 @@ namespace core::data {
         return getValStr();
     }
 
-    void KeyValuePair::setKey(const std::shared_ptr<RVM_Data>& key) {
-        this->key = key;
+    void KeyValuePair::setKey(const std::shared_ptr<RVM_Data>& key_) {
+        this->key = key_;
     }
 
-    void KeyValuePair::setValue(const std::shared_ptr<RVM_Data>& value) {
-        this->value = value;
+    void KeyValuePair::setValue(const std::shared_ptr<RVM_Data>& value_) {
+        this->value = value_;
     }
 
     std::shared_ptr<base::RVM_Data> KeyValuePair::getKey() const {
@@ -1568,7 +1572,7 @@ namespace core::data {
 
     bool CompareGroup::updateData(const std::shared_ptr<RVM_Data> &newData) {
         if (typeId == newData->getTypeID()){
-            if (auto newComp = static_pointer_cast<const CompareGroup>(newData)){
+            if (const auto newComp = static_pointer_cast<const CompareGroup>(newData)){
                 this->compLeft = newComp->compLeft;
                 this->compRight = newComp->compRight;
                 return true;
@@ -1605,7 +1609,7 @@ namespace core::data {
             }
             throw std::runtime_error("Type mismatch");
         }
-        auto otherComp = static_pointer_cast<const CompareGroup>(other);
+        const auto otherComp = static_pointer_cast<const CompareGroup>(other);
         switch (relational) {
             case base::Relational::RE: {
                 return compLeft.get() == otherComp.get()->compLeft.get() &&
@@ -1648,7 +1652,7 @@ namespace core::data {
 
     bool CustomType::updateData(const std::shared_ptr<RVM_Data> &newData) {
         if (typeId == newData->getTypeID()){
-            if (auto newCustomStruct = static_pointer_cast<const CustomType>(newData)){
+            if (const auto newCustomStruct = static_pointer_cast<const CustomType>(newData)){
                 this->typeName = newCustomStruct->typeName;
                 return true;
             } else {
@@ -1670,7 +1674,7 @@ namespace core::data {
             }
             throw std::runtime_error("Type mismatch");
         }
-        auto newCustomStruct = static_pointer_cast<const CustomType>(other);
+        const auto newCustomStruct = static_pointer_cast<const CustomType>(other);
         switch (relational) {
             case base::Relational::RE: {
                 return tpFields == newCustomStruct->tpFields;
@@ -1691,7 +1695,7 @@ namespace core::data {
     }
 
     std::string CustomType::getValStr() const {
-        return "[CustomType: " + typeName + "]";
+        return typeName;
     }
 
     base::RVM_ID &CustomType::getTypeID() const {
@@ -1699,7 +1703,7 @@ namespace core::data {
     }
 
     std::string CustomType::getTypeName() const {
-        return "CustomType";
+        return "Type";
     }
 
     bool CustomType::hasFieldItself(const std::string &fieldName) const
@@ -1740,8 +1744,8 @@ namespace core::data {
             if (!tpFields[fieldName]->updateData(fieldData)){
                 tpFields[fieldName] = fieldData;
             }
-            bool has_this_method_field = std::ranges::find(methodFields, fieldName) != methodFields.end();
-            if (fieldData->getTypeID() == Callable::typeId && has_this_method_field) {
+            if (const bool has_this_method_field = std::ranges::find(methodFields, fieldName) != methodFields.end();
+                fieldData->getTypeID() == Callable::typeId && has_this_method_field) {
                 methodFields.insert(fieldName);
             } else if (has_this_method_field) {
                 methodFields.erase(std::ranges::find(methodFields, fieldName));
@@ -1778,7 +1782,7 @@ namespace core::data {
         if (!type) {
             return false;
         }
-        const CustomType* current = this;
+        auto current = this;
         while (current) {
             if (current == type.get()) {
                 return true;
@@ -1793,12 +1797,7 @@ namespace core::data {
     }
 
     std::string CustomType::getTypeIDString() const {
-        return "<CustomType::" + typeName + ": " + typeId.getIDString() + ">";
-    }
-
-    std::string CustomType::getCustomTypeIDString() const
-    {
-        return typeId.toString(typeName + "@" + instID.getIDString());
+        return "<Type: " + typeName + ">";
     }
 
     bool CustomType::hasInstField(const std::string &fieldName) {
@@ -1869,7 +1868,7 @@ namespace core::data {
 
     bool CustomInst::updateData(const std::shared_ptr<RVM_Data> &newData) {
         if (typeId == newData->getTypeID()){
-            if (auto newCustomStruct = static_pointer_cast<const CustomInst>(newData)){
+            if (const auto newCustomStruct = static_pointer_cast<const CustomInst>(newData)){
                 customType = newCustomStruct->customType;
                 instFields = newCustomStruct->instFields;
                 return true;
@@ -1891,7 +1890,7 @@ namespace core::data {
             }
             throw std::runtime_error("Type mismatch");
         }
-        auto newCustomStruct = static_pointer_cast<const CustomInst>(other);
+        const auto newCustomStruct = static_pointer_cast<const CustomInst>(other);
         switch (relational) {
             case base::Relational::RE: return customType == newCustomStruct->customType && instFields == newCustomStruct->instFields;
             case base::Relational::RNE: return customType != newCustomStruct->customType || instFields != newCustomStruct->instFields;
@@ -1912,11 +1911,16 @@ namespace core::data {
     }
 
     std::string CustomInst::getValStr() const {
-        return "[" + customType->typeName + ": inst]";
+        return "<Instance: " + customType->getValStr() + "@" + instID.getIDString() + ">";
+    }
+
+    std::string CustomInst::toString() const
+    {
+        return getValStr();
     }
 
     std::string CustomInst::getTypeName() const {
-        return "CustomInst";
+        return "Instance";
     }
 
     std::shared_ptr<base::RVM_Data>
@@ -1959,8 +1963,8 @@ namespace core::data {
                 throw base::errors::DataTypeMismatchError(unknown_, unknown_, {}, {});
             }
         } else {
-            auto &target_fields = instFields[customType->typeName];
-            if (target_fields.contains(fieldName)) {
+            if (auto &target_fields = instFields[customType->typeName];
+                target_fields.contains(fieldName)) {
                 target_fields[fieldName] = fieldData;
             } else {
                 const auto &callback =
@@ -1997,7 +2001,7 @@ namespace core::data {
     }
 
     std::string CustomInst::getTypeIDString() const {
-        return customType->getCustomTypeIDString();
+        return customType->getValStr();
     }
 
     void CustomInst::derivedToChildType(const std::shared_ptr<CustomType> &childType) {
@@ -2064,7 +2068,7 @@ namespace core::data {
 
     bool Quote::updateData(const std::shared_ptr<RVM_Data> &newData) {
         if (typeId == newData->getTypeID()){
-            if (auto newQuote = static_pointer_cast<const Quote>(newData)){
+            if (const auto newQuote = static_pointer_cast<const Quote>(newData)){
                 this->quoteDataID = newQuote->quoteDataID;
                 this->quotedDataIDString = newQuote->quotedDataIDString;
                 return true;
@@ -2076,7 +2080,7 @@ namespace core::data {
     }
 
     bool Quote::compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const {
-        auto quotedData = memory::data_space_pool.findDataByIDNoLock(quoteDataID);
+        const auto quotedData = memory::data_space_pool.findDataByIDNoLock(quoteDataID);
         return quotedData->compare(other, relational);
     }
 
@@ -2130,22 +2134,23 @@ namespace core::data {
             {"fl-wa", FileMode::WriteAppend}
     };
 
+    id::TypeID File::typeId {"File", base::IDType::File, tp_file};
+
     FileMode File::stringToFileMode(const std::string &fileModeString) {
-        auto it = fileModeMap.find(fileModeString);
-        if (it != fileModeMap.end()) {
+        if (const auto it = fileModeMap.find(fileModeString);
+            it != fileModeMap.end()) {
             return it->second;
         } else {
             throw std::runtime_error("Invalid file mode: " + fileModeString);
         }
     }
 
-    id::TypeID File::typeId {"File", base::IDType::File, tp_file};
-
     File::File(const FileMode &mode, const std::string &filepath) : dataId(id::DataID()),
                                                                     filepath(filepath), fileMode(mode){}
 
     std::string File::getValStr() const {
-        return "[File(" + fileModeToString(fileMode) + "): '" + utils::getFileFromPath(filepath) + "']";
+        return "[File(" + fileModeToString(fileMode) + "): '" + utils::StringManager::escape(
+            utils::getFileFromPath(filepath)) + "']";
     }
 
     std::string File::getTypeName() const {
@@ -2158,7 +2163,7 @@ namespace core::data {
 
     bool File::updateData(const std::shared_ptr<RVM_Data> &newData) {
         if (File::typeId == newData->getTypeID()){
-            if (auto newFile = static_pointer_cast<const File>(newData)){
+            if (const auto newFile = static_pointer_cast<const File>(newData)){
                 this->fileMode = newFile->fileMode;
                 this->filepath = newFile->filepath;
                 return true;
@@ -2178,18 +2183,25 @@ namespace core::data {
             }
             throw std::runtime_error("Type mismatch");
         }
-        auto otherFile = static_pointer_cast<const File>(other);
+        const auto otherFile = static_pointer_cast<const File>(other);
         switch (relational) {
-            case base::Relational::RE: return fileMode == otherFile->fileMode && filepath == otherFile->filepath;
-            case base::Relational::RNE: return fileMode != otherFile->fileMode || filepath != otherFile->filepath;
-            case base::Relational::AND: return convertToBool() && other->convertToBool();
-            case base::Relational::OR: return convertToBool() || other->convertToBool();
-            default: throw std::runtime_error("Type mismatch");
+        case base::Relational::RE: return fileMode == otherFile->fileMode && filepath == otherFile->filepath;
+        case base::Relational::RNE: return fileMode != otherFile->fileMode || filepath != otherFile->filepath;
+        case base::Relational::AND: return convertToBool() && other->convertToBool();
+        case base::Relational::OR: return convertToBool() || other->convertToBool();
+        default: throw std::runtime_error("Type mismatch");
         }
     }
 
     std::shared_ptr<base::RVM_Data> File::copy_ptr() const {
         return std::make_shared<File>(this->fileMode, this->filepath);
+    }
+
+    void File::setModeByString(const std::string &modeStr) {
+        if (!fileModeMap.contains(modeStr)){
+            throw std::runtime_error("Invalid file mode");
+        }
+        fileMode = fileModeMap.at(modeStr);
     }
 
     std::string File::readFile() const {
@@ -2207,19 +2219,13 @@ namespace core::data {
     }
 
     bool File::writeFile(const std::string &content) const {
-        if (fileMode == FileMode::Write){
+        if (fileMode == FileMode::Write || fileMode == FileMode::ReadWrite){
             return utils::writeFile(filepath, content);
-        } else if (fileMode == FileMode::WriteAppend || fileMode == FileMode::ReadWrite) {
+        }
+        if (fileMode == FileMode::WriteAppend || fileMode == FileMode::ReadAppend || fileMode == FileMode::Append) {
             return utils::appendFile(filepath, content);
         }
         return false;
-    }
-
-    void File::setModeByString(const std::string &modeStr) {
-        if (!fileModeMap.contains(modeStr)){
-            throw std::runtime_error("Invalid file mode");
-        }
-        fileMode = fileModeMap.at(modeStr);
     }
 
     bool File::convertToBool() const {
@@ -2228,60 +2234,13 @@ namespace core::data {
 
     id::TypeID Time::typeId{"Time", base::IDType::Time, tp_time};
 
-    Time::Time(int year, int month, int day, int hour, int minute, int second, const utils::TimeFormat &format)
-    : base::RVM_Data(), dataId(id::DataID()), year(year), month(month), day(day),
-    hour(hour), minute(minute), second(second), format(format){}
-
-    Time Time::now() {
-        auto now = std::chrono::system_clock::now();
-        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
-        std::tm local_time = *std::localtime(&now_time);
-        return Time(local_time.tm_year + 1900, local_time.tm_mon + 1,
-                    local_time.tm_mday, local_time.tm_hour,
-                    local_time.tm_min, local_time.tm_sec);
-    }
+    Time::Time(const int year, const int month, const int day, const int hour, const int minute,
+        const int second, const utils::TimeFormat& format)
+        : base::RVM_Data(), year(year), month(month), day(day),
+          hour(hour), minute(minute), second(second), format(format){}
 
     std::string Time::getValStr() const {
         return getTimeString();
-    }
-
-    std::string Time::toString() const {
-        return "[Time: '" + getTimeString() + "']";
-    }
-
-    Time Time::fromString(const std::string &dateString, const utils::TimeFormat &format) {
-        int year = 0, month = 0, day = 0;
-        int hour = 0, minute = 0, second = 0;
-
-        switch (format) {
-            case utils::TimeFormat::ISO:
-            case utils::TimeFormat::US:
-            case utils::TimeFormat::European:
-                if (!parseDateFromString(dateString, format, year, month, day, hour, minute, second)) {
-                    throw std::runtime_error("Invalid date format: " + dateString);
-                }
-                break;
-
-            case utils::TimeFormat::Timestamp:
-                try {
-                    std::time_t timestamp = std::stol(dateString);
-                    std::tm local_time = *std::localtime(&timestamp);
-                    year = local_time.tm_year + 1900;
-                    month = local_time.tm_mon + 1;
-                    day = local_time.tm_mday;
-                    hour = local_time.tm_hour;
-                    minute = local_time.tm_min;
-                    second = local_time.tm_sec;
-                } catch (const std::exception &_) {
-                    throw std::runtime_error("Invalid timestamp format: " + dateString);
-                }
-                break;
-
-            default:
-                throw std::runtime_error("Unsupported date format");
-        }
-
-        return Time(year, month, day, hour, minute, second);
     }
 
     std::string Time::getTypeName() const {
@@ -2306,51 +2265,51 @@ namespace core::data {
         return false;
     }
 
-    std::shared_ptr<base::RVM_Data> Time::copy_ptr() const {
-        return std::make_shared<Time>(year, month, day, hour, minute, second);
-    }
-
     bool Time::compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const {
         bool thisBool = convertToBool();
         bool otherBool = other->convertToBool();
         if (other->getTypeID().fullEqualWith(typeId)){
             const auto & otherTime = std::static_pointer_cast<Time>(other);
-            auto thisTimeTuple = std::tie(year, month, day, hour, minute, second);
-            auto otherTimeTuple = std::tie(otherTime->year, otherTime->month, otherTime->day, otherTime->hour, otherTime->minute, otherTime->second);
+            const auto thisTimeTuple = std::tie(year, month, day, hour, minute, second);
+            const auto otherTimeTuple = std::tie(otherTime->year, otherTime->month, otherTime->day, otherTime->hour, otherTime->minute, otherTime->second);
             switch (relational) {
-                case base::Relational::RE:
-                    return thisTimeTuple == otherTimeTuple;
-                case base::Relational::RNE:
-                    return thisTimeTuple != otherTimeTuple;
-                case base::Relational::RL:
-                    return thisTimeTuple < otherTimeTuple;
-                case base::Relational::RG:
-                    return thisTimeTuple > otherTimeTuple;
-                case base::Relational::RLE:
-                    return thisTimeTuple <= otherTimeTuple;
-                case base::Relational::RGE:
-                    return thisTimeTuple >= otherTimeTuple;
-                case base::Relational::AND:
-                    return thisBool && otherBool;
-                case base::Relational::OR:
-                    return thisBool || otherBool;
-                default:
-                    throw std::runtime_error("Invalid relational operator");
+            case base::Relational::RE:
+                return thisTimeTuple == otherTimeTuple;
+            case base::Relational::RNE:
+                return thisTimeTuple != otherTimeTuple;
+            case base::Relational::RL:
+                return thisTimeTuple < otherTimeTuple;
+            case base::Relational::RG:
+                return thisTimeTuple > otherTimeTuple;
+            case base::Relational::RLE:
+                return thisTimeTuple <= otherTimeTuple;
+            case base::Relational::RGE:
+                return thisTimeTuple >= otherTimeTuple;
+            case base::Relational::AND:
+                return thisBool && otherBool;
+            case base::Relational::OR:
+                return thisBool || otherBool;
+            default:
+                throw std::runtime_error("Invalid relational operator");
             }
         } else {
             switch (relational) {
-                case base::Relational::AND:
-                    return thisBool && otherBool;
-                case base::Relational::OR:
-                    return thisBool || otherBool;
-                case base::Relational::RE:
-                    return false;
-                case base::Relational::RNE:
-                    return true;
-                default:
-                    throw std::runtime_error("Invalid relational operator");
+            case base::Relational::AND:
+                return thisBool && otherBool;
+            case base::Relational::OR:
+                return thisBool || otherBool;
+            case base::Relational::RE:
+                return false;
+            case base::Relational::RNE:
+                return true;
+            default:
+                throw std::runtime_error("Invalid relational operator");
             }
         }
+    }
+
+    std::shared_ptr<base::RVM_Data> Time::copy_ptr() const {
+        return std::make_shared<Time>(year, month, day, hour, minute, second);
     }
 
     void Time::setFormat(const utils::TimeFormat &new_format) {
@@ -2360,85 +2319,137 @@ namespace core::data {
     std::string Time::getTimeString() const {
         std::array<char, 64> buffer{};
         switch (format) {
-            case utils::TimeFormat::ISO:
-                std::snprintf(buffer.data(), buffer.size(), "%04d-%02d-%02d %02d:%02d:%02d",
-                              year, month, day, hour, minute, second);
-                break;
-            case utils::TimeFormat::US:
-                std::snprintf(buffer.data(), buffer.size(), "%02d/%02d/%04d %02d:%02d:%02d",
-                              month, day, year, hour, minute, second);
-                break;
-            case utils::TimeFormat::European:
-                std::snprintf(buffer.data(), buffer.size(), "%02d/%02d/%04d %02d:%02d:%02d",
-                              day, month, year, hour, minute, second);
-                break;
-            case utils::TimeFormat::Timestamp:
-                std::snprintf(buffer.data(), buffer.size(), "%lld",
-                              std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-                break;
-            default:
-                throw std::runtime_error("Invalid date format");
+        case utils::TimeFormat::ISO:
+            std::snprintf(buffer.data(), buffer.size(), "%04d-%02d-%02d %02d:%02d:%02d",
+                          year, month, day, hour, minute, second);
+            break;
+        case utils::TimeFormat::US:
+            std::snprintf(buffer.data(), buffer.size(), "%02d/%02d/%04d %02d:%02d:%02d",
+                          month, day, year, hour, minute, second);
+            break;
+        case utils::TimeFormat::European:
+            std::snprintf(buffer.data(), buffer.size(), "%02d/%02d/%04d %02d:%02d:%02d",
+                          day, month, year, hour, minute, second);
+            break;
+        case utils::TimeFormat::Timestamp:
+            std::snprintf(buffer.data(), buffer.size(), "%lld",
+                          std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+            break;
+        default:
+            throw std::runtime_error("Invalid date format");
         }
         return std::string(buffer.data());
     }
 
-    bool Time::convertToBool() const {
-        return year > 0 && month >= 1 && month <= 12 && day >= 1 && day <= 31 &&
-               hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 && second >= 0 && second <= 59;
+    std::string Time::toString() const {
+        return "<Time: '" + getTimeString() + "'@" + instID.getIDString() + ">";
     }
 
-    void Time::addDays(int days) {
+    Time Time::fromString(const std::string &dateString, const utils::TimeFormat &format) {
+        int year = 0, month = 0, day = 0;
+        int hour = 0, minute = 0, second = 0;
+
+        switch (format) {
+        case utils::TimeFormat::ISO:
+        case utils::TimeFormat::US:
+        case utils::TimeFormat::European:
+            if (!parseDateFromString(dateString, format, year, month, day, hour, minute, second)) {
+                throw std::runtime_error("Invalid date format: " + dateString);
+            }
+            break;
+
+        case utils::TimeFormat::Timestamp:
+            try {
+                std::time_t timestamp = std::stol(dateString);
+                std::tm local_time = *std::localtime(&timestamp);
+                year = local_time.tm_year + 1900;
+                month = local_time.tm_mon + 1;
+                day = local_time.tm_mday;
+                hour = local_time.tm_hour;
+                minute = local_time.tm_min;
+                second = local_time.tm_sec;
+            } catch (const std::exception &_) {
+                throw std::runtime_error("Invalid timestamp format: " + dateString);
+            }
+            break;
+
+        default:
+            throw std::runtime_error("Unsupported date format");
+        }
+
+        return Time(year, month, day, hour, minute, second);
+    }
+
+    Time Time::now() {
+        const auto now = std::chrono::system_clock::now();
+        const std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+        const std::tm local_time = *std::localtime(&now_time);
+        return Time(local_time.tm_year + 1900, local_time.tm_mon + 1,
+                    local_time.tm_mday, local_time.tm_hour,
+                    local_time.tm_min, local_time.tm_sec);
+    }
+
+    void Time::addDays(const int days) {
         if (days == 0) {
             return;
         }
         day += days;
     }
 
-    void Time::addYears(int years) {
-        if (years == 0) {
-            return;
-        }
-        year += years;
-    }
-
-    void Time::addSeconds(int seconds) {
-        if (seconds == 0) {
-            return;
-        }
-        second += seconds;
-    }
-
-    void Time::addMonths(int months) {
+    void Time::addMonths(const int months) {
         if (months == 0) {
             return;
         }
         month += months;
     }
 
-    void Time::addHours(int hours) {
-        if (hours == 0) {
+    void Time::addYears(const int years) {
+        if (years == 0) {
             return;
         }
-        hour += hours;
+        year += years;
     }
 
-    void Time::addMinutes(int minutes) {
+    void Time::addSeconds(const int seconds) {
+        if (seconds == 0) {
+            return;
+        }
+        second += seconds;
+    }
+
+    void Time::addMinutes(const int minutes) {
         if (minutes == 0) {
             return;
         }
         minute += minutes;
     }
 
+    void Time::addHours(const int hours) {
+        if (hours == 0) {
+            return;
+        }
+        hour += hours;
+    }
+
+    bool Time::convertToBool() const {
+        return year > 0 && month >= 1 && month <= 12 && day >= 1 && day <= 31 &&
+            hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 && second >= 0 && second <= 59;
+    }
+
     id::TypeID Error::typeId{"Error", base::IDType::Error, tp_error};
 
     Error::Error(std::string error_position, std::string error_line, std::vector<std::string> error_info)
-            : base::RVM_Data(), error_position(std::move(error_position)), error_line(std::move(error_line)),
-              error_info(std::move(error_info)){
+        : base::RVM_Data(), error_position(std::move(error_position)), error_line(std::move(error_line)),
+          error_info(std::move(error_info)){
         error = std::make_shared<base::errors::ExposedError>(this->error_position, this->error_line, this->error_info);
     }
 
     std::string Error::getValStr() const {
         return error->toString();
+    }
+
+    std::string Error::toString() const {
+        return "[Error: " + dataId.toString() + "]";
     }
 
     std::string Error::getTypeName() const {
@@ -2474,21 +2485,29 @@ namespace core::data {
         return std::make_shared<Error>(error_position, error_line, error_info);
     }
 
-    std::string Error::toString() const {
-        return "[Error: " + dataId.toString() + "]";
-    }
-
     id::TypeID Extension::typeId {"Extension", base::IDType::Extension, undefined_};
 
-    Extension::Extension(const std::string &ident, const std::string &extension_path)
-    : extension_type(ExtensionTypeTools::getExtensionType(extension_path)), extension_name(utils::getFileFromPath(extension_path)),
-      extension_ident(ident), extension_path(extension_path){
+    Extension::Extension(const std::string &ident, const std::string &extension_name, const std::string &extension_path)
+        : extension_type(ExtensionTypeTools::getExtensionType(extension_path)), extension_name(extension_name),
+          extension_ident(ident), extension_path(extension_path){
         extension_scope = memory::RVM_Memory::getInstance().acquireScopeNoLock(extension_ident, false);
     }
 
+    Extension::Extension(const std::string &ident, const std::string &extension_path)
+        : extension_type(ExtensionTypeTools::getExtensionType(extension_path)), extension_name(utils::getFileFromPath(extension_path)),
+          extension_ident(ident), extension_path(extension_path){
+        extension_scope = memory::RVM_Memory::getInstance().acquireScopeNoLock(extension_ident, false);
+    }
+
+    Extension::Extension(const std::string &ident, const std::string &extension_path, const ScopePtr &scope)
+        : extension_type(ExtensionTypeTools::getExtensionType(extension_path)),
+          extension_name(utils::getFileNameFromPath(extension_path)),
+          extension_ident(ident), extension_path(extension_path),
+          extension_scope(scope){}
+
     std::string Extension::getValStr() const {
         return "[Extension(" + ExtensionTypeTools::getExtensionTypeName(extension_type) +
-        "): " + dataId.base::RVM_ID::toString("Data(" + extension_name + ")") + "]";
+            "): " + dataId.base::RVM_ID::toString("Data(" + extension_name + ")") + "]";
     }
 
     std::string Extension::getTypeName() const {
@@ -2513,18 +2532,6 @@ namespace core::data {
 
     std::shared_ptr<base::RVM_Data> Extension::copy_ptr() const {
         return std::make_shared<Extension>(this->extension_name, this->extension_path);
-    }
-
-    Extension::Extension(const std::string &ident, const std::string &extension_path, const ScopePtr &scope)
-    : extension_type(ExtensionTypeTools::getExtensionType(extension_path)),
-      extension_name(utils::getFileNameFromPath(extension_path)),
-      extension_ident(ident), extension_path(extension_path),
-      extension_scope(scope){}
-
-    Extension::Extension(const std::string &ident, const std::string &extension_name, const std::string &extension_path)
-    : extension_type(ExtensionTypeTools::getExtensionType(extension_path)), extension_name(extension_name),
-      extension_ident(ident), extension_path(extension_path){
-        extension_scope = memory::RVM_Memory::getInstance().acquireScopeNoLock(extension_ident, false);
     }
 
 }
@@ -2783,6 +2790,21 @@ namespace core::memory{
         RVM_Scope::removable = isRemovable;
     }
 
+    void RVM_Scope::activate()
+    {
+        isActive_ = true;
+    }
+
+    void RVM_Scope::deactivate()
+    {
+        isActive_ = false;
+    }
+
+    bool RVM_Scope::isActive() const
+    {
+        return isActive_;
+    }
+
     bool RVM_Scope::getOpPermission(const base::OpMode &opMode) const {
         switch (opMode) {
             case base::OpMode::Add:
@@ -2946,10 +2968,12 @@ namespace core::memory{
         }
 
         out << "\n--- Named Spaces Index ---\n";
-        for (const auto &[name, weakSpace]: namedScopes_) {
+        for (const auto& space: activeScopes_) {
+            const auto& name = space->getName();
+            const auto& weakSpace = namedScopes_[name];
             out << "Name: " << name;
-            if (auto space = weakSpace.lock()) {
-                out << " (active, size: " << space->size() << ")";
+            if (const auto space_ = weakSpace.lock()) {
+                out << " (active, size: " << space_->size() << ")";
             } else {
                 out << " (expired)";
             }
@@ -2988,6 +3012,7 @@ namespace core::memory{
                                        DEFAULT_SCOPE_PREFIX + name + "#" + std::to_string(nextDefaultNameId_++) :
                                        name;
 
+        scope->activate();
         scope->setName(spaceName);
         namedScopes_[spaceName] = scope;
         activeScopes_.push_back(scope);
@@ -2996,15 +3021,24 @@ namespace core::memory{
     }
 
     void RVM_Memory::releaseScopeNoLock(const RVM_Memory::ScopePtr &scope) {
-        const auto &name = scope->getName();
-        if (!name.empty()) {
+        if (!scope->isActive())
+        {
+            currentScope_ = activeScopes_.empty() ? nullptr : activeScopes_.back();
+            return;
+        }
+
+        if (const auto &name = scope->getName();
+            !name.empty()) {
             namedScopes_.erase(name);
         }
         activeScopes_.remove(scope);
         recentAccessCache_.clear();
 
+        scope->deactivate();
         scope->clear();
         scope->setName("");
+        static int calledTimes = 0;
+        calledTimes ++;
         freeScopes_.push(scope);
 
         currentScope_ = activeScopes_.empty() ? nullptr : activeScopes_.back();
@@ -3124,13 +3158,13 @@ namespace core::memory{
         globalScope_->clear();
     }
 
-    void RVM_Memory::initializePool(size_t size) {
+    void RVM_Memory::initializePool(const size_t size) {
         for (size_t i = 0; i < size; ++i) {
             freeScopes_.push(std::make_shared<RVM_Scope>());
         }
     }
 
-    void RVM_Memory::expandPool(size_t size) {
+    void RVM_Memory::expandPool(const size_t size) {
         initializePool(size);
     }
 

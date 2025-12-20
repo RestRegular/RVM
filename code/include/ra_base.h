@@ -22,8 +22,8 @@
 #include "rvm_version.h"
 
 
-namespace base {
-
+namespace base
+{
 #define MAIN_SCOPE      "MainScope"
 #define GLOBAL_SCOPE    "GlobalScope"
 
@@ -74,34 +74,37 @@ namespace base {
 
 #pragma pack(push, 1)
 
-    struct RVMSerialHeader {
+    struct RVMSerialHeader
+    {
         uint8_t magic[4];
         uint16_t major_ver;
         uint16_t minor_ver;
         uint16_t patch_ver;
         uint16_t profile;
 
-        explicit RVMSerialHeader(const utils::SerializationProfile &profile = utils::SerializationProfile::Debug)
-                : magic{'R', 'S', 'I', 0x1A},
-                  major_ver(VERSION_MAJOR),
-                  minor_ver(VERSION_MINOR),
-                  patch_ver(VERSION_PATCH),
-                  profile(static_cast<uint16_t>(profile)) {}
+        explicit RVMSerialHeader(const utils::SerializationProfile& profile = utils::SerializationProfile::Debug)
+            : magic{'R', 'S', 'I', 0x1A},
+              major_ver(VERSION_MAJOR),
+              minor_ver(VERSION_MINOR),
+              patch_ver(VERSION_PATCH),
+              profile(static_cast<uint16_t>(profile))
+        {
+        }
 
-        void serialize(std::ostream &out) const;
+        void serialize(std::ostream& out) const;
 
-        void deserialize(std::istream &in, const utils::SerializationProfile &profile_,
-                         const std::string &file_path, const bool &validate_ = true);
+        void deserialize(std::istream& in, const utils::SerializationProfile& profile_,
+                         const std::string& file_path, const bool& validate_ = true);
 
-        void validate(const std::string &file_path) const;
+        void validate(const std::string& file_path) const;
 
         [[nodiscard]] utils::SerializationProfile getProfile() const;
 
-        void setProfile(const utils::SerializationProfile &profile_);
+        void setProfile(const utils::SerializationProfile& profile_);
 
         static std::string getRVMVersionInfo();
 
-        [[nodiscard]] std::string getRSIVersionInfo(const std::string &path) const;
+        [[nodiscard]] std::string getRSIVersionInfo(const std::string& path) const;
     };
 
 #pragma pack(pop)
@@ -120,11 +123,12 @@ namespace base {
 
     enum class Relational;
 
-    Relational stringToRelational(const std::string &str);
+    Relational stringToRelational(const std::string& str);
 
-    std::string relationalToString(const Relational &relational);
+    std::string relationalToString(const Relational& relational);
 
-    enum class OpMode {
+    enum class OpMode
+    {
         Add,
         Delete,
         Remove,
@@ -132,11 +136,13 @@ namespace base {
         Find
     };
 
-    namespace OpModeTools {
-        std::string getOpModeString(const base::OpMode &opMode);
+    namespace OpModeTools
+    {
+        std::string getOpModeString(const base::OpMode& opMode);
     }
 
-    struct RVM_ID {
+    struct RVM_ID
+    {
         int dis_id;
         char sign;
         IDType idType;
@@ -149,17 +155,17 @@ namespace base {
 
         [[nodiscard]] std::string getIDString() const;
 
-        [[nodiscard]] virtual std::string toString(const std::string &detail) const;
+        [[nodiscard]] virtual std::string toString(const std::string& detail) const;
 
         [[nodiscard]] virtual std::string toString() const;
 
         virtual void printInfo() const;
 
-        virtual bool operator==(const RVM_ID &other) const;
+        virtual bool operator==(const RVM_ID& other) const;
 
-        [[nodiscard]] virtual bool equalWith(const RVM_ID &other) const;
+        [[nodiscard]] virtual bool equalWith(const RVM_ID& other) const;
 
-        [[nodiscard]] virtual bool fullEqualWith(const RVM_ID &other) const;
+        [[nodiscard]] virtual bool fullEqualWith(const RVM_ID& other) const;
 
         [[nodiscard]] virtual std::string getIdentStr() const;
 
@@ -170,8 +176,8 @@ namespace base {
         int uid;
     };
 
-    struct InstID : base::RVM_ID {
-    public:
+    struct InstID final : base::RVM_ID
+    {
         explicit InstID();
 
         void printInfo() const override;
@@ -179,7 +185,8 @@ namespace base {
         [[nodiscard]] std::string toString() const override;
     };
 
-    struct RVM_Data {
+    struct RVM_Data
+    {
         explicit RVM_Data();
 
         virtual ~RVM_Data() = default;
@@ -188,12 +195,12 @@ namespace base {
 
         [[nodiscard]] virtual std::string getTypeName() const = 0;
 
-        [[nodiscard]] virtual RVM_ID &getTypeID() const = 0;
+        [[nodiscard]] virtual RVM_ID& getTypeID() const = 0;
 
-        [[nodiscard]] virtual bool updateData(const std::shared_ptr<RVM_Data> &newData) = 0;
+        [[nodiscard]] virtual bool updateData(const std::shared_ptr<RVM_Data>& newData) = 0;
 
-        [[nodiscard]] virtual bool compare(const std::shared_ptr<RVM_Data> &other,
-                                           const base::Relational &relational) const = 0;
+        [[nodiscard]] virtual bool compare(const std::shared_ptr<RVM_Data>& other,
+                                           const base::Relational& relational) const = 0;
 
         [[nodiscard]] virtual bool convertToBool() const = 0;
 
@@ -203,25 +210,27 @@ namespace base {
 
         [[nodiscard]] virtual std::string toEscapedString() const;
 
-        [[nodiscard]] const RVM_ID &getInstID() const;
+        [[nodiscard]] const RVM_ID& getInstID() const;
 
         [[nodiscard]] std::string getDataInfo() const;
 
-        bool operator==(const RVM_Data &other) const;
+        bool operator==(const RVM_Data& other) const;
 
     protected:
         InstID instID;
     };
 
-    struct RVM_ThreadPool {
-        RVM_ThreadPool(const RVM_ThreadPool &) = delete;
+    struct RVM_ThreadPool
+    {
+        RVM_ThreadPool(const RVM_ThreadPool&) = delete;
 
-        RVM_ThreadPool &operator=(const RVM_ThreadPool &) = delete;
+        RVM_ThreadPool& operator=(const RVM_ThreadPool&) = delete;
 
-        static RVM_ThreadPool &getInstance(size_t numThreads = std::thread::hardware_concurrency());
+        static RVM_ThreadPool& getInstance(size_t numThreads = std::thread::hardware_concurrency());
 
-        template<class F>
-        void enqueue(F &&f) {
+        template <class F>
+        void enqueue(F&& f)
+        {
             {
                 std::unique_lock<std::mutex> lock(queueMutex);
                 tasks.emplace(std::forward<F>(f));
@@ -242,7 +251,8 @@ namespace base {
     };
 
 
-    enum class IODataType {
+    enum class IODataType
+    {
         Null,
         Int,
         Float,
@@ -253,69 +263,78 @@ namespace base {
 
     std::string getIODataTypeName(IODataType type);
 
-    struct RVM_IO {
-
-        RVM_IO(const RVM_IO &) = delete;
-
-        RVM_IO &operator=(const RVM_IO &) = delete;
-
-        static RVM_IO *getInstance();
+    struct RVM_IO
+    {
+        RVM_IO(const RVM_IO&) = delete;
+        RVM_IO& operator=(const RVM_IO&) = delete;
+        static RVM_IO* getInstance();
 
         void setOutputToConsole(bool enable);
-
-        void setOutputToFile(const std::string &filename);
-
+        void setOutputToFile(const std::string& filename);
         void setBufferThreshold(size_t threshold);
-
         size_t getCurrentBufferSize() const;
 
-        template<typename T>
-        RVM_IO &operator<<(const T &data) {
+        void setInputFromFile(const std::string& filename);
+        void setInputFromConsole();
+        bool isInputFromFile() const;
+
+        template <typename T>
+        RVM_IO& operator<<(const T& data)
+        {
             std::stringstream temp;
             temp << data;
             std::string strData = temp.str();
             currentSize += strData.size();
             buffer << strData;
-            if (currentSize >= bufferThreshold) {
+            if (currentSize >= bufferThreshold)
+            {
                 flushOutputCache();
             }
             return *this;
         }
 
-        template<typename T>
-        RVM_IO &operator+=(const T &data) {
+        template <typename T>
+        RVM_IO& operator+=(const T& data)
+        {
             std::stringstream temp;
             temp << data;
             std::string strData = temp.str();
             currentSize += strData.size();
             errorBuffer << strData;
-            if (currentSize >= bufferThreshold) {
+            if (currentSize >= bufferThreshold)
+            {
                 flushOutputCache();
             }
             return *this;
         }
 
-        template<typename... Args>
-        void immediateOutput(const Args &... args) {
+        template <typename... Args>
+        void immediateOutput(const Args&... args)
+        {
             if constexpr (sizeof...(args) == 0) return;
-            if (toConsole) {
+            if (toConsole)
+            {
                 immediateOutputImpl(std::cout, args...);
                 std::cout << std::flush;
             }
-            if (toFile) {
+            if (toFile)
+            {
                 immediateOutputImpl(fileStream, args...);
                 fileStream << std::flush;
             }
         }
 
-        template<typename... Args>
-        void immediateOutputError(const Args &... args) {
+        template <typename... Args>
+        void immediateOutputError(const Args&... args)
+        {
             if constexpr (sizeof...(args) == 0) return;
-            if (toConsole) {
+            if (toConsole)
+            {
                 immediateOutputImpl(std::cerr, args...);
                 std::cerr << std::flush;
             }
-            if (toFile) {
+            if (toFile)
+            {
                 immediateOutputImpl(fileStream, args...);
                 fileStream << std::flush;
             }
@@ -326,47 +345,53 @@ namespace base {
         static void handleSigInt(int signal);
 
         void readLineRaw();
-
         void readLineAndSplit();
-
         std::string nextString();
-
         std::vector<std::string> nextStrings(size_t count);
-
         bool hasNextString() const;
-
         void flashInputCache();
+
+        bool hasMoreInput();
 
         ~RVM_IO();
 
     private:
-        static RVM_IO *instance;
+        static RVM_IO* instance;
         std::stringstream buffer;
         std::stringstream errorBuffer;
         std::ofstream fileStream;
+        std::ifstream inputFileStream;
         std::mutex fileWriteMutex;
+        std::mutex inputMutex;
         bool toConsole;
         bool toFile;
+        bool inputFromFile;
         size_t bufferThreshold;
         size_t currentSize;
         std::vector<std::string> inputCache;
-        RVM_ThreadPool &threadPool = RVM_ThreadPool::getInstance();
+        RVM_ThreadPool& threadPool = RVM_ThreadPool::getInstance();
 
         explicit RVM_IO(int threshold_size = 20);
 
-        template<typename T>
-        static void immediateOutputImpl(std::ostream &os, const T &arg) {
+        template <typename T>
+        static void immediateOutputImpl(std::ostream& os, const T& arg)
+        {
             os << arg;
         }
 
-        template<typename T, typename... Args>
-        void immediateOutputImpl(std::ostream &out, const T &first, const Args &... args) {
+        template <typename T, typename... Args>
+        void immediateOutputImpl(std::ostream& out, const T& first, const Args&... args)
+        {
             out << first;
             immediateOutputImpl(out, args...);
         }
+
+        // 新增：获取输入流的通用方法
+        std::istream& getInputStream();
     };
 
-    enum class ErrorType {
+    enum class ErrorType
+    {
         SyntaxError,
         RuntimeError,
         IOError,
@@ -385,9 +410,10 @@ namespace base {
         CustomError
     };
 
-    std::string getErrorTypeName(const ErrorType &errorType);
+    std::string getErrorTypeName(const ErrorType& errorType);
 
-    struct RVM_Error : std::exception {
+    struct RVM_Error : std::exception
+    {
         ErrorType error_type;
         std::string error_type_name;
         std::string error_position;
@@ -409,146 +435,193 @@ namespace base {
 
         [[nodiscard]] std::string getErrorInfo() const;
 
-        void addTraceInfo(const std::string &traceInfo);
+        void addTraceInfo(const std::string& traceInfo);
     };
 
-    namespace errors {
-
-        struct ExposedError final : RVM_Error {
+    namespace errors
+    {
+        struct ExposedError final : RVM_Error
+        {
             ExposedError(const std::string& error_position, const std::string& error_line,
-                         const std::vector<std::string> &error_info)
-                    : RVM_Error(ErrorType::CustomError, error_position, error_line,
-                                error_info, {}) {}
+                         const std::vector<std::string>& error_info)
+                : RVM_Error(ErrorType::CustomError, error_position, error_line,
+                            error_info, {})
+            {
+            }
         };
 
-        struct ModificationError final : RVM_Error {
+        struct ModificationError final : RVM_Error
+        {
             ModificationError(const std::string& error_position, const std::string& error_line,
-                              const std::vector<std::string> &error_info,
+                              const std::vector<std::string>& error_info,
                               const std::vector<std::string>& repair_tips)
-                    : RVM_Error(ErrorType::CustomError, error_position, error_line,
-                                error_info, repair_tips) {}
+                : RVM_Error(ErrorType::CustomError, error_position, error_line,
+                            error_info, repair_tips)
+            {
+            }
         };
 
-        struct DataTypeMismatchError final : RVM_Error {
+        struct DataTypeMismatchError final : RVM_Error
+        {
             DataTypeMismatchError(const std::string& error_position,
-                const std::string& error_line,
-                std::vector<std::string> error_info,
-                const std::vector<std::string>& repair_tips)
-                    : RVM_Error(ErrorType::TypeError, error_position, error_line,
-                                {"This error is caused by a data type mismatch."}, repair_tips) {
+                                  const std::string& error_line,
+                                  std::vector<std::string> error_info,
+                                  const std::vector<std::string>& repair_tips)
+                : RVM_Error(ErrorType::TypeError, error_position, error_line,
+                            {"This error is caused by a data type mismatch."}, repair_tips)
+            {
                 this->error_info.insert(this->error_info.end(), error_info.begin(), error_info.end());
             }
         };
 
-        struct ArgTypeMismatchError final : RVM_Error {
+        struct ArgTypeMismatchError final : RVM_Error
+        {
             ArgTypeMismatchError(const std::string& error_position,
-                const std::string& error_line,
-                std::vector<std::string> error_info,
-                const std::vector<std::string>& repair_tips)
-                    : RVM_Error(ErrorType::TypeError, error_position, error_line,
-                                {"This error is caused by an arg type mismatch."}, repair_tips) {
+                                 const std::string& error_line,
+                                 std::vector<std::string> error_info,
+                                 const std::vector<std::string>& repair_tips)
+                : RVM_Error(ErrorType::TypeError, error_position, error_line,
+                            {"This error is caused by an arg type mismatch."}, repair_tips)
+            {
                 this->error_info.insert(this->error_info.end(), error_info.begin(), error_info.end());
             }
         };
 
-        struct DuplicateKeyError final : RVM_Error {
-            DuplicateKeyError(const std::string& error_position, const std::string& error_line, std::vector<std::string> error_info,
+        struct DuplicateKeyError final : RVM_Error
+        {
+            DuplicateKeyError(const std::string& error_position, const std::string& error_line,
+                              std::vector<std::string> error_info,
                               const std::vector<std::string>& repair_tips) :
-                    RVM_Error(base::ErrorType::MemoryError, error_position, error_line,
-                              {"This error is caused by allocating memory space with the duplicate name."},
-                              repair_tips) {
+                RVM_Error(base::ErrorType::MemoryError, error_position, error_line,
+                          {"This error is caused by allocating memory space with the duplicate name."},
+                          repair_tips)
+            {
                 this->error_info.insert(this->error_info.end(), error_info.begin(), error_info.end());
             }
         };
 
-        struct ArgumentNumberError final : RVM_Error {
+        struct ArgumentNumberError final : RVM_Error
+        {
             ArgumentNumberError(const std::string& error_position, const std::string& error_line,
                                 const std::string& arg_num, const int supported_num, const std::string& error_ri,
                                 std::vector<std::string> repair_tips) :
-                    RVM_Error(base::ErrorType::ArgumentError, error_position, error_line,
-                                    {"This error is caused by a mismatch between required and received arguments.",
-                                     "Target RI: " + error_ri, "Required Arg Number: " + arg_num,
-                                     "Received Arg Number: " + std::to_string(supported_num)},
-                                    {"Check the number of arguments provided for " + error_ri + "."}) {
+                RVM_Error(base::ErrorType::ArgumentError, error_position, error_line,
+                          {
+                              "This error is caused by a mismatch between required and received arguments.",
+                              "Target RI: " + error_ri, "Required Arg Number: " + arg_num,
+                              "Received Arg Number: " + std::to_string(supported_num)
+                          },
+                          {"Check the number of arguments provided for " + error_ri + "."})
+            {
                 this->repair_tips.insert(this->repair_tips.end(), repair_tips.begin(), repair_tips.end());
             }
         };
 
-        struct ArgumentError final : RVM_Error {
-            ArgumentError(const std::string& error_position, const std::string& error_line, std::string error_argument_info,
+        struct ArgumentError final : RVM_Error
+        {
+            ArgumentError(const std::string& error_position, const std::string& error_line,
+                          std::string error_argument_info,
                           const std::vector<std::string>& repair_tips) :
-                    base::RVM_Error(base::ErrorType::ArgumentError, error_position, error_line,
-                                    {"This error is caused by a mismatch between required and received arguments.",
-                                     std::move(error_argument_info)},
-                                    repair_tips) {}
+                base::RVM_Error(base::ErrorType::ArgumentError, error_position, error_line,
+                                {
+                                    "This error is caused by a mismatch between required and received arguments.",
+                                    std::move(error_argument_info)
+                                },
+                                repair_tips)
+            {
+            }
         };
 
-        struct MemoryError final : RVM_Error {
-            MemoryError(const std::string& error_position, const std::string& error_line, const std::vector<std::string>& error_info,
+        struct MemoryError final : RVM_Error
+        {
+            MemoryError(const std::string& error_position, const std::string& error_line,
+                        const std::vector<std::string>& error_info,
                         const std::vector<std::string>& repair_tips) :
-                    RVM_Error(ErrorType::MemoryError, error_position, error_line,
-                              error_info, repair_tips) {}
+                RVM_Error(ErrorType::MemoryError, error_position, error_line,
+                          error_info, repair_tips)
+            {
+            }
         };
 
-        struct FieldNotFoundError final : RVM_Error {
-            FieldNotFoundError(const std::string& error_position, const std::string& error_line, const std::string& target_tp_or_inst,
+        struct FieldNotFoundError final : RVM_Error
+        {
+            FieldNotFoundError(const std::string& error_position, const std::string& error_line,
+                               const std::string& target_tp_or_inst,
                                const std::string& undefined_field,
                                const std::vector<std::string>& repair_tips) :
-                    RVM_Error(base::ErrorType::FieldError, error_position, error_line,
-                              {"This error is caused by accessing an undefined field.",
-                               "Target: " + target_tp_or_inst,
-                               "Undefined Field: \"" + undefined_field + "\""}, repair_tips) {}
+                RVM_Error(base::ErrorType::FieldError, error_position, error_line,
+                          {
+                              "This error is caused by accessing an undefined field.",
+                              "Target: " + target_tp_or_inst,
+                              "Undefined Field: \"" + undefined_field + "\""
+                          }, repair_tips)
+            {
+            }
         };
 
-        struct FileWriteError final : RVM_Error {
-            FileWriteError(const std::string& error_position, const std::string& error_line, const std::vector<std::string>& error_info,
+        struct FileWriteError final : RVM_Error
+        {
+            FileWriteError(const std::string& error_position, const std::string& error_line,
+                           const std::vector<std::string>& error_info,
                            const std::vector<std::string>& repair_tips) :
-                    RVM_Error(ErrorType::FileError, error_position, error_line,
-                              error_info, repair_tips) {}
+                RVM_Error(ErrorType::FileError, error_position, error_line,
+                          error_info, repair_tips)
+            {
+            }
         };
 
-        struct FileReadError final : RVM_Error {
-            FileReadError(const std::string& error_position, const std::string& error_line, std::vector<std::string> error_info,
+        struct FileReadError final : RVM_Error
+        {
+            FileReadError(const std::string& error_position, const std::string& error_line,
+                          std::vector<std::string> error_info,
                           const std::vector<std::string>& repair_tips) :
-                    RVM_Error(ErrorType::FileError, error_position, error_line,
-                              {"This error is caused by the non - existence or incorrectness"
-                               " of the path provided for reading the file."},
-                              repair_tips) {
+                RVM_Error(ErrorType::FileError, error_position, error_line,
+                          {
+                              "This error is caused by the non - existence or incorrectness"
+                              " of the path provided for reading the file."
+                          },
+                          repair_tips)
+            {
                 this->error_info.insert(this->error_info.end(), error_info.begin(), error_info.end());
             }
         };
 
-        struct KeyNotFoundError final : RVM_Error {
-            KeyNotFoundError(const std::string& error_position, const std::string& error_line, std::vector<std::string> error_info,
+        struct KeyNotFoundError final : RVM_Error
+        {
+            KeyNotFoundError(const std::string& error_position, const std::string& error_line,
+                             std::vector<std::string> error_info,
                              std::vector<std::string> repair_tips)
-                    : RVM_Error(ErrorType::KeyError, error_position, error_line,
-                                {"This error is caused by the specified key not being found."},
-                                {"When accessing a value by key, ensure the key exists and has a corresponding value."}) {
+                : RVM_Error(ErrorType::KeyError, error_position, error_line,
+                            {"This error is caused by the specified key not being found."},
+                            {"When accessing a value by key, ensure the key exists and has a corresponding value."})
+            {
                 this->error_info.insert(this->error_info.end(), error_info.begin(), error_info.end());
                 this->repair_tips.insert(this->repair_tips.end(), repair_tips.begin(), repair_tips.end());
             }
         };
 
-        struct IndexOutOfRangeError final : RVM_Error {
+        struct IndexOutOfRangeError final : RVM_Error
+        {
             IndexOutOfRangeError(const std::string& error_position,
                                  const std::string& error_line,
                                  std::vector<std::string> error_info,
                                  std::vector<std::string> repair_tips)
-                    : RVM_Error(ErrorType::RangeError,
-                                error_position,
-                                error_line,
-                                {"This error is caused by accessing an invalid index position."},
-                                {"Ensure the index is within the valid range of the container."}) {
+                : RVM_Error(ErrorType::RangeError,
+                            error_position,
+                            error_line,
+                            {"This error is caused by accessing an invalid index position."},
+                            {"Ensure the index is within the valid range of the container."})
+            {
                 this->error_info.insert(this->error_info.end(),
                                         error_info.begin(), error_info.end());
                 this->repair_tips.insert(this->repair_tips.end(),
                                          repair_tips.begin(), repair_tips.end());
             }
         };
-
     }
 
-    enum class KeywordType {
+    enum class KeywordType
+    {
         IOModes,
         Logical,
         MemoryVars,
@@ -557,28 +630,33 @@ namespace base {
         Instructions
     };
 
-    std::string getKeywordTypeName(const KeywordType &keywordType);
+    std::string getKeywordTypeName(const KeywordType& keywordType);
 
     static std::unordered_map<std::string, std::unordered_set<std::string>> categorizedKeywords{
-            {"IOMode",       {"s-m",  "s-l",   "s-f",   "s-n",   "s-unpack"}},
-            {"Logical",      {"RG",   "RGE",   "RNE",   "RE",    "RAE",   "RGE", "RG", "RT", "RF", "AND", "OR"}},
-            {"MemoryVar",    {"true", "false", "null",  "SN",    "SE",    "SS",  "SR"}},
-            {"DataTypes",    {tp, tp_int, tp_float, tp_str, tp_bool, tp_null,
-                                     tp_char, tp_list, tp_dict, tp_series, tp_pair,
-                                     tp_time, tp_qot, tp_error}},
-            {"FileModes",    {"fl-r", "fl-w",  "fl-rw", "fl-ap", "fl-ra", "fl-wa"}},
-            {"Instructions", {}}
+        {"IOMode", {"s-m", "s-l", "s-f", "s-n", "s-unpack"}},
+        {"Logical", {"RG", "RGE", "RNE", "RE", "RAE", "RGE", "RG", "RT", "RF", "AND", "OR"}},
+        {"MemoryVar", {"true", "false", "null", "SN", "SE", "SS", "SR"}},
+        {
+            "DataTypes", {
+                tp, tp_int, tp_float, tp_str, tp_bool, tp_null,
+                tp_char, tp_list, tp_dict, tp_series, tp_pair,
+                tp_time, tp_qot, tp_error
+            }
+        },
+        {"FileModes", {"fl-r", "fl-w", "fl-rw", "fl-ap", "fl-ra", "fl-wa"}},
+        {"Instructions", {}}
     };
 
-    void addKeywordInCategory(const KeywordType &category, const std::string &keyword);
+    void addKeywordInCategory(const KeywordType& category, const std::string& keyword);
 
-    bool containsKeyword(const std::string &keyword);
+    bool containsKeyword(const std::string& keyword);
 
-    bool containsKeywordInCategory(const KeywordType &category, const std::string &keyword);
+    bool containsKeywordInCategory(const KeywordType& category, const std::string& keyword);
 
-    std::string getKeywordTypeFormatString(const KeywordType &keywordType);
+    std::string getKeywordTypeFormatString(const KeywordType& keywordType);
 
-    enum class IDType {
+    enum class IDType
+    {
         Inst,
         Type,
         Data,
@@ -614,7 +692,8 @@ namespace base {
         Extension
     };
 
-    enum class Relational {
+    enum class Relational
+    {
         RG,
         RGE,
         RNE,

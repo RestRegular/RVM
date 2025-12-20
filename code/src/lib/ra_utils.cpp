@@ -1062,8 +1062,8 @@ namespace utils {
         return isValidIdentifier(content);
     }
 
-    std::string getSpaceFormatString(const std::string& name, const std::string& value){
-        return "[Space(" + name + "): " + value + "]";
+    std::string getEntityFormatString(const std::string& name, const std::string& value){
+        return "[Entity: " + value + "]";
     }
 
     size_t getSpaceFrontOfLineCode(const std::string& lineCode){

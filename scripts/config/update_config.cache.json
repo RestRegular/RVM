@@ -1,17 +1,21 @@
 {
   "validate": true,
   "version": {
-    "vs_desc": "适配Linux平台并修复部分符号错误",
+    "vs_desc": "优化了并新增了错误处理相关功能",
     "change_type": [
-      "feat",
-      "fix"
+      "opt",
+      "feat"
     ]
   },
   "update_log": {
     "author": "RestRegular",
     "log_contents": [
-      "新增适配Linux平台功能。",
-      "修复了部分符号静态初始化的错误。"
+      "统一内存空间ID命名风格，使用全大写命名规范。",
+      "扩展 `DetectBlock` 构造函数以支持内置类型检测。",
+      "调整 `DETECT` 指令参数数量限制并增强类型检查。",
+      "改进 `EXPOSE` 指令错误数据传递逻辑。",
+      "优化 `SR_SPACE_ID` 和 `SE_SPACE_ID` 的引用一致性。",
+      "完善文件写入异常抛出逻辑结构。"
     ]
   },
   "annotation": {

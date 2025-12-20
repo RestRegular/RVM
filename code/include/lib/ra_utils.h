@@ -76,7 +76,7 @@ namespace utils {
     bool isStringFormat(const std::string& str);
     std::string parseStringFormat(const std::string& str);
     void parseStringFormat_nret(std::string& str);
-    std::string getSpaceFormatString(const std::string& name, const std::string& value);
+    std::string getEntityFormatString(const std::string& name, const std::string& value);
     std::string getObjectFormatString(const std::string &type, const std::string &name);
     std::string getTypeFormatString(const ArgType &argType);
     std::string getArgTypeName(const ArgType& argType);

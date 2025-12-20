@@ -34,11 +34,11 @@ namespace core {
 
             bool operator==(const RVM_ID &other) const override;
 
-            std::shared_ptr<TypeID> getTopParentTypeID() const;
+            [[nodiscard]] std::shared_ptr<TypeID> getTopParentTypeID() const;
 
-            bool equalWith(const RVM_ID &other) const override;
+            [[nodiscard]] bool equalWith(const RVM_ID &other) const override;
 
-            std::string getIdentStr() const override;
+            [[nodiscard]] std::string getIdentStr() const override;
 
         private:
             std::shared_ptr<TypeID> parent_type_id;
@@ -137,25 +137,25 @@ namespace core {
 
             explicit DType() = delete;
 
-            explicit DType(const id::TypeID &_typeId): dTypeId(_typeId){};
+            explicit DType(id::TypeID _typeId): dTypeId(std::move(_typeId)){};
 
             ~DType() override = default;
 
-            std::string getValStr() const override;
+            [[nodiscard]] std::string getValStr() const override;
 
-            std::string getTypeName() const override;
+            [[nodiscard]] std::string getTypeName() const override;
 
-            base::RVM_ID &getTypeID() const override;
+            [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
-            bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
+            [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
-            std::shared_ptr<base::RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<base::RVM_Data> copy_ptr() const override;
 
-            id::TypeID getDTypeID() const;
+            [[nodiscard]] id::TypeID getDTypeID() const;
 
         protected:
             id::TypeID dTypeId;
@@ -182,7 +182,7 @@ namespace core {
 
             [[nodiscard]] std::string toEscapedString() const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
         };
 
         extern Null nullInstance; // 空对象：供其他地方使用
@@ -216,7 +216,7 @@ namespace core {
 
             [[nodiscard]] virtual std::shared_ptr<Numeric> mod(const std::shared_ptr<Numeric> &other) const = 0;
 
-            std::string toEscapedString() const override;
+            [[nodiscard]] std::string toEscapedString() const override;
         };
 
         struct Int : Numeric {
@@ -257,7 +257,7 @@ namespace core {
 
             [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
         protected:
             int value;
@@ -291,9 +291,9 @@ namespace core {
 
             [[nodiscard]] std::shared_ptr<Numeric> mod(const std::shared_ptr<Numeric> &other) const override;
 
-            std::shared_ptr<Numeric> pow(const std::shared_ptr<Numeric> &other) const override;
+            [[nodiscard]] std::shared_ptr<Numeric> pow(const std::shared_ptr<Numeric> &other) const override;
 
-            std::shared_ptr<Numeric> root(const std::shared_ptr<Numeric> &other) const override;
+            [[nodiscard]] std::shared_ptr<Numeric> root(const std::shared_ptr<Numeric> &other) const override;
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
@@ -301,7 +301,7 @@ namespace core {
 
             [[nodiscard]] bool compare(const std::shared_ptr<base::RVM_Data> &other, const base::Relational &relational) const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
         private:
             double value;
@@ -316,11 +316,11 @@ namespace core {
 
             [[nodiscard]] id::TypeID &getTypeID() const override;
 
-            std::string getValStr() const override;
+            [[nodiscard]] std::string getValStr() const override;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
 
-            std::shared_ptr<Numeric> opp() const override;
+            [[nodiscard]] std::shared_ptr<Numeric> opp() const override;
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
         };
@@ -338,11 +338,11 @@ namespace core {
 
             [[nodiscard]] id::TypeID &getTypeID() const override;
 
-            std::string toEscapedString() const override;
+            [[nodiscard]] std::string toEscapedString() const override;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
 
-            std::string toString() const override;
+            [[nodiscard]] std::string toString() const override;
         };
 
         struct Iterable : base::RVM_Data {
@@ -360,7 +360,7 @@ namespace core {
 
             [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
-            virtual size_t size() const = 0;
+            [[nodiscard]] virtual size_t size() const = 0;
 
             virtual void append(const std::shared_ptr<RVM_Data> &data) = 0;
 
@@ -455,18 +455,18 @@ namespace core {
 
             [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            size_t size() const override;
+            [[nodiscard]] size_t size() const override;
 
             void append(const std::shared_ptr<RVM_Data> &data) override;
 
             std::shared_ptr<Iterable> subpart(int begin, int end) override;
 
-            virtual std::string getValStdStr(const base::RVM_ID &main_container_id, const std::string &prefix = "[",
-                                             const std::string &suffix = "]") const;
+            [[nodiscard]] virtual std::string getValStdStr(const base::RVM_ID &main_container_id, const std::string &prefix,
+                                             const std::string &suffix) const;
 
-            std::string getValStr() const override;
+            [[nodiscard]] std::string getValStr() const override;
 
-            std::string getTypeName() const override;
+            [[nodiscard]] std::string getTypeName() const override;
 
             std::shared_ptr<RVM_Data> getDataAt(int index) override;
 
@@ -474,15 +474,15 @@ namespace core {
 
             void eraseDataAt(int index) override;
 
-            std::string toEscapedString() const override;
+            [[nodiscard]] std::string toEscapedString() const override;
 
-            const std::vector<std::shared_ptr<RVM_Data>> &getDataList() const;
+            [[nodiscard]] const std::vector<std::shared_ptr<RVM_Data>> &getDataList() const;
 
             void insertDataAt(int index, const std::shared_ptr<RVM_Data> &data) override;
 
-            base::RVM_ID &getTypeID() const override;
+            [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
             void splice(const std::shared_ptr<Iterable>& other) override;
 
@@ -564,25 +564,25 @@ namespace core {
 
             explicit Series();
 
-            Series(const std::shared_ptr<base::RVM_Data>& list);
+            explicit Series(const std::shared_ptr<base::RVM_Data>& list);
 
             ~Series() override = default;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
 
-            base::RVM_ID &getTypeID() const override;
+            [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
-            bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
+            [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
             std::shared_ptr<Iterable> subpart(int begin, int end) override;
 
-            std::string getValStr() const override;
+            [[nodiscard]] std::string getValStr() const override;
 
-            std::string getTypeName() const override;
+            [[nodiscard]] std::string getTypeName() const override;
 
-            std::string toEscapedString() const override;
+            [[nodiscard]] std::string toEscapedString() const override;
         };
 
         struct Structure: base::RVM_Data {
@@ -608,23 +608,23 @@ namespace core {
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
-            bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
+            [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
 
-            base::RVM_ID &getTypeID() const override;
+            [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
-            std::string getValStr() const override;
+            [[nodiscard]] std::string getValStr() const override;
 
-            std::string getTypeName() const override;
+            [[nodiscard]] std::string getTypeName() const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
             [[nodiscard]] std::string toEscapedString() const override;
 
-            void setKey(const std::shared_ptr<RVM_Data> &key);
+            void setKey(const std::shared_ptr<RVM_Data> &key_);
 
-            void setValue(const std::shared_ptr<RVM_Data> &value);
+            void setValue(const std::shared_ptr<RVM_Data> &value_);
 
             [[nodiscard]] std::shared_ptr<RVM_Data> getKey() const;
 
@@ -657,7 +657,7 @@ namespace core {
 
             [[nodiscard]] bool compare(const base::Relational & relational) const;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
         };
 
@@ -669,7 +669,7 @@ namespace core {
          * 设置类型字段的数据只能通过 CustomType 进行设置，不能通过 CustomInst 进行设置
          * 设置实例字段的数据只能通过 CustomInst 进行设置，不能通过 CustomType 进行设置
          */
-        struct CustomType: Structure {
+        struct CustomType final : Structure {
             static id::TypeID typeId;
             std::string typeName;
             std::shared_ptr<CustomType> parentType;
@@ -718,8 +718,6 @@ namespace core {
             bool convertToBool() const override;
 
             [[nodiscard]] std::string getTypeIDString() const;
-
-            [[nodiscard]] std::string getCustomTypeIDString() const;
         };
 
         /*
@@ -728,14 +726,14 @@ namespace core {
          * 它可以设置字段和方法的数据
          * 它可以获取实例字段，也可以获取类型字段
          */
-        struct CustomInst : Structure {
+        struct CustomInst final : Structure {
             static id::TypeID typeId;
             std::unordered_map
             <std::string, std::unordered_map
             <std::string, std::shared_ptr<base::RVM_Data>>> instFields; //instFields: 存储实例的 CustomType 和继承的父类中预设的所有实例字段
             std::shared_ptr<CustomType> customType;
 
-            CustomInst(std::shared_ptr<CustomType> instType);
+            explicit CustomInst(std::shared_ptr<CustomType> instType);
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
@@ -746,6 +744,8 @@ namespace core {
             base::RVM_ID &getTypeID() const override;
 
             std::string getValStr() const override;
+
+            std::string toString() const override;
 
             std::string getTypeName() const override;
 
@@ -780,9 +780,9 @@ namespace core {
 
             [[nodiscard]] base::RVM_ID & getTypeID() const override;
 
-            virtual core::components::ExecutionStatus callSelf() const = 0;
+            [[nodiscard]] virtual core::components::ExecutionStatus callSelf() const = 0;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
         };
 
         struct Function : data::Callable {
@@ -792,7 +792,7 @@ namespace core {
 
             explicit Function(std::string, StdArgs, std::shared_ptr<components::InsSet>);
 
-            core::components::ExecutionStatus callSelf() const override;
+            [[nodiscard]] core::components::ExecutionStatus callSelf() const override;
 
             [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
@@ -808,7 +808,7 @@ namespace core {
             compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
         };
 
-        struct RetFunction : data::Function {
+        struct RetFunction final : data::Function {
             static id::TypeID typeId;
 
             RetFunction(std::string, StdArgs, std::shared_ptr<components::InsSet>);
@@ -825,7 +825,7 @@ namespace core {
             compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
         };
 
-        struct Quote : base::RVM_Data {
+        struct Quote final : base::RVM_Data {
             static id::TypeID typeId;
             id::DataID dataId;
             std::string quotedDataIDString;
@@ -835,23 +835,23 @@ namespace core {
 
             ~Quote() override = default;
 
-            std::string getValStr() const override;
+            [[nodiscard]] std::string getValStr() const override;
 
-            std::string getTypeName() const override;
+            [[nodiscard]] std::string getTypeName() const override;
 
-            base::RVM_ID &getTypeID() const override;
+            [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
-            bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
+            [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
 
             void updateQuoteData(const std::shared_ptr<RVM_Data> &newData) const;
 
-            std::shared_ptr<base::RVM_Data> getQuotedData() const;
+            [[nodiscard]] std::shared_ptr<RVM_Data> getQuotedData() const;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
         };
 
         enum class FileMode {
@@ -887,9 +887,9 @@ namespace core {
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
-            bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
+            [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
 
             void setModeByString(const std::string& modeStr);
 
@@ -899,18 +899,18 @@ namespace core {
 
             [[nodiscard]] virtual bool writeFile(const std::string &content) const;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
         };
 
-        struct Time : base::RVM_Data {
+        struct Time final : base::RVM_Data {
             static id::TypeID typeId;
             id::DataID dataId = id::DataID();
-            int year;
-            int month;
-            int day;
-            int hour;
-            int minute;
-            int second;
+            int year{};
+            int month{};
+            int day{};
+            int hour{};
+            int minute{};
+            int second{};
             utils::TimeFormat format = utils::TimeFormat::ISO;
 
             explicit Time () = default;
@@ -928,9 +928,9 @@ namespace core {
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
-            bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
+            [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
 
             void setFormat(const utils::TimeFormat &format);
 
@@ -949,10 +949,10 @@ namespace core {
             void addMinutes(int minutes);
             void addHours(int hours);
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
         };
 
-        struct Error: base::RVM_Data {
+        struct Error final : base::RVM_Data {
             static id::TypeID typeId;
             id::DataID dataId = id::DataID();
             std::string error_position;
@@ -962,27 +962,27 @@ namespace core {
 
             Error(std::string error_position, std::string error_line, std::vector<std::string> error_info);
 
-            std::string getValStr() const override;
+            [[nodiscard]] std::string getValStr() const override;
 
-            std::string toString() const override;
+            [[nodiscard]] std::string toString() const override;
 
-            std::string getTypeName() const override;
+            [[nodiscard]] std::string getTypeName() const override;
 
-            base::RVM_ID &getTypeID() const override;
+            [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
-            bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
+            [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
         };
 
     }
 
     namespace memory {
-        extern std::unordered_map<std::string, std::shared_ptr<core::data::Extension>> loadedExtensions;
+        extern std::unordered_map<std::string, std::shared_ptr<data::Extension>> loadedExtensions;
 
         /*
          * RA_Space类用于管理空间内的数据，
@@ -991,7 +991,6 @@ namespace core {
          * 以及数据容器的大小查询、清空和迭代器支持。
          */
         struct RVM_Scope {
-        public:
             explicit RVM_Scope(std::string name = "");
 
             RVM_Scope(std::string name, const std::unordered_map<std::string, std::shared_ptr<base::RVM_Data>> &dataMap);
@@ -1075,10 +1074,17 @@ namespace core {
 
             void setRemovable(bool isRemovable);
 
+            void activate();
+
+            void deactivate();
+
+            bool isActive() const;
+
         private:
             base::InstID instID {};
             std::string name_;
             bool needCollect = false;
+            bool isActive_ = false;
             std::unordered_map<std::string, std::shared_ptr<base::RVM_Data>> dataMap;
             std::unordered_map<std::string, id::DataID> nameMap;
             bool addable = true;
@@ -1237,7 +1243,7 @@ namespace core {
             mutable ScopePtr globalScope_ = std::make_shared<RVM_Scope>(GLOBAL_SCOPE);
             ScopePtr currentScope_ = nullptr;
 
-            RVM_Memory::ScopePtr
+            ScopePtr
             findOperableScopeByDataName(const std::string &name, bool needContains, const base::OpMode &opMode) const;
         };
 
@@ -1275,19 +1281,19 @@ namespace core {
 
             Extension(const std::string &ident, const std::string &extension_path, const ScopePtr &scope);
 
-            std::string getValStr() const override;
+            [[nodiscard]] std::string getValStr() const override;
 
-            std::string getTypeName() const override;
+            [[nodiscard]] std::string getTypeName() const override;
 
-            base::RVM_ID &getTypeID() const override;
+            [[nodiscard]] base::RVM_ID &getTypeID() const override;
 
             bool updateData(const std::shared_ptr<RVM_Data> &newData) override;
 
-            bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
+            [[nodiscard]] bool compare(const std::shared_ptr<RVM_Data> &other, const base::Relational &relational) const override;
 
-            bool convertToBool() const override;
+            [[nodiscard]] bool convertToBool() const override;
 
-            std::shared_ptr<RVM_Data> copy_ptr() const override;
+            [[nodiscard]] std::shared_ptr<RVM_Data> copy_ptr() const override;
         };
 
     }

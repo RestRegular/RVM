@@ -10,5 +10,6 @@
     <file url="file://$PROJECT_DIR$/scripts/config/update_config.cache.json" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/scripts/config/update_config.json" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/scripts/execute.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/test/test_input.txt" charset="UTF-8" />
   </component>
 </project>

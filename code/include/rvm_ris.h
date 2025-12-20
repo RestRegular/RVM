@@ -13,8 +13,8 @@ namespace core::components {
     extern std::unordered_map<int, const RI*> insMap;
     extern std::unordered_map<std::string, const RI*> insNameMap;
     extern std::vector<RI *> ri_list;
-    extern id::DataID SR_SpaceID;
-    extern id::DataID _SE_SpaceID;
+    extern id::DataID SR_SPACE_ID;
+    extern id::DataID SE_SPACE_ID;
 
     // 枚举类：执行状态
     enum class ExecutionStatus {
@@ -43,14 +43,13 @@ namespace core::components {
         ExposedError                    // 暴露异常
     };
 
-    // RI类：RVM Instruction指令
     struct RI {
         RIID id = RIID();
         std::string name{};
         int arity{};
         ExecutorFunc executor{};
         bool hasScope{false};
-        bool isDelayedReleaseScope{false}; // 是否延迟释放scope
+        bool isDelayedReleaseScope{false};
 
         RI() = default;
 
@@ -64,7 +63,7 @@ namespace core::components {
 
         bool equalWith(const RI* other) const;
 
-        std::string toString() const;
+        [[nodiscard]] std::string toString() const;
 
         void serialize(std::ostream &os, const utils::SerializationProfile &profile) const;
 
@@ -73,16 +72,15 @@ namespace core::components {
         static const RI* getRIByStr(const std::string& content);
     };
 
-    // Ins类：由RA代码解析出来的可执行指令
     struct Ins {
-        utils::Pos pos{}; // 调用Pos的序列化函数和反序列化函数
-        const RI *ri; // 调用RI的序列化函数和静态反序列化函数
-        InsID insId = core::id::InsID(); // 无需序列化
-        StdArgs args; // 调用utils::Arg的序列化函数和反序列化函数，注意vector的序列化
+        utils::Pos pos{};
+        const RI *ri = nullptr;
+        InsID insId = core::id::InsID();
+        StdArgs args;
         std::shared_ptr<InsSet> scopeInsSet;
         std::string raw_code;
-        bool is_delayed_release_scope{false}; // 需要序列化
-        std::string ext; // ToDo: 需要序列化
+        bool is_delayed_release_scope{false};
+        std::string ext;
 
         Ins() = default;
 
@@ -100,11 +98,13 @@ namespace core::components {
 
     struct DetectBlock {
         std::shared_ptr<data::CustomType> detected_type = nullptr;
+        std::optional<id::TypeID> detected_builtin_type = std::nullopt;
         utils::Arg error_stored_arg;
-        std::shared_ptr<data::CustomInst> error_data = nullptr;
+        std::shared_ptr<base::RVM_Data> error_data = nullptr;
         std::shared_ptr<InsSet> block_ins_set;
 
         DetectBlock(std::shared_ptr<data::CustomType> detected_type,
+                    std::optional<id::TypeID> detected_builtin_type,
                     utils::Arg error_stored_data,
                     std::shared_ptr<InsSet> block_ins_set);
     };
@@ -180,7 +180,7 @@ namespace core::components {
 
         static DebugMode debug_mode; // 无需序列化
         static std::string file_record; // 无需序列化
-        static std::stack<InsSet*> exe_stack; // 无需序列化
+        static std::vector<InsSet*> exe_stack; // 无需序列化
         static std::vector<std::shared_ptr<AtmpBlock>> atmp_stack; // 无需序列化
         std::stack<std::string> scope_name_stack{}; // 无需序列化
 
@@ -286,8 +286,11 @@ namespace ris {
     extern const RI FUNC;
     extern const RI FUNI;
     extern const RI CALL;
+    extern const RI CALL_FAST;
     extern const RI IVOK;
+    extern const RI IVOK_FAST;
     extern const RI RET;
+    extern const RI RET_FAST;
 
     /* 循环操作指令 */
     extern const RI REPEAT;
@@ -320,6 +323,7 @@ namespace ris {
     extern const RI TP_GET_FIELD;           // 获取自定义类型中的字段值 TP_GET_FIELD: <custom tp name / inst>, <field name>, <stored data>
     extern const RI TP_GET_SUPER_FIELD;     // 获取自定义类型中的字段值 TP_GET_SUPER_FIELD: <custom tp name / inst>, <super tp name>, <field name>, <stored data>
     extern const RI TP_DERIVE;              // 派生自定义类型 TP_DERIVE: <custom tp inst>, <child tp>
+    extern const RI TP_CHECK_RELATE;        // 检查自定义类型实例是否与指定类型关联 TP_CHECK_RELATE: <custom tp inst>, <tp name>, <stored data>
 
     /* 作用域操作指令 */
     extern const RI SP_SET;
@@ -422,7 +426,9 @@ namespace exes {
     ExecutionStatus ri_func(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_funi(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_call(const Ins &ins, size_t &pointer, const StdArgs &args);
+    ExecutionStatus ri_call_fast(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_ivok(const Ins &ins, size_t &pointer, const StdArgs &args);
+    ExecutionStatus ri_ivok_fast(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_until(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_exit(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_sout(const Ins &ins, size_t &pointer, const StdArgs &args);
@@ -472,6 +478,7 @@ namespace exes {
     ExecutionStatus ri_tp_get_field(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_tp_get_super_field(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_tp_derive(const Ins &ins, size_t &pointer, const StdArgs &args);
+    ExecutionStatus ri_tp_check_relate(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_sp_set(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_sp_get(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_sp_new(const Ins &ins, size_t &pointer, const StdArgs &args);
@@ -481,6 +488,7 @@ namespace exes {
     ExecutionStatus ri_atmp(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_expose(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_ret(const Ins &ins, size_t &pointer, const StdArgs &args);
+    ExecutionStatus ri_ret_fast(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_pair_set(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_pair_set_key(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_pair_set_value(const Ins &ins, size_t &pointer, const StdArgs &args);
