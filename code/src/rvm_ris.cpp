@@ -645,6 +645,16 @@ namespace core::components {
     }
 
     void InsSet::serialize(std::ostream &os, const utils::SerializationProfile &profile) const {
+        /*
+         * 静态槽位信息：本指令集所属的帧下标、是否帧根。
+         *
+         * 紧跟在最前面，与反序列化侧的读取顺序一致。这两个字段在所有 profile 下都写——
+         * 缺了它们，反序列化后 frameRootScope 恒为 false，连根帧都不会切换。
+         */
+        os.write(reinterpret_cast<const char *>(&frameIndex), sizeof(frameIndex));
+        const uint8_t frameRootFlag = frameRootScope ? 1 : 0;
+        os.write(reinterpret_cast<const char *>(&frameRootFlag), sizeof(frameRootFlag));
+
         // 序列化布尔值
         os.write(reinterpret_cast<const char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
 
@@ -707,6 +717,12 @@ namespace core::components {
     }
 
     void InsSet::deserialize(std::istream &is, const utils::SerializationProfile &profile) {
+        // 静态槽位信息（与 serialize 顺序一致）
+        is.read(reinterpret_cast<char *>(&frameIndex), sizeof(frameIndex));
+        uint8_t frameRootFlag = 0;
+        is.read(reinterpret_cast<char *>(&frameRootFlag), sizeof(frameRootFlag));
+        frameRootScope = (frameRootFlag != 0);
+
         is.read(reinterpret_cast<char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
 
         is.read(reinterpret_cast<char *>(&end_pointer), sizeof(end_pointer));

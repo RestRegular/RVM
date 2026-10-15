@@ -925,6 +925,15 @@ namespace utils {
         if (valueLength > 0) {
             out.write(value.c_str(), static_cast<long long>(valueLength));
         }
+
+        /*
+         * 序列化静态槽位地址。
+         *
+         * 这是运行期取变量的唯一依据：反序列化后没有它，参数就没有地址，
+         * 槽位寻址无从谈起（旧版 RSI 正是如此，故 1.8.0 起不再兼容）。
+         */
+        out.write(reinterpret_cast<const char*>(&frameIndex), sizeof(frameIndex));
+        out.write(reinterpret_cast<const char*>(&slotIndex), sizeof(slotIndex));
     }
 
     // 反序列化函数
@@ -946,6 +955,10 @@ namespace utils {
         } else {
             value.clear();
         }
+
+        // 反序列化静态槽位地址（与 serialize 顺序一致）
+        in.read(reinterpret_cast<char*>(&frameIndex), sizeof(frameIndex));
+        in.read(reinterpret_cast<char*>(&slotIndex), sizeof(slotIndex));
     }
 
     std::string readFile(const std::string &filepath) {

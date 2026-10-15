@@ -246,25 +246,26 @@ int main(const int argc, char *argv[]){
             /*
              * 决定运行期使用哪一套变量系统。
              *
-             *   --legacy-mode 优先：显式要求旧系统时，即使解析期建好了槽位表也不启用。
+             *   --legacy-mode 优先：显式要求旧系统时，即使槽位表就绪也不启用。
              *   其余情况启用静态槽位架构（这是 RVM 的目标架构，故为默认）。
              *
-             * '.rsi' 是例外：槽位表不参与序列化，反序列化路径不会建立任何槽位信息，
-             * 此时启用只会让运行期查不到绑定，所以必须明确拒绝而不是静默降级。
+             * 可用性由「帧表是否就绪」唯一决定，而不是按文件类型判断：
+             *   - '.ra'  ：解析期建立帧表；
+             *   - '.rsi' ：1.8.0 起槽位表随文件落盘，反序列化时重建帧表。
+             * 两者都就绪才启用；否则明确拒绝，不静默降级到旧系统。
              */
             if (program_legacy_mode_) {
                 core::memory::setSlotBindingModeEnabled(false);
-            } else if (file_ext == RSI_EXT || !parse::isSlotModeAvailable()) {
+            } else if (!parse::isSlotModeAvailable()) {
                 if (program_slot_mode_) {
                     throw base::RVM_Error(
                             base::ErrorType::RuntimeError, program_target_file_path_, {},
                             {"Static slot mode is not available for this target.",
                              "Target: " + program_target_file_path_,
-                             file_ext == RSI_EXT
-                                     ? "Reason: slot tables are not serialized into '.rsi'."
-                                     : "Reason: the parse-time slot tables were not built."},
-                            {"Run the '.ra' source with '--slot-mode', or drop '--slot-mode' to use "
-                             "the legacy dynamic-scope system."});
+                             "Reason: no static slot table could be built or loaded."},
+                            {"Compile the '.ra' source with this RVM version to produce an RSI "
+                             "carrying the slot table, or drop '--slot-mode' to use the legacy "
+                             "dynamic-scope system."});
                 }
                 core::memory::setSlotBindingModeEnabled(false);
             } else {

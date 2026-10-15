@@ -62,11 +62,24 @@ namespace base
             // 固定使用 expected_magic 的长度
             throw std::runtime_error("Invalid file format!");
         }
-        if (major_ver > VERSION_MAJOR || minor_ver > VERSION_MINOR || patch_ver > VERSION_PATCH)
+        /*
+         * 版本必须【完全一致】。
+         *
+         * 原实现只在「文件版本高于 RVM 版本」时报错，于是低版本文件会一路通过校验，
+         * 然后在反序列化阶段以 std::bad_alloc 之类的形式炸掉——报错完全指不到原因。
+         *
+         * 1.8.0 起 RSI 布局随静态槽位表改变，旧文件即便版本号更低也不再兼容，
+         * 所以这里改成逐段比较：只要文件版本与 RVM 版本不同就明确拒绝。
+         */
+        const bool versionDiffers = major_ver != VERSION_MAJOR
+                                    || minor_ver != VERSION_MINOR
+                                    || patch_ver != VERSION_PATCH;
+        if (versionDiffers)
         {
             throw std::runtime_error(
                 "Unsupported version\nRVM version: " + getRVMVersionInfo() + "\nRSI File Version: " +
-                getRSIVersionInfo(file_path));
+                getRSIVersionInfo(file_path) +
+                "\nRecompile the source with this RVM version to produce a compatible RSI.");
         }
     }
 

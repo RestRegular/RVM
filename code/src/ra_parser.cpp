@@ -275,12 +275,15 @@ namespace parser {
 
         bool isSlotModeAvailable() {
             /*
-             * 静态槽位是否可用：帧表必须已经建好。
+             * 槽位表是否已建立且可用。
              * 只走 '.rsi' 反序列化时解析期不运行，帧表不会就绪——
              * 那时参数上没有槽位地址，启用只会让运行期报错，所以必须明确拒绝。
              */
             return core::memory::RVM_RUNTIME_MEMORY.isFrameTableReady();
         }
+
+        /* 最近一次解析得到的槽位表，供 --comp 落盘 */
+        RVMSlotTable lastSlotTable{};
 
         const ParseScopeRecord &getLastParseScopeRecord() {
             return last_parse_scope_record;
@@ -304,6 +307,130 @@ namespace parser {
                           [](const auto &lhs, const auto &rhs) { return lhs.second < rhs.second; });
                 return ordered;
             }
+        }
+
+        void RVMSlotTable::serialize(std::ostream &os) const {
+            const uint32_t frameCount = static_cast<uint32_t>(frames.size());
+            os.write(reinterpret_cast<const char *>(&frameCount), sizeof(frameCount));
+            for (const auto &frame: frames) {
+                os.write(reinterpret_cast<const char *>(&frame.slotSpan), sizeof(frame.slotSpan));
+                os.write(reinterpret_cast<const char *>(&frame.parentFrameIndex),
+                         sizeof(frame.parentFrameIndex));
+                const uint8_t isRoot = frame.frameRoot ? 1 : 0;
+                os.write(reinterpret_cast<const char *>(&isRoot), sizeof(isRoot));
+            }
+
+            os.write(reinterpret_cast<const char *>(&rootFrameIndex), sizeof(rootFrameIndex));
+
+            const uint32_t slotNameCount = static_cast<uint32_t>(rootSlotNames.size());
+            os.write(reinterpret_cast<const char *>(&slotNameCount), sizeof(slotNameCount));
+            for (const auto &name: rootSlotNames) {
+                const size_t len = name.size();
+                os.write(reinterpret_cast<const char *>(&len), sizeof(len));
+                if (len > 0) {
+                    os.write(name.c_str(), static_cast<long long>(len));
+                }
+            }
+        }
+
+        void RVMSlotTable::deserialize(std::istream &is) {
+            uint32_t frameCount = 0;
+            is.read(reinterpret_cast<char *>(&frameCount), sizeof(frameCount));
+            if (!is || frameCount == 0) {
+                throw base::RVM_Error(
+                        base::ErrorType::RuntimeError, {}, {},
+                        {"The RSI file carries no static slot table.",
+                         "Frame count read: " + std::to_string(frameCount)},
+                        {"Recompile the source with this RVM version to produce a compatible RSI."});
+            }
+            frames.resize(frameCount);
+            for (auto &frame: frames) {
+                is.read(reinterpret_cast<char *>(&frame.slotSpan), sizeof(frame.slotSpan));
+                is.read(reinterpret_cast<char *>(&frame.parentFrameIndex),
+                        sizeof(frame.parentFrameIndex));
+                uint8_t isRoot = 0;
+                is.read(reinterpret_cast<char *>(&isRoot), sizeof(isRoot));
+                frame.frameRoot = (isRoot != 0);
+            }
+            is.read(reinterpret_cast<char *>(&rootFrameIndex), sizeof(rootFrameIndex));
+
+            uint32_t slotNameCount = 0;
+            is.read(reinterpret_cast<char *>(&slotNameCount), sizeof(slotNameCount));
+            rootSlotNames.resize(slotNameCount);
+            for (auto &name: rootSlotNames) {
+                size_t len = 0;
+                is.read(reinterpret_cast<char *>(&len), sizeof(len));
+                if (len > 0) {
+                    std::string buf(len, '\0');
+                    is.read(buf.data(), static_cast<long long>(len));
+                    name = std::move(buf);
+                }
+            }
+            if (!is) {
+                throw base::RVM_Error(base::ErrorType::RuntimeError, {}, {},
+                                      {"The static slot table in the RSI file is truncated."},
+                                      {"Recompile the source with this RVM version."});
+            }
+
+            /*
+             * 直接建好运行期帧表。
+             *
+             * 帧下标在编译期就写死在各处（InsSet::frameIndex、Arg::frameIndex），
+             * 所以这里必须【按原下标顺序】重建，不能重新编号。
+             */
+            auto &runtimeMemory = core::memory::RVM_RUNTIME_MEMORY;
+            runtimeMemory.clearAllFrames();
+            for (uint32_t i = 0; i < frameCount; ++i) {
+                auto scope = std::make_shared<core::memory::RVM_RuntimeScope>(
+                        std::max<size_t>(frames[i].slotSpan, 1), nullptr, std::string{});
+                if (frames[i].frameRoot) {
+                    scope->markAsFrameRoot();
+                }
+                const uint32_t index = runtimeMemory.addFrame(scope, std::string{});
+                if (index != i) {
+                    throw base::RVM_Error(base::ErrorType::RuntimeError, {}, {},
+                                          {"Slot table frame indices are inconsistent."},
+                                          {"This indicates a corrupted RSI file."});
+                }
+            }
+            // 接词法父链：所有帧实例都已就位，取地址安全
+            for (uint32_t i = 0; i < frameCount; ++i) {
+                const uint32_t parentIndex = frames[i].parentFrameIndex;
+                if (parentIndex == core::memory::INVALID_INDEX) {
+                    continue;
+                }
+                const auto frame = runtimeMemory.frameAt(i);
+                const auto parent = runtimeMemory.frameAt(parentIndex);
+                if (frame && parent) {
+                    frame->setParentScope(parent.get());
+                }
+            }
+
+            /*
+             * 把全局数据灌回根帧槽位。
+             *
+             * 编译期这些名字（tp-* / true / false / null / SN / SE / SS …）已经分好了槽位，
+             * 但它们的值只存在于 RVM_Memory 的全局作用域里，必须复制进根帧。
+             */
+            runtimeMemory.setRootFrameIndex(rootFrameIndex);
+            const auto rootFrame = runtimeMemory.frameAt(rootFrameIndex);
+            if (rootFrame) {
+                for (size_t slotIndex = 0; slotIndex < rootSlotNames.size(); ++slotIndex) {
+                    const auto [dataID, globalData] =
+                            data_space_pool.findDataByNameNoLock(rootSlotNames[slotIndex]);
+                    if (globalData) {
+                        rootFrame->ensureSlotCount(slotIndex + 1);
+                        const auto &_ = rootFrame->setSlot(slotIndex, globalData->copy_ptr());
+                    }
+                    runtimeMemory.setRootSlotByName(rootSlotNames[slotIndex],
+                                                    static_cast<uint32_t>(slotIndex));
+                }
+            }
+            runtimeMemory.markFrameTableReady();
+        }
+
+        const RVMSlotTable &getLastSlotTable() {
+            return lastSlotTable;
         }
 
         void prepareRuntimeFrames(const ParseScopeRecord &record) {
@@ -379,6 +506,45 @@ namespace parser {
                 runtimeMemory.setRootFrameIndex(rootIt->second);
             }
             runtimeFrameIndexByPath = std::move(frameIndexByPath);
+
+            /*
+             * 落盘用的槽位表。
+             *
+             * 必须与 addFrame 的调用顺序完全一致——帧下标是各参数里写死的身份，
+             * 重建时不能重新编号。上面遍历 record.frames（std::map，按路径有序）
+             * 依次调用 addFrame，这里就按同一顺序填表。
+             */
+            lastSlotTable = RVMSlotTable{};
+            lastSlotTable.frames.reserve(runtimeFrameIndexByPath.size());
+            for (const auto &[framePathKey, frameInfo]: record.frames) {
+                if (framePathKey.empty()) {
+                    continue;
+                }
+                const auto indexIt = runtimeFrameIndexByPath.find(framePathKey);
+                if (indexIt == runtimeFrameIndexByPath.end()) {
+                    continue;
+                }
+                RVMSlotTable::FrameEntry entry{};
+                entry.slotSpan = static_cast<uint32_t>(
+                        std::max<size_t>(frameInfo.slotSpan, 1));
+                entry.frameRoot = frameInfo.parentFramePath.empty();
+                if (!frameInfo.parentFramePath.empty()) {
+                    if (const auto parentIt = runtimeFrameIndexByPath.find(frameInfo.parentFramePath);
+                        parentIt != runtimeFrameIndexByPath.end()) {
+                        entry.parentFrameIndex = parentIt->second;
+                    }
+                }
+                // 以帧下标为准定位，避免顺序假设出问题
+                if (indexIt->second >= lastSlotTable.frames.size()) {
+                    lastSlotTable.frames.resize(indexIt->second + 1);
+                }
+                lastSlotTable.frames[indexIt->second] = entry;
+            }
+            lastSlotTable.rootSlotNames = record.rootSlotNames;
+            if (const auto rootIt2 = runtimeFrameIndexByPath.find(record.rootScopePath);
+                rootIt2 != runtimeFrameIndexByPath.end()) {
+                lastSlotTable.rootFrameIndex = rootIt2->second;
+            }
         }
 
         void printParseScopeRecord(const ParseScopeRecord &record, std::ostream &os,
@@ -1188,6 +1354,11 @@ namespace parser {
             base::rvm_serial_header.setProfile(profile);
             base::rvm_serial_header.serialize(binary_file);
             env::serializeLinkedExtensions(binary_file);
+            /*
+             * 静态槽位表必须落在指令流之前：反序列化时要先按它把运行期帧表建好，
+             * 各处参数里写死的帧下标才有对应的帧实例。
+             */
+            getLastSlotTable().serialize(binary_file);
             ins_set->serialize(binary_file, profile);
             binary_file.close();
         }
@@ -1197,6 +1368,9 @@ namespace parser {
             std::ifstream binary_file(binary_file_path, std::ios::binary);
             base::rvm_serial_header.deserialize(binary_file, profile, binary_file_path);
             env::deserializeLinkedExtensions(binary_file);
+            // 先重建运行期帧表，指令里写死的帧下标才有落点
+            lastSlotTable = RVMSlotTable{};
+            lastSlotTable.deserialize(binary_file);
             auto ins_set = std::make_shared<InsSet>("File");
             ins_set->deserialize(binary_file, base::rvm_serial_header.getProfile());
             binary_file.close();

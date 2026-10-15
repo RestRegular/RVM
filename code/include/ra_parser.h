@@ -166,6 +166,38 @@ namespace parser {
         void prepareRuntimeFrames(const ParseScopeRecord &record);
 
         /*
+         * RSI 里的静态槽位表。
+         *
+         * 解析期把 (帧下标, 槽位号) 挂到了每个参数上，但那是内存里的字段，不随指令流落盘。
+         * 没有这张表，反序列化出来的参数就没有地址，槽位寻址无从谈起。
+         *
+         * 落盘内容分两部分，与内存里的存放位置一一对应：
+         *   - 帧表：规模 + 词法父下标（对应 RVM_RuntimeMemory 的 frames）
+         *   - 根帧的槽位名（对应 rootSlotByName，用于把全局数据 tp-* / true / null … 灌回根帧）
+         * 每个 InsSet 自己的 frameIndex 与每个参数的 (frameIndex, slotIndex) 写在 InsSet / Arg 里。
+         */
+        struct RVMSlotTable {
+            struct FrameEntry {
+                uint32_t slotSpan{0};
+                /* 词法父帧的下标；没有父帧时为 INVALID_INDEX */
+                uint32_t parentFrameIndex{core::memory::INVALID_INDEX};
+                bool frameRoot{false};
+            };
+            std::vector<FrameEntry> frames;
+            uint32_t rootFrameIndex{core::memory::INVALID_INDEX};
+            std::vector<std::string> rootSlotNames;
+
+            [[nodiscard]] bool empty() const { return frames.empty(); }
+
+            void serialize(std::ostream &os) const;
+            /* 读回并直接建立运行期帧表；表为空则抛错（不静默降级） */
+            void deserialize(std::istream &is);
+        };
+
+        /* 把最近一次解析得到的槽位表交给序列化方 */
+        [[nodiscard]] const RVMSlotTable &getLastSlotTable();
+
+        /*
          * 运行期槽位绑定的全局开关。
          *
          * 切换之后，变量存取一律走「解析期绑定表 → 帧 + 槽位」，不再有任何按名字查找；
