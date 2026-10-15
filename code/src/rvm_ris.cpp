@@ -2993,7 +2993,15 @@ namespace exes {
             const auto &iter_container_data = std::static_pointer_cast<data::Iterable>(iter_container);
 
             // 根据 reverse 参数决定使用正向还是反向遍历
-            data_space_pool.acquireScope(reverse ? pre_ITER_REV_TRAV : pre_ITER_TRAV);
+            /*
+             * 与 ri_repeat / ri_until 同理：这个 RVM_Scope 只为 ri_end 的 clear() 服务，
+             * 槽位模式下块级变量住在帧槽位里，不需要旧系统作用域。
+             */
+            const bool slotMode = core::memory::isSlotBindingModeEnabled();
+            core::memory::RVM_Memory::ScopePtr iterScope{};
+            if (!slotMode) {
+                iterScope = data_space_pool.acquireScope(reverse ? pre_ITER_REV_TRAV : pre_ITER_TRAV);
+            }
 
             const int &container_size = static_cast<int>(iter_container_data->size());
             const int start = reverse ? container_size - 1 : 0;
@@ -3008,7 +3016,9 @@ namespace exes {
                     break;
                 }
             }
-            data_space_pool.releaseScopeNoLock(data_space_pool.getCurrentScopeNoLock());
+            if (!slotMode) {
+                data_space_pool.releaseScopeNoLock(data_space_pool.getCurrentScopeNoLock());
+            }
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
