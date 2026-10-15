@@ -542,7 +542,6 @@ namespace core::components {
     ExecutionStatus InsSet::execute() {
         // 更新当前程序的工作目录
         base::PROGRAM_WORKING_DIRECTORY_STACK.push(utils::getFileDirFromPath(this->scope_leader_file));
-        scope_name_stack.push(data_space_pool.getCurrentScopeNoLock()->getName());
         const std::string &ext_name = insSet.empty() ? "" : insSet[0]->ext.empty() ? "" : insSet[0]->ext;
 
         /*
@@ -556,6 +555,17 @@ namespace core::components {
          */
         const bool slotMode = core::memory::isSlotBindingModeEnabled()
                               && frameIndex != core::memory::INVALID_INDEX;
+        /*
+         * scope_name_stack 是【旧系统】的作用域名回溯栈：ri_end 靠它 setCurrentScopeByName
+         * 找回要清空/释放的 RVM_Scope。槽位模式下不再创建 RVM_Scope，这个栈也就没有读者，
+         * 因此只在非槽位模式维护它，两种模式各自 push/pop 配对。
+         *
+         * 原先这里无条件 push，且无条件 data_space_pool.getCurrentScopeNoLock()->getName() 解引用：
+         * 该函数可能返回 nullptr（currentScope_ 与 activeScopes_ 同时为空时），存在空指针风险。
+         */
+        if (!slotMode) {
+            scope_name_stack.push(data_space_pool.getCurrentScopeNoLock()->getName());
+        }
         if (slotMode) {
             if (frameRootScope) {
                 currentFramePushed = true;
@@ -603,7 +613,9 @@ namespace core::components {
         }
         exe_stack.pop_back();
         pointers.pop();
-        scope_name_stack.pop();
+        if (!slotMode) {
+            scope_name_stack.pop();
+        }
         if (exe_stack.empty()) {
             io->flushOutputCache();
             if (resultStatus == ExecutionStatus::ExposedError) {
@@ -1530,7 +1542,16 @@ namespace exes {
             throw std::runtime_error("Invalid argument type: " + value1->getTypeID().toString());
             return ExecutionStatus::FailedWithError;
         }
-        const auto &repeatScope = data_space_pool.acquireScope(pre_REPEAT);
+        /*
+         * 旧系统为循环体开一个 RVM_Scope，靠 ri_end 的 clear() 让下一轮从干净状态开始。
+         * 槽位模式不需要：块级变量住在帧槽位里，每轮被重新赋值，语义等价。
+         * 因此只在非槽位模式创建/释放这个作用域。
+         */
+        const bool slotMode = core::memory::isSlotBindingModeEnabled();
+        core::memory::RVM_Memory::ScopePtr repeatScope{};
+        if (!slotMode) {
+            repeatScope = data_space_pool.acquireScope(pre_REPEAT);
+        }
         ExecutionStatus result = ExecutionStatus::Success;
         for (int i = 0; i < repeat_times; i++) {
             if (repeated_index && !repeated_index->updateData(std::make_shared<data::Int>(i))){
@@ -1545,23 +1566,25 @@ namespace exes {
                 break;
             }
         }
-        data_space_pool.releaseScopeNoLock(repeatScope);
+        if (!slotMode) {
+            data_space_pool.releaseScopeNoLock(repeatScope);
+        }
         return result;
     }
 
     ExecutionStatus ri_end(const Ins &ins, size_t &pointer, const StdArgs &args) {
         /*
-         * 槽位模式下 END 不能沿用旧的作用域释放逻辑。
+         * END 的作用域回收只在【旧系统】里需要。
          *
-         * 旧系统靠每条 FUNC/REPEAT/UNTIL 开一个 RVM_Scope，END 负责回收它。
-         * 槽位模式下函数帧由新系统管理、根本没有对应的 RVM_Scope，
-         * 此时 currentScope 是调用方（或外层）的作用域——无条件释放会把别人的作用域毁掉，
-         * 外层随后的执行就会崩溃（表现为第二次 CALL 直接段错误）。
+         * 旧系统靠每条 FUNC/REPEAT/UNTIL 开一个 RVM_Scope，END 负责 clear()/release 它。
+         * 槽位模式不再创建 RVM_Scope，块级变量的生命周期由帧槽位承担：
+         *   - 函数帧由 RVM_RuntimeMemory 管理（帧根作用域的 execute 负责 push/pop 帧下标）；
+         *   - 块作用域与外层同属一个帧，其槽位在解析期就固定，不需要每轮清空——
+         *     块内 ALLOT 的变量每轮被重新赋值，语义与旧系统 clear() 后的重新 ALLOT 一致。
          *
-         * 只有「延迟释放」的块作用域（REPEAT / UNTIL / ITER_TRAV …）仍然需要 clear()，
-         * 它们的 RVM_Scope 是旧系统真实创建的，清空是为了让下一轮迭代从干净状态开始。
+         * 因此槽位模式直接返回：既不释放（会毁掉调用方的作用域），也不清空（没有对象可清）。
          */
-        if (core::memory::isSlotBindingModeEnabled() && !ins.is_delayed_release_scope) {
+        if (core::memory::isSlotBindingModeEnabled()) {
             return ExecutionStatus::Success;
         }
         data_space_pool.setCurrentScopeByName(InsSet::exe_stack.back()->scope_name_stack.top());
@@ -2016,7 +2039,12 @@ namespace exes {
             throw std::runtime_error("Invalid argument type: " + args[1].toString());
         }
         const auto relation = base::stringToRelational(args[1].getValue());
-        const auto &until_scope = data_space_pool.acquireScope(pre_UNTIL);
+        // 与 ri_repeat 同理：旧系统的作用域只为 ri_end 的 clear() 服务，槽位模式不需要
+        const bool slotMode = core::memory::isSlotBindingModeEnabled();
+        core::memory::RVM_Memory::ScopePtr until_scope{};
+        if (!slotMode) {
+            until_scope = data_space_pool.acquireScope(pre_UNTIL);
+        }
         ExecutionStatus result = ExecutionStatus::Success;
         while (!compGroup->compare(relation)) {
             if (const ExecutionStatus insResult = ins.scopeInsSet->execute();
@@ -2029,7 +2057,9 @@ namespace exes {
                 break;
             }
         }
-        data_space_pool.releaseScopeNoLock(until_scope);
+        if (!slotMode) {
+            data_space_pool.releaseScopeNoLock(until_scope);
+        }
         return result;
     }
 
