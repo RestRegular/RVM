@@ -1473,10 +1473,13 @@ namespace core {
             void setRootFrameIndex(uint32_t frameIndex);
             [[nodiscard]] uint32_t getRootFrameIndex() const;
 
-            /* 登记/写入根帧的槽位名（SE / _SE 这类 RVM 内部全局槽位） */
+            /* 登记/写入根帧的槽位名（SR / _SE / SE 这类 RVM 内部全局槽位） */
             void setRootSlotByName(const std::string &name, uint32_t slotIndex);
             [[nodiscard]] bool writeRootSlotByName(const std::string &name,
                                                    std::shared_ptr<base::RVM_Data> data) const;
+            /* 按名字读根帧槽位。名字未登记或槽位为空时返回 nullptr。 */
+            [[nodiscard]] std::shared_ptr<base::RVM_Data>
+            readRootSlotByName(const std::string &name) const;
 
             /* 当前正在执行的帧下标 */
             void setCurrentFrameIndex(uint32_t frameIndex);

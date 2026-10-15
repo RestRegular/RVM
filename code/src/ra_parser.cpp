@@ -123,8 +123,10 @@ namespace parser {
          *   1. initialize() 用它把全局数据注册进 RVM_Memory 的 globalScope；
          *   2. 解析期用它把同名变量登记进文件根作用域，使每个标识符都能被解析成槽位。
          *
-         * 注意：SR 与 _SE 不在此列——它们的 DataID 需要被单独保存（SR_SPACE_ID / SE_SPACE_ID），
-         * 由 initialize() 单独处理。
+         * SR 与 _SE 也在列表中：它们同样需要根帧槽位。SR 是 RET/IVOK 的返回值中转位，
+         * _SE 是 EXPO 的错误传播位，两者都会被运行期改写；槽位模式必须在根帧里给它们
+         * 留出位置，否则取到的是空槽位。它们的 DataID 另外由 SR_SPACE_ID / SE_SPACE_ID
+         * 保存，供旧系统路径使用（见 initialize()）。
          */
         const std::vector<std::string> &getRuntimeGlobalDataNames() {
             static const std::vector<std::string> names{
@@ -133,7 +135,8 @@ namespace parser {
                     "tp",
                     "tp-int", "tp-float", "tp-char", "tp-bool",
                     "tp-str", "tp-null", "tp-list", "tp-dict",
-                    "tp-series", "tp-pair", "tp-time", "tp-qot"
+                    "tp-series", "tp-pair", "tp-time", "tp-qot",
+                    "SR", "_SE"
             };
             return names;
         }
@@ -146,11 +149,14 @@ namespace parser {
             base::PROGRAM_WORKING_DIRECTORY_STACK.push(
                     utils::getAbsolutePath(working_directory.empty() || working_directory == undefined_ ?
                     utils::getFileDirFromPath(executed_file_path) : working_directory));
-            auto [SR_id, _1] = data_space_pool.addGlobalData("SR", std::make_shared<data::Null>());
-            SR_SPACE_ID = SR_id;
-            auto [SE_id_, _2] = data_space_pool.addGlobalData("_SE", std::make_shared<data::Null>());
-            SE_SPACE_ID = SE_id_;
-            // 全局数据的初值表。键必须与 getRuntimeGlobalDataNames() 完全一致。
+            /*
+             * 全局数据的初值表。键必须与 getRuntimeGlobalDataNames() 完全一致。
+             *
+             * SR / _SE 也在表内，与其他全局量走同一条注册路径（不能再单独 addGlobalData，
+             * 否则重复注册会抛 DuplicateKeyError）。它们会被运行期改写：
+             *   SR  —— RET 写入返回值、IVOK 取出后清空
+             *   _SE —— EXPO 写入错误对象、错误处理后清空
+             */
             const std::unordered_map<std::string, std::shared_ptr<base::RVM_Data>> globalInitialValues{
                     {"SN", std::make_shared<data::Null>()},
                     {"SE", std::make_shared<data::Null>()},
@@ -170,11 +176,25 @@ namespace parser {
                     {"tp-series", std::make_shared<data::DType>(data::Series::typeId)},
                     {"tp-pair", std::make_shared<data::DType>(data::KeyValuePair::typeId)},
                     {"tp-time", std::make_shared<data::DType>(data::Time::typeId)},
-                    {"tp-qot", std::make_shared<data::DType>(data::Quote::typeId)}
+                    {"tp-qot", std::make_shared<data::DType>(data::Quote::typeId)},
+                    {"SR", std::make_shared<data::Null>()},
+                    {"_SE", std::make_shared<data::Null>()}
             };
             for (const auto &name: getRuntimeGlobalDataNames()) {
-                if (const auto it = globalInitialValues.find(name); it != globalInitialValues.end()) {
-                    data_space_pool.addGlobalData(name, it->second);
+                const auto it = globalInitialValues.find(name);
+                if (it == globalInitialValues.end()) {
+                    throw base::RVM_Error(
+                            base::ErrorType::RuntimeError, {}, {},
+                            {"No initial value is registered for a runtime global.",
+                             "Global name: \"" + name + "\""},
+                            {"getRuntimeGlobalDataNames() and globalInitialValues must list the "
+                             "same names; this is an RVM internal inconsistency."});
+                }
+                const auto [dataId, _] = data_space_pool.addGlobalData(name, it->second);
+                if (name == "SR") {
+                    SR_SPACE_ID = dataId;
+                } else if (name == "_SE") {
+                    SE_SPACE_ID = dataId;
                 }
             }
             const auto &main_space_name = utils::getFileNameFromPath(executed_file_path);

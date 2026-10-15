@@ -1814,20 +1814,33 @@ namespace exes {
         }
         if (func && func->getTypeID() == data::RetFunction::typeId) {
             try {
-                // 槽位模式：返回值直接写进目标槽位，不经过旧内存
+                /*
+                 * 返回值中转位 SR。
+                 *
+                 * 槽位模式下 SR 就是根帧里的一个槽位，读写都走槽位，不再经旧内存：
+                 *   RET  —— 写入 SR 槽位
+                 *   IVOK —— 从 SR 槽位取出、写进目标槽位，然后把 SR 清空
+                 * 与旧系统语义一致：SR 是单一全局位，嵌套调用会互相覆盖（既有行为）。
+                 */
                 if (core::memory::isSlotBindingModeEnabled()) {
-                    if (!ret_name_arg.hasSlotRef()
+                    const auto returned =
+                            core::memory::RVM_RUNTIME_MEMORY.readRootSlotByName("SR");
+                    if (!ret_name_arg.hasSlotRef() || !returned
                         || !core::memory::RVM_RUNTIME_MEMORY.writeSlot(
                                 ret_name_arg.getFrameIndex(), ret_name_arg.getSlotIndex(),
-                                data_space_pool.findDataByIDNoLock(SR_SPACE_ID)->copy_ptr())) {
+                                returned->copy_ptr())) {
                         throw core::memory::makeSlotModelError("ivok-return",
                                                               ret_name_arg.getValue());
+                    }
+                    if (!core::memory::RVM_RUNTIME_MEMORY.writeRootSlotByName(
+                                "SR", data::nullInstance.copy_ptr())) {
+                        throw core::memory::makeSlotModelError("ivok-return", "SR");
                     }
                 } else {
                     data_space_pool.updateDataByArgOrName(ret_name_arg, ret_name_arg.getValue(),
                             data_space_pool.findDataByIDNoLock(SR_SPACE_ID)->copy_ptr());
+                    data_space_pool.updateDataByIDNoLock(SR_SPACE_ID, data::nullInstance.copy_ptr());
                 }
-                data_space_pool.updateDataByIDNoLock(SR_SPACE_ID, data::nullInstance.copy_ptr());
             } catch (const base::errors::MemoryError &) {
                 throw base::errors::MemoryError(ret_name_arg.getPosStr(), ins.raw_code,
                                                 {"This error is caused by accessing memory space that does not exist.",
@@ -1966,16 +1979,20 @@ namespace exes {
 
         if (func && func->getTypeID() == data::RetFunction::typeId)
         {
-            // 槽位模式：返回值直接写进目标槽位，不经过旧内存
+            // 槽位模式：SR 就是根帧的一个槽位，读写都走槽位，不经过旧内存
             if (core::memory::isSlotBindingModeEnabled()) {
-                if (!ret_name_arg.hasSlotRef()
+                const auto returned = core::memory::RVM_RUNTIME_MEMORY.readRootSlotByName("SR");
+                if (!ret_name_arg.hasSlotRef() || !returned
                     || !core::memory::RVM_RUNTIME_MEMORY.writeSlot(
                             ret_name_arg.getFrameIndex(), ret_name_arg.getSlotIndex(),
-                            data_space_pool.findDataByIDNoLock(SR_SPACE_ID)->copy_ptr())) {
+                            returned->copy_ptr())) {
                     throw core::memory::makeSlotModelError("ivok-return",
                                                           ret_name_arg.getValue());
                 }
-                data_space_pool.updateDataByIDNoLock(SR_SPACE_ID, data::nullInstance.copy_ptr());
+                if (!core::memory::RVM_RUNTIME_MEMORY.writeRootSlotByName(
+                            "SR", data::nullInstance.copy_ptr())) {
+                    throw core::memory::makeSlotModelError("ivok-return", "SR");
+                }
                 return ExecutionStatus::Success;
             }
             data_space_pool.updateDataByArgOrName(ret_name_arg, ret_name_arg.getValue(),
@@ -2566,6 +2583,18 @@ namespace exes {
                         return {id, data};
                 }
                 default: {
+                        /*
+                         * 字面量（数字、字符串等）：槽位模式下不需要在旧内存里登记。
+                         *
+                         * CompareGroup 在槽位模式下直接持有数据（directLeft/directRight），
+                         * 不读 DataID；返回的 id 对此分支的调用方无用。
+                         * 原先无条件 addData()，等于每个比较指令的字面量操作数都在旧内存里
+                         * 建一个 "[目标名]_id_[指令号]" 条目，而这些条目没有任何读者
+                         * （该命名只在此处构造，全仓库无按名查找）。
+                         */
+                        if (slotMode) {
+                            return {id::DataID{}, tools::getArgOriginData(arg)};
+                        }
                         auto [id, data] = data_space_pool.addData(
                                 args[2].getValue() + "_id_" + std::to_string(
                                         tools::getArgOriginData(arg)->getInstID().dis_id),
@@ -3992,7 +4021,15 @@ namespace exes {
         }
         try {
             if (args.size() == 1) {
-                data_space_pool.updateDataNoLock(SR_SPACE_ID, tools::getArgNewData(args[0]));
+                // 槽位模式：返回值写进根帧的 SR 槽位，与 IVOK 侧的读取方式一致
+                if (core::memory::isSlotBindingModeEnabled()) {
+                    if (!core::memory::RVM_RUNTIME_MEMORY.writeRootSlotByName(
+                                "SR", tools::getArgNewData(args[0]))) {
+                        throw core::memory::makeSlotModelError("ret-write", "SR");
+                    }
+                } else {
+                    data_space_pool.updateDataNoLock(SR_SPACE_ID, tools::getArgNewData(args[0]));
+                }
             }
             return ExecutionStatus::AbortedFunction;
         } catch (const base::errors::MemoryError &_) {
@@ -4012,7 +4049,15 @@ namespace exes {
         }
 
         // 只有一个参数的情况
-        data_space_pool.updateDataNoLock(SR_SPACE_ID, tools::getArgNewData(args[0]));
+        if (core::memory::isSlotBindingModeEnabled()) {
+            // 槽位模式：写入根帧的 SR 槽位
+            if (!core::memory::RVM_RUNTIME_MEMORY.writeRootSlotByName(
+                        "SR", tools::getArgNewData(args[0]))) {
+                throw core::memory::makeSlotModelError("ret-write", "SR");
+            }
+        } else {
+            data_space_pool.updateDataNoLock(SR_SPACE_ID, tools::getArgNewData(args[0]));
+        }
         return ExecutionStatus::AbortedFunction;
     }
 

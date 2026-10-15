@@ -3543,6 +3543,14 @@ namespace core::memory{
         return false;
     }
 
+    std::shared_ptr<base::RVM_Data>
+    RVM_RuntimeMemory::readRootSlotByName(const std::string &name) const {
+        if (const auto it = rootSlotByName.find(name); it != rootSlotByName.end()) {
+            return readSlot(rootFrameIndex, it->second);
+        }
+        return nullptr;
+    }
+
     void RVM_RuntimeMemory::setCurrentFrameIndex(const uint32_t frameIndex) {
         currentFrameIndex = frameIndex;
     }
