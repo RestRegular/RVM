@@ -1,0 +1,57 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+
+# 本地环境配置（含路径/凭据），模板见 scripts/.env.example
+.env
+.env.local
+*.env.local
+
+# ---- 构建产物 ----
+# CMake / IDE 构建目录
+cmake-build-*/
+cmake-build-debug/
+cmake-build-release/
+build/
+out/
+# 可执行文件
+*.exe
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+
+# ---- 编辑器 / IDE 杂项 ----
+.idea/shelf/
+.idea/workspace.xml
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.vs/
+.vscode/
+*.swp
+*~
+
+# ---- 编译产物（RSI）----
+# 注意：这里【不】忽略 *.rsi。
+# .rsi 是 --precomp-link 使用的预编译库分发格式，仓库历史上曾有意跟踪
+# lib/*.rsi、rsi/*.rsi 等文件，属于可交付物而非临时产物。
+# 只在测试目录下忽略编译生成的 RSI —— test/*.ra 才是测试的源文件。
+test/*.rsi
+test/**/*.rsi
+test/output.txt
+
+# ---- 运行/日志输出 ----
+*.log
+test.txt
+
+# ---- 系统 ----
+.DS_Store
+Thumbs.db
+desktop.ini
