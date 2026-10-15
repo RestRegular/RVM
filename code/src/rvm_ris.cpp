@@ -55,15 +55,20 @@ namespace core::components {
 
     // 序列化函数：序列化 id
     void RI::serialize(std::ostream &os, const utils::SerializationProfile &profile) const {
-        os.write(reinterpret_cast<const char *>(&id.dis_id), sizeof(id.dis_id));
+        /*
+         * RSI 1.9.0：指令编号改用变长编码（1.8.0 写的是 4 字节 int）。
+         * dis_id 是自增序号、非负，用无符号 varint；指令表约百条，绝大多数只占 1 字节。
+         */
+        (void) profile;
+        utils::writeVarint(os, static_cast<uint32_t>(id.dis_id));
     }
 
     // 反序列化函数：通过 id 从 insMap 获取对象
     const RI* RI::deserialize(std::istream& is, const utils::SerializationProfile& profile)
     {
-        int riid{};
-        is.read(reinterpret_cast<char *>(&riid), sizeof(riid));
-    
+        (void) profile;
+        const auto riid = static_cast<int>(utils::readVarint(is));
+
         if (const auto &it = insMap.find(riid);
             it != insMap.end())
         {
@@ -115,100 +120,81 @@ namespace core::components {
     }
 
     // 序列化函数
-    void Ins::serialize(std::ostream &os, const utils::SerializationProfile &profile) const {
+    void Ins::serialize(std::ostream &os, const utils::SerializationProfile &profile,
+                        utils::PathTable &paths) const {
         // 序列化 Pos
-        pos.serialize(os, profile);
+        pos.serialize(os, profile, paths);
 
-        // 序列化 RI
+        // 序列化 RI（id 用变长编码）
         ri->serialize(os, profile);
 
         // 序列化 StdArgs (std::vector<utils::Arg>)
-        const size_t argsSize = args.size();
-        os.write(reinterpret_cast<const char *>(&argsSize), sizeof(argsSize));
+        utils::writeVarint(os, args.size());
         for (const auto &arg: args) {
-            arg.serialize(os, profile);
+            arg.serialize(os, profile, paths);
         }
 
         // 序列化 scopeInsSet
-        const bool hasScopeInsSet = ri->hasScope;
+        const uint8_t hasScopeInsSet = ri->hasScope ? 1 : 0;
         os.write(reinterpret_cast<const char *>(&hasScopeInsSet), sizeof(hasScopeInsSet));
         if (hasScopeInsSet) {
-            scopeInsSet->serialize(os, profile);
+            scopeInsSet->serialize(os, profile, paths);
         }
 
         // 序列化 raw_code
         if (profile < utils::SerializationProfile::Testing) {
             // 高于测试模式下，不序列化 raw_code
-            const size_t codeLength = raw_code.size();
-            os.write(reinterpret_cast<const char *>(&codeLength), sizeof(codeLength));
-            if (codeLength > 0) {
-                os.write(raw_code.c_str(), static_cast<int>(codeLength));
-            }
+            utils::writeString(os, raw_code);
         }
 
         // 序列化布尔值
-        os.write(reinterpret_cast<const char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
+        const uint8_t delayedFlag = is_delayed_release_scope ? 1 : 0;
+        os.write(reinterpret_cast<const char *>(&delayedFlag), sizeof(delayedFlag));
 
-        // 序列化 ext_info
-        const size_t extLength = ext.size();
-        os.write(reinterpret_cast<const char *>(&extLength), sizeof(extLength));
-        if (extLength > 0) {
-            os.write(ext.c_str(), static_cast<long long>(extLength));
-        }
+        // 序列化 ext_info（1.9.0 起走变长 string）
+        utils::writeString(os, ext);
     }
 
     // 反序列化函数
-    void Ins::deserialize(std::istream &is, const utils::SerializationProfile &profile) {
+    void Ins::deserialize(std::istream &is, const utils::SerializationProfile &profile,
+                          const utils::PathTable &paths) {
         // 反序列化 Pos
-        pos.deserialize(is, profile);
+        pos.deserialize(is, profile, paths);
 
         // 反序列化 RI
         ri = RI::deserialize(is, profile);
 
         // 反序列化 StdArgs (std::vector<utils::Arg>)
-        size_t argsSize;
-        is.read(reinterpret_cast<char *>(&argsSize), sizeof(argsSize));
+        const auto argsSize = utils::readVarint(is);
         args.clear();
         for (size_t i = 0; i < argsSize; ++i) {
             utils::Arg arg;
-            arg.deserialize(is, profile);
+            arg.deserialize(is, profile, paths);
             args.push_back(arg);
         }
 
         // 反序列化 scopeInsSet
-        bool hasScopeInsSet;
+        uint8_t hasScopeInsSet = 0;
         is.read(reinterpret_cast<char *>(&hasScopeInsSet), sizeof(hasScopeInsSet));
         if (hasScopeInsSet) {
             scopeInsSet = std::make_shared<InsSet>(unknown_);
-            scopeInsSet->deserialize(is, profile);
+            scopeInsSet->deserialize(is, profile, paths);
         } else {
             scopeInsSet = nullptr;
         }
 
         // 反序列化 raw_code
         if (profile < utils::SerializationProfile::Testing) {
-            size_t codeLength;
-            is.read(reinterpret_cast<char *>(&codeLength), sizeof(codeLength));
-            if (codeLength > 0) {
-                raw_code.resize(codeLength);
-                is.read(&raw_code[0], static_cast<long long>(codeLength));
-            } else {
-                raw_code.clear();
-            }
+            raw_code = utils::readString(is);
         }
 
         // 反序列化布尔值
-        is.read(reinterpret_cast<char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
+        uint8_t delayedFlag = 0;
+        is.read(reinterpret_cast<char *>(&delayedFlag), sizeof(delayedFlag));
+        is_delayed_release_scope = (delayedFlag != 0);
 
         // 反序列化 ext_info
-        size_t extLength;
-        is.read(reinterpret_cast<char *>(&extLength), sizeof(extLength));
-        if (extLength > 0) {
-            ext.resize(extLength);
-            is.read(&ext[0], static_cast<long long>(extLength));
-        } else {
-            ext.clear();
-        }
+        ext = utils::readString(is);
     }
 
     AtmpBlock::AtmpBlock(std::vector<std::shared_ptr<DetectBlock>> detectBlocks, std::shared_ptr<InsSet> block_ins_set,
@@ -644,167 +630,114 @@ namespace core::components {
         return resultStatus;
     }
 
-    void InsSet::serialize(std::ostream &os, const utils::SerializationProfile &profile) const {
+    void InsSet::serialize(std::ostream &os, const utils::SerializationProfile &profile,
+                           utils::PathTable &paths) const {
         /*
          * 静态槽位信息：本指令集所属的帧下标、是否帧根。
          *
          * 紧跟在最前面，与反序列化侧的读取顺序一致。这两个字段在所有 profile 下都写——
          * 缺了它们，反序列化后 frameRootScope 恒为 false，连根帧都不会切换。
+         * 1.9.0 起帧下标用变长编码（下标通常很小，1 字节足够）。
          */
-        os.write(reinterpret_cast<const char *>(&frameIndex), sizeof(frameIndex));
+        utils::writeVarint(os, frameIndex);
         const uint8_t frameRootFlag = frameRootScope ? 1 : 0;
         os.write(reinterpret_cast<const char *>(&frameRootFlag), sizeof(frameRootFlag));
 
         // 序列化布尔值
-        os.write(reinterpret_cast<const char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
+        const uint8_t delayedFlag = is_delayed_release_scope ? 1 : 0;
+        os.write(reinterpret_cast<const char *>(&delayedFlag), sizeof(delayedFlag));
 
-        // 序列化整数
-        os.write(reinterpret_cast<const char *>(&end_pointer), sizeof(end_pointer));
+        // 序列化整数：end_pointer 初值 -1，必须用有符号编码
+        utils::writeSVarint(os, end_pointer);
 
         if (profile < utils::SerializationProfile::Testing) {
             // 序列化字符串
-            const size_t prefixLength = scope_prefix.size();
-            os.write(reinterpret_cast<const char *>(&prefixLength), sizeof(prefixLength));
-            if (prefixLength > 0) {
-                os.write(scope_prefix.c_str(), prefixLength);
-            }
-
-            const size_t leaderLength = scope_leader.size();
-            os.write(reinterpret_cast<const char *>(&leaderLength), sizeof(leaderLength));
-            if (leaderLength > 0) {
-                os.write(scope_leader.c_str(), leaderLength);
-            }
+            utils::writeString(os, scope_prefix);
+            utils::writeString(os, scope_leader);
         }
 
         if (profile < utils::SerializationProfile::Release) {
-            const size_t leaderPosLength = scope_leader_pos.size();
-            os.write(reinterpret_cast<const char *>(&leaderPosLength), sizeof(leaderPosLength));
-            if (leaderPosLength > 0) {
-                os.write(scope_leader_pos.c_str(), leaderPosLength);
-            }
-
-            const size_t leaderFileLength = scope_leader_file.size();
-            os.write(reinterpret_cast<const char *>(&leaderFileLength), sizeof(leaderFileLength));
-            if (leaderFileLength > 0) {
-                os.write(scope_leader_file.c_str(), leaderFileLength);
-            }
-
-//            size_t nameLength = scope_name_stack.size();
-//            os.write(reinterpret_cast<const char *>(&nameLength), sizeof(nameLength));
-//            if (nameLength > 0) {
-//                os.write(scope_name_stack.c_str(), nameLength);
-//            }
+            utils::writeString(os, scope_leader_pos);
+            /*
+             * scope_leader_file 走路径表。
+             * 它与 Pos::filepath 是同一批路径，共用一张表——这正是路径表放在
+             * InsSet 之前的原因：反序列化 Pos 时就要能取到。
+             */
+            utils::writeVarint(os, paths.intern(scope_leader_file));
         }
 
         // 序列化 vector<std::shared_ptr<Ins>>
-        size_t insSetSize = insSet.size();
-        os.write(reinterpret_cast<const char *>(&insSetSize), sizeof(insSetSize));
+        utils::writeVarint(os, insSet.size());
         for (const auto &ins: insSet) {
-            ins->serialize(os, profile);
+            ins->serialize(os, profile, paths);
         }
 
-        // 序列化 unordered_map<string, int>
-        size_t labelsSize = set_labels.size();
-        os.write(reinterpret_cast<const char *>(&labelsSize), sizeof(labelsSize));
-        for (const auto &[key, value]: set_labels) {
-            size_t keyLength = key.size();
-            os.write(reinterpret_cast<const char *>(&keyLength), sizeof(keyLength));
-            if (keyLength > 0) {
-                os.write(key.c_str(), keyLength);
-            }
-            os.write(reinterpret_cast<const char *>(&value), sizeof(value));
+        /*
+         * 序列化 unordered_map<string, int>。
+         *
+         * 必须按 key 排序后写出。
+         *
+         * set_labels 的迭代顺序取决于哈希与 rehash 历史，而两条构建路径的插入顺序并不相同：
+         *   - 解析期：先由 END: 登记 end_pointer 标签，再按 SET: 出现顺序；
+         *   - 反序列化：严格按文件里的顺序读入。
+         * 直接迭代 unordered_map 会让「.ra → .rsi」与「.rsi → .rsi2」写出不同的字节序，
+         * 往返测试因此失败（文件大小相同、内容只是顺序不同）。
+         * 排序后两条路径产出完全一致的字节流。
+         */
+        std::vector<std::pair<std::string, int>> orderedLabels(set_labels.begin(),
+                                                              set_labels.end());
+        std::sort(orderedLabels.begin(), orderedLabels.end(),
+                  [](const auto &lhs, const auto &rhs) { return lhs.first < rhs.first; });
+
+        utils::writeVarint(os, orderedLabels.size());
+        for (const auto &[key, value]: orderedLabels) {
+            utils::writeString(os, key);
+            // label 值是指令下标，允许 -1（表示无匹配），用有符号编码
+            utils::writeSVarint(os, value);
         }
     }
 
-    void InsSet::deserialize(std::istream &is, const utils::SerializationProfile &profile) {
+    void InsSet::deserialize(std::istream &is, const utils::SerializationProfile &profile,
+                             const utils::PathTable &paths) {
         // 静态槽位信息（与 serialize 顺序一致）
-        is.read(reinterpret_cast<char *>(&frameIndex), sizeof(frameIndex));
+        frameIndex = static_cast<uint32_t>(utils::readVarint(is));
         uint8_t frameRootFlag = 0;
         is.read(reinterpret_cast<char *>(&frameRootFlag), sizeof(frameRootFlag));
         frameRootScope = (frameRootFlag != 0);
 
-        is.read(reinterpret_cast<char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
+        uint8_t delayedFlag = 0;
+        is.read(reinterpret_cast<char *>(&delayedFlag), sizeof(delayedFlag));
+        is_delayed_release_scope = (delayedFlag != 0);
 
-        is.read(reinterpret_cast<char *>(&end_pointer), sizeof(end_pointer));
+        // end_pointer 用有符号编码读回（初值 -1）
+        end_pointer = static_cast<int>(utils::readSVarint(is));
 
         if (profile < utils::SerializationProfile::Testing) {
-            size_t prefixLength = 0;
-            is.read(reinterpret_cast<char *>(&prefixLength), sizeof(prefixLength));
-            if (prefixLength > 0) {
-                std::vector<char> buffer(prefixLength);
-                is.read(buffer.data(), prefixLength);
-                scope_prefix.assign(buffer.data(), buffer.size());
-            } else {
-                scope_prefix.clear();
-            }
-
-            size_t leaderLength = 0;
-            is.read(reinterpret_cast<char *>(&leaderLength), sizeof(leaderLength));
-            if (leaderLength > 0) {
-                std::vector<char> buffer(leaderLength);
-                is.read(buffer.data(), leaderLength);
-                scope_leader.assign(buffer.data(), buffer.size());
-            } else {
-                scope_leader.clear();
-            }
+            scope_prefix = utils::readString(is);
+            scope_leader = utils::readString(is);
         }
 
         if (profile < utils::SerializationProfile::Release) {
-            size_t leaderPosLength = 0;
-            is.read(reinterpret_cast<char *>(&leaderPosLength), sizeof(leaderPosLength));
-            if (leaderPosLength > 0) {
-                std::vector<char> buffer(leaderPosLength);
-                is.read(buffer.data(), leaderPosLength);
-                scope_leader_pos.assign(buffer.data(), buffer.size());
-            } else {
-                scope_leader_pos.clear();
-            }
-
-            size_t leaderFileLength = 0;
-            is.read(reinterpret_cast<char *>(&leaderFileLength), sizeof(leaderFileLength));
-            if (leaderFileLength > 0) {
-                std::vector<char> buffer(leaderFileLength);
-                is.read(buffer.data(), leaderFileLength);
-                scope_leader_file.assign(buffer.data(), buffer.size());
-            } else {
-                scope_leader_file.clear();
-            }
-
-//            size_t nameLength = 0;
-//            is.read(reinterpret_cast<char *>(&nameLength), sizeof(nameLength));
-//            if (nameLength > 0) {
-//                std::vector<char> buffer(nameLength);
-//                is.read(buffer.data(), nameLength);
-//                scope_name_stack.assign(buffer.data(), buffer.size());
-//            } else {
-//                scope_name_stack.clear();
-//            }
+            scope_leader_pos = utils::readString(is);
+            // scope_leader_file 从路径表取回（写的是下标）
+            scope_leader_file = paths.at(static_cast<uint32_t>(utils::readVarint(is)));
         }
 
-        size_t insSetSize = 0;
-        is.read(reinterpret_cast<char *>(&insSetSize), sizeof(insSetSize));
+        const auto insSetSize = utils::readVarint(is);
         insSet.clear();
-        insSet.reserve(insSetSize);
+        insSet.reserve(static_cast<size_t>(insSetSize));
         for (size_t i = 0; i < insSetSize; ++i) {
             auto ins = std::make_shared<Ins>();
-            ins->deserialize(is, profile);
+            ins->deserialize(is, profile, paths);
             insSet.push_back(ins);
         }
 
-        size_t labelsSize = 0;
-        is.read(reinterpret_cast<char *>(&labelsSize), sizeof(labelsSize));
+        const auto labelsSize = utils::readVarint(is);
         set_labels.clear();
         for (size_t i = 0; i < labelsSize; ++i) {
-            size_t keyLength = 0;
-            is.read(reinterpret_cast<char *>(&keyLength), sizeof(keyLength));
-            std::string key;
-            if (keyLength > 0) {
-                std::vector<char> buffer(keyLength);
-                is.read(buffer.data(), keyLength);
-                key.assign(buffer.data(), buffer.size());
-            }
-            int value = 0;
-            is.read(reinterpret_cast<char *>(&value), sizeof(value));
+            std::string key = utils::readString(is);
+            // label 值是有符号的（-1 表示无匹配）
+            const int value = static_cast<int>(utils::readSVarint(is));
             set_labels[key] = value;
         }
     }

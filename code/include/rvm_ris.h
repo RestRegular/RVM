@@ -90,9 +90,12 @@ namespace core::components {
 
         void addIns(std::shared_ptr<Ins> ins) const;
 
-        void serialize(std::ostream &os, const utils::SerializationProfile &profile) const;
+        /* 路径表显式传参：--precomp-link 会在解析循环里嵌套调用序列化，全局表会被内层清掉 */
+        void serialize(std::ostream &os, const utils::SerializationProfile &profile,
+                       utils::PathTable &paths) const;
 
-        void deserialize(std::istream &is, const utils::SerializationProfile &profile);
+        void deserialize(std::istream &is, const utils::SerializationProfile &profile,
+                         const utils::PathTable &paths);
 
     };
 
@@ -174,9 +177,12 @@ namespace core::components {
 
         ExecutionStatus execute();
 
-        void serialize(std::ostream &os, const utils::SerializationProfile &profile) const;
+        /* 路径表显式传参：--precomp-link 会在解析循环里嵌套调用序列化，全局表会被内层清掉 */
+        void serialize(std::ostream &os, const utils::SerializationProfile &profile,
+                       utils::PathTable &paths) const;
 
-        void deserialize(std::istream &is, const utils::SerializationProfile &profile);
+        void deserialize(std::istream &is, const utils::SerializationProfile &profile,
+                         const utils::PathTable &paths);
 
         static DebugMode debug_mode; // 无需序列化
         static std::string file_record; // 无需序列化

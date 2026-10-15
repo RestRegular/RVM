@@ -35,17 +35,24 @@ namespace utils {
 
     // 序列化 ArgType 到二进制文件
     void serializeArgType(std::ostream &os, const ArgType &argType, const SerializationProfile &profile) {
-        // 将 ArgType 转换为底层整数类型
-        int value = static_cast<int>(argType);
+        /*
+         * RSI 1.9.0：收窄为 1 字节。
+         * 1.8.0 写的是 int（4 字节），对只有 5 个取值的枚举而言每处都浪费 3 字节。
+         * 保留 profile 参数以免波及调用方。
+         */
+        (void) profile;
+        const auto value = static_cast<uint8_t>(argType);
         os.write(reinterpret_cast<const char*>(&value), sizeof(value));
     }
 
     // 反序列化 ArgType 从二进制文件
     ArgType deserializeArgType(std::istream &is, const SerializationProfile &profile) {
-        int value;
+        (void) profile;
+        uint8_t value = 0;
         is.read(reinterpret_cast<char*>(&value), sizeof(value));
-
-        // 将整数转换回 ArgType 枚举类型
+        if (!is) {
+            throw std::runtime_error("RSI: unexpected EOF while reading ArgType");
+        }
         return static_cast<ArgType>(value);
     }
 
@@ -767,40 +774,24 @@ namespace utils {
         return "\"" + this->getFilepath() + ":1:1\", line 1";
     }
 
-    void Pos::serialize(std::ostream &out, const utils::SerializationProfile &profile) const {
+    void Pos::serialize(std::ostream &out, const utils::SerializationProfile &profile,
+                        PathTable &paths) const {
         if (profile < utils::SerializationProfile::Release) {
-            // 写入整数类型的成员变量
-            out.write(reinterpret_cast<const char *>(&line), sizeof(line));
-            out.write(reinterpret_cast<const char *>(&column), sizeof(column));
-
-            // 写入字符串的长度
-            size_t filepathLength = filepath.size();
-            out.write(reinterpret_cast<const char *>(&filepathLength), sizeof(filepathLength));
-
-            // 写入字符串的内容
-            if (filepathLength > 0) {
-                out.write(filepath.c_str(), static_cast<long long>(filepathLength));
-            }
+            // RSI 1.9.0：行号/列号用 zigzag 变长编码（小数值只占 1 字节）
+            writeSVarint(out, line);
+            writeSVarint(out, column);
+            // 文件路径改存路径表下标——原先每个参数都内联一份完整路径，是最大单项开销
+            writeVarint(out, paths.intern(filepath));
         }
     }
 
-    void Pos::deserialize(std::istream &in, const utils::SerializationProfile &profile) {
-        if (profile < utils::SerializationProfile::Release){
-            // 读取整数类型的成员变量
-            in.read(reinterpret_cast<char *>(&line), sizeof(line));
-            in.read(reinterpret_cast<char *>(&column), sizeof(column));
-
-            // 读取字符串的长度
-            size_t filepathLength;
-            in.read(reinterpret_cast<char *>(&filepathLength), sizeof(filepathLength));
-
-            // 读取字符串的内容
-            if (filepathLength > 0) {
-                filepath.resize(filepathLength);  // 调整字符串大小
-                in.read(&filepath[0], static_cast<long long>(filepathLength));
-            } else {
-                filepath.clear();  // 如果长度为0，清空字符串
-            }
+    void Pos::deserialize(std::istream &in, const utils::SerializationProfile &profile,
+                          const PathTable &paths) {
+        if (profile < utils::SerializationProfile::Release) {
+            line = static_cast<int>(readSVarint(in));
+            column = static_cast<int>(readSVarint(in));
+            // 路径表下标是普通 varint（无 +1 偏移），直接读
+            filepath = paths.at(static_cast<uint32_t>(readVarint(in)));
         }
     }
 
@@ -910,55 +901,43 @@ namespace utils {
     Arg::Arg(const std::string& value): Arg(Pos(-1, -1, ""), value) {}
 
     // 序列化函数
-    void Arg::serialize(std::ostream &out, const utils::SerializationProfile &profile) const {
+    void Arg::serialize(std::ostream &out, const utils::SerializationProfile &profile,
+                        PathTable &paths) const {
         // 序列化 Pos
-        pos.serialize(out, profile);
+        pos.serialize(out, profile, paths);
 
-        // 序列化 ArgType
+        // 序列化 ArgType（1.9.0 起 1 字节）
         utils::serializeArgType(out, type, profile);
 
-        // 序列化字符串的长度
-        size_t valueLength = value.size();
-        out.write(reinterpret_cast<const char*>(&valueLength), sizeof(valueLength));
-
-        // 序列化字符串的内容
-        if (valueLength > 0) {
-            out.write(value.c_str(), static_cast<long long>(valueLength));
-        }
+        // 1.9.0：长度前缀改用变长编码，value 走统一的 string 编码
+        utils::writeString(out, value);
 
         /*
-         * 序列化静态槽位地址。
+         * 静态槽位地址，同样改用变长编码。
          *
-         * 这是运行期取变量的唯一依据：反序列化后没有它，参数就没有地址，
-         * 槽位寻址无从谈起（旧版 RSI 正是如此，故 1.8.0 起不再兼容）。
+         * 用「下标 +1」：INVALID_SLOT(0xFFFFFFFF) 加 1 在 uint32 下回绕为 0，
+         * 于是「没有槽位」这个最常见的情形只占 1 字节，而不是 5 字节。
+         * 参与运算的类型必须是 uint32_t，不能被提升成 int 或 uint64_t。
          */
-        out.write(reinterpret_cast<const char*>(&frameIndex), sizeof(frameIndex));
-        out.write(reinterpret_cast<const char*>(&slotIndex), sizeof(slotIndex));
+        utils::writeIndexPlusOne(out, frameIndex);
+        utils::writeIndexPlusOne(out, slotIndex);
     }
 
     // 反序列化函数
-    void Arg::deserialize(std::istream &in, const SerializationProfile &profile) {
+    void Arg::deserialize(std::istream &in, const SerializationProfile &profile,
+                          const PathTable &paths) {
         // 反序列化 Pos
-        pos.deserialize(in, profile);
+        pos.deserialize(in, profile, paths);
 
         // 反序列化 ArgType
         type = utils::deserializeArgType(in, profile);
 
-        // 反序列化字符串的长度
-        size_t valueLength;
-        in.read(reinterpret_cast<char*>(&valueLength), sizeof(valueLength));
+        // 1.9.0：value 走统一 string 编码
+        value = utils::readString(in);
 
-        // 反序列化字符串的内容
-        if (valueLength > 0) {
-            value.resize(valueLength);
-            in.read(&value[0], static_cast<long long>(valueLength));
-        } else {
-            value.clear();
-        }
-
-        // 反序列化静态槽位地址（与 serialize 顺序一致）
-        in.read(reinterpret_cast<char*>(&frameIndex), sizeof(frameIndex));
-        in.read(reinterpret_cast<char*>(&slotIndex), sizeof(slotIndex));
+        // 静态槽位地址（0 回绕回 INVALID_SLOT）
+        frameIndex = utils::readIndexPlusOne(in);
+        slotIndex = utils::readIndexPlusOne(in);
     }
 
     std::string readFile(const std::string &filepath) {

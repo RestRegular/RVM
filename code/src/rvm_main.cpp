@@ -36,6 +36,8 @@ static bool program_get_ris_;
 static bool program_parse_info_;
 static bool program_slot_mode_;
 static bool program_legacy_mode_;
+static bool program_dump_rsi_;
+static std::string program_dump_rsi_to_;
 
 static void initializeArgumentParser() {
     argParser.addFlag("help", &program_help_option_, false, true,
@@ -95,14 +97,24 @@ static void initializeArgumentParser() {
                       "Variable names are resolved to (frame, slot) addresses while parsing, and the "
                       "runtime performs no name lookup at all. Scoping becomes lexical: a function body "
                       "sees its definition site rather than its call site. "
-                      "Only available for '.ra' sources: the slot tables are not serialized into '.rsi', "
-                      "so running a precompiled file always uses the legacy dynamic-scope system. "
-                      "Use '--legacy-mode' to force the legacy system for a '.ra' file.",
+                      "Works for both '.ra' sources and '.rsi' artifacts (1.8.0+ carries the slot table). "
+                      "Use '--legacy-mode' to force the legacy system instead.",
                       {"sm", "slot"});
     argParser.addFlag("legacy-mode", &program_legacy_mode_, false, true,
                       "Forces the legacy dynamic-scope memory system, disabling the static slot "
                       "architecture for '.ra' sources. Useful for A/B comparison against '--slot-mode'.",
                       {"lm", "legacy"});
+    argParser.addFlag("dump-rsi", &program_dump_rsi_, false, true,
+                      "Reads the '.rsi' target, re-serializes it, and writes the result to "
+                      "'--dump-rsi-to'. Used to verify that the serializer and deserializer are "
+                      "symmetric: a correct round trip reproduces the input byte for byte. "
+                      "Note that '.rsi' has no header under the 'Minified' profile, so that profile "
+                      "also requires '--comp-level Minified' on input.",
+                      {"dr"});
+    argParser.addOption<std::string>("dump-rsi-to", &program_dump_rsi_to_,
+                                     "",
+                                     "Output path for '--dump-rsi'.",
+                                     {"drt"});
 
     argParser.addOption<std::string>("help-option", &program_help_option_name_,
                                                      "",
@@ -244,6 +256,22 @@ int main(const int argc, char *argv[]){
                 core::memory::RVM_RUNTIME_MEMORY.printInfo(std::cout);
             }
             /*
+             * 往返验证：把刚反序列化出来的指令集重新序列化。
+             * 解析器与序列化器对称时，产物应与输入逐字节相同——能一次性抓出
+             * 写读两端不对称、路径表错位这类问题。
+             */
+            if (program_dump_rsi_) {
+                if (program_dump_rsi_to_.empty()) {
+                    throw base::RVM_Error(
+                            base::ErrorType::RuntimeError, program_target_file_path_, {},
+                            {"--dump-rsi requires --dump-rsi-to <path>."},
+                            {"Specify the output path for the re-serialized RSI."});
+                }
+                parse::serializeExecutableInsToBinaryFile(
+                        program_dump_rsi_to_, ins_set, env::program_serialization_profile_);
+                *io += "[RVM Msg] >> Round-trip RSI written to " + program_dump_rsi_to_ + "\n";
+            } else {
+            /*
              * 决定运行期使用哪一套变量系统。
              *
              *   --legacy-mode 优先：显式要求旧系统时，即使槽位表就绪也不启用。
@@ -272,6 +300,7 @@ int main(const int argc, char *argv[]){
                 core::memory::setSlotBindingModeEnabled(true);
             }
             ins_set->execute();
+            }
         }
         if (program_help_option_) {
             if (program_help_option_name_.empty()) {

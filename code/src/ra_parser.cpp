@@ -191,30 +191,18 @@ namespace parser {
         }
 
         void serializeLinkedExtensions(std::ostream &out) {
-            size_t extension_count = loadedExtensions.size();
-            out.write(reinterpret_cast<const char *>(&extension_count), sizeof(extension_count));
+            // RSI 1.9.0：计数与字符串都改用变长编码
+            utils::writeVarint(out, loadedExtensions.size());
             for (const auto& ext_name : loadedExtensions | std::views::keys) {
-                size_t extension_size = ext_name.size();
-                out.write(reinterpret_cast<const char *>(&extension_size), sizeof(extension_size));
-                if (extension_size > 0){
-                    out.write(ext_name.c_str(), static_cast<long long>(extension_size));
-                }
+                utils::writeString(out, ext_name);
                 // FixMe
             }
         }
 
         void deserializeLinkedExtensions(std::istream &in) {
-            size_t extension_count;
-            in.read(reinterpret_cast<char *>(&extension_count), sizeof(extension_count));
-            for (size_t i = 0; i < extension_count; ++i) {
-                size_t extension_size;
-                in.read(reinterpret_cast<char *>(&extension_size), sizeof(extension_size));
-                if (extension_size > 0){
-                    std::string extension;
-                    extension.resize(extension_size);
-                    in.read(&extension[0], static_cast<long long>(extension_size));
-                    loadedExtensions.emplace(extension, nullptr); // FixMe
-                }
+            const auto extension_count = utils::readVarint(in);
+            for (uint64_t i = 0; i < extension_count; ++i) {
+                loadedExtensions.emplace(utils::readString(in), nullptr); // FixMe
             }
         }
 
@@ -310,32 +298,25 @@ namespace parser {
         }
 
         void RVMSlotTable::serialize(std::ostream &os) const {
-            const uint32_t frameCount = static_cast<uint32_t>(frames.size());
-            os.write(reinterpret_cast<const char *>(&frameCount), sizeof(frameCount));
+            // RSI 1.9.0：全部改用变长编码，帧下标/父下标用 +1 编码
+            utils::writeVarint(os, frames.size());
             for (const auto &frame: frames) {
-                os.write(reinterpret_cast<const char *>(&frame.slotSpan), sizeof(frame.slotSpan));
-                os.write(reinterpret_cast<const char *>(&frame.parentFrameIndex),
-                         sizeof(frame.parentFrameIndex));
+                utils::writeVarint(os, frame.slotSpan);
+                utils::writeIndexPlusOne(os, frame.parentFrameIndex);
                 const uint8_t isRoot = frame.frameRoot ? 1 : 0;
                 os.write(reinterpret_cast<const char *>(&isRoot), sizeof(isRoot));
             }
 
-            os.write(reinterpret_cast<const char *>(&rootFrameIndex), sizeof(rootFrameIndex));
+            utils::writeVarint(os, rootFrameIndex);
 
-            const uint32_t slotNameCount = static_cast<uint32_t>(rootSlotNames.size());
-            os.write(reinterpret_cast<const char *>(&slotNameCount), sizeof(slotNameCount));
+            utils::writeVarint(os, rootSlotNames.size());
             for (const auto &name: rootSlotNames) {
-                const size_t len = name.size();
-                os.write(reinterpret_cast<const char *>(&len), sizeof(len));
-                if (len > 0) {
-                    os.write(name.c_str(), static_cast<long long>(len));
-                }
+                utils::writeString(os, name);
             }
         }
 
         void RVMSlotTable::deserialize(std::istream &is) {
-            uint32_t frameCount = 0;
-            is.read(reinterpret_cast<char *>(&frameCount), sizeof(frameCount));
+            const auto frameCount = static_cast<uint32_t>(utils::readVarint(is));
             if (!is || frameCount == 0) {
                 throw base::RVM_Error(
                         base::ErrorType::RuntimeError, {}, {},
@@ -345,26 +326,18 @@ namespace parser {
             }
             frames.resize(frameCount);
             for (auto &frame: frames) {
-                is.read(reinterpret_cast<char *>(&frame.slotSpan), sizeof(frame.slotSpan));
-                is.read(reinterpret_cast<char *>(&frame.parentFrameIndex),
-                        sizeof(frame.parentFrameIndex));
+                frame.slotSpan = static_cast<uint32_t>(utils::readVarint(is));
+                frame.parentFrameIndex = utils::readIndexPlusOne(is);
                 uint8_t isRoot = 0;
                 is.read(reinterpret_cast<char *>(&isRoot), sizeof(isRoot));
                 frame.frameRoot = (isRoot != 0);
             }
-            is.read(reinterpret_cast<char *>(&rootFrameIndex), sizeof(rootFrameIndex));
+            rootFrameIndex = static_cast<uint32_t>(utils::readVarint(is));
 
-            uint32_t slotNameCount = 0;
-            is.read(reinterpret_cast<char *>(&slotNameCount), sizeof(slotNameCount));
-            rootSlotNames.resize(slotNameCount);
+            const auto slotNameCount = utils::readVarint(is);
+            rootSlotNames.resize(static_cast<size_t>(slotNameCount));
             for (auto &name: rootSlotNames) {
-                size_t len = 0;
-                is.read(reinterpret_cast<char *>(&len), sizeof(len));
-                if (len > 0) {
-                    std::string buf(len, '\0');
-                    is.read(buf.data(), static_cast<long long>(len));
-                    name = std::move(buf);
-                }
+                name = utils::readString(is);
             }
             if (!is) {
                 throw base::RVM_Error(base::ErrorType::RuntimeError, {}, {},
@@ -1351,6 +1324,19 @@ namespace parser {
                                                 const utils::SerializationProfile &profile){
             binary_file_path = utils::getAbsolutePath(binary_file_path);
             std::ofstream binary_file(binary_file_path, std::ios::binary);
+
+            /*
+             * 路径表只有在整个指令流写完后才完整，所以先把指令流写进内存缓冲区，
+             * 再按「头 → 扩展表 → 槽位表 → 路径表 → 指令流」的顺序落盘。
+             *
+             * 路径表是【局部变量】而不是全局/线程局部状态：--precomp-link 会在解析主文件的
+             * 循环里对本函数递归调用（见 LINK 分支），全局表会被内层调用清掉，
+             * 写进主文件的路径表就会被链接文件的内容污染。
+             */
+            utils::PathTable paths;
+            std::ostringstream body;
+            ins_set->serialize(body, profile, paths);
+
             base::rvm_serial_header.setProfile(profile);
             base::rvm_serial_header.serialize(binary_file);
             env::serializeLinkedExtensions(binary_file);
@@ -1359,7 +1345,18 @@ namespace parser {
              * 各处参数里写死的帧下标才有对应的帧实例。
              */
             getLastSlotTable().serialize(binary_file);
-            ins_set->serialize(binary_file, profile);
+            // 路径表同样必须在指令流之前：反序列化 Pos 时就要能按下标取回路径
+            paths.serialize(binary_file);
+
+            const std::string bodyStr = body.str();
+            if (!bodyStr.empty()) {
+                binary_file.write(bodyStr.data(), static_cast<std::streamsize>(bodyStr.size()));
+            }
+            if (!binary_file) {
+                throw base::RVM_Error(base::ErrorType::RuntimeError, binary_file_path, {},
+                                      {"Failed to write the RSI file."},
+                                      {"Check that the target directory exists and is writable."});
+            }
             binary_file.close();
         }
 
@@ -1371,8 +1368,11 @@ namespace parser {
             // 先重建运行期帧表，指令里写死的帧下标才有落点
             lastSlotTable = RVMSlotTable{};
             lastSlotTable.deserialize(binary_file);
+            // 路径表：局部实例，与写入端顺序一致
+            utils::PathTable paths;
+            paths.deserialize(binary_file);
             auto ins_set = std::make_shared<InsSet>("File");
-            ins_set->deserialize(binary_file, base::rvm_serial_header.getProfile());
+            ins_set->deserialize(binary_file, base::rvm_serial_header.getProfile(), paths);
             binary_file.close();
             return ins_set;
         }

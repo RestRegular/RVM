@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include "../rsi_codec.h"
 
 namespace utils {
 
@@ -26,6 +27,12 @@ namespace utils {
         identifier,
         keyword,
     };
+
+    /*
+     * RSI 1.9.0 起 ArgType 序列化为 1 字节（1.8.0 是 4 字节）。
+     * 新增枚举值时必须仍能装进 1 字节，否则下面的断言会失败。
+     */
+    static_assert(static_cast<int>(ArgType::keyword) < 256, "ArgType must fit in 1 byte");
 
     enum class FieldType{
         InstField,
@@ -153,8 +160,15 @@ namespace utils {
         [[nodiscard]] std::string getFilePosStr() const;
         friend std::ostream& operator<<(std::ostream& out, const Pos& pos);
         [[nodiscard]] std::string toString() const;
-        void serialize(std::ostream& out, const SerializationProfile &profile) const;
-        void deserialize(std::istream& in, const SerializationProfile &profile);
+        /*
+         * RSI 1.9.0 起，filepath 不再内联，改存路径表下标（paths）。
+         * 路径表显式传参而不是全局状态——--precomp-link 会在解析循环里嵌套调用序列化，
+         * 全局表会被内层调用清掉、污染外层。
+         */
+        void serialize(std::ostream& out, const SerializationProfile &profile,
+                       PathTable &paths) const;
+        void deserialize(std::istream& in, const SerializationProfile &profile,
+                         const PathTable &paths);
     private:
         int line{0};
         int column{0};
@@ -187,8 +201,7 @@ namespace utils {
          * 这是静态槽位架构的核心——解析期就把名字换成地址，运行期只做
          * `frames[frameIndex].slots[slotIndex]` 两次数组索引，没有任何名字或字符串查找。
          *
-         * 两者都不参与序列化（Arg::serialize 只写 pos/type/value），所以 RSI 格式不变；
-         * 同理，'.rsi' 反序列化得到的参数不会带槽位信息，只能走旧系统。
+         * RSI 1.8.0 起参与序列化；1.9.0 起用「下标 +1」的变长编码，无效哨兵只占 1 字节。
          */
         static constexpr uint32_t INVALID_SLOT = std::numeric_limits<uint32_t>::max();
 
@@ -197,8 +210,10 @@ namespace utils {
         [[nodiscard]] uint32_t getFrameIndex() const;
         [[nodiscard]] uint32_t getSlotIndex() const;
 
-        void serialize(std::ostream& out, const SerializationProfile &profile) const;
-        void deserialize(std::istream& in, const SerializationProfile &profile);
+        void serialize(std::ostream& out, const SerializationProfile &profile,
+                       PathTable &paths) const;
+        void deserialize(std::istream& in, const SerializationProfile &profile,
+                         const PathTable &paths);
     private:
         Pos pos{};
         utils::ArgType type{};
