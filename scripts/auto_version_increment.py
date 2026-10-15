@@ -60,6 +60,13 @@ CHANGE_TYPE_MAP = {
     "opt": "Optimize",
     "depr": "Deprecate",
     "ref": "Refactor",
+    # 以下三项原先缺失，导致：
+    #   break 被当成 BugFix -> 本该 Major 的破坏性变更降级成 Patch；
+    #   doc / test 走默认分支，靠巧合得到正确的 Patch；
+    #   且日志里会原样输出简写 "[break]"，与历史条目的全名格式不一致。
+    "break": "Breaking",
+    "doc": "Docs",
+    "test": "Test",
 }
 
 
@@ -100,30 +107,34 @@ class IncrementType(Enum):
 
     @staticmethod
     def from_change_type(change_types: List[str]) -> 'IncrementType':
+        """
+        从变更类型列表推导版本递增层级，取最严格的一档。
+
+        变更类型有简写与全名两种写法（见 CHANGE_TYPE_MAP 与 update_config.json 的
+        annotation.change_types），必须都能识别，否则会被当成默认的 BugFix 而降级。
+        """
         INCREMENT_TYPE_MATCH_CHANGE_TYPE_MAP = {
-            "Breaking": 0, # major
-            "Feature": 1, # minor
-            "BugFix": 2, # patch
-            "Optimize": 2, # patch
-            "Deprecate": 1, # minor
-            "Refactor": 2, # patch
-            "Docs": 2, # patch
-            "Test": 2, # patch
+            "Breaking": 0,  # major
+            "Feature": 1,  # minor
+            "BugFix": 2,  # patch
+            "Optimize": 2,  # patch
+            "Deprecate": 1,  # minor
+            "Refactor": 2,  # patch
+            "Docs": 2,  # patch
+            "Test": 2,  # patch
+            "Release": 2,  # patch
         }
-        max_inc_type = 2
+
+        # 最严格的一档（枚举值最小）——初值取 patch，再逐项收紧
+        strictest = 2
         for ct in change_types:
-            # 转换为标准变更类型
-            if ct in CHANGE_TYPE_MAP.values():
-                std_type = ct
-            else:
-                std_type = CHANGE_TYPE_MAP.get(ct, "BugFix")
-
-            # 获取对应的版本递增类型值，默认为patch
+            std_type = ct if ct in INCREMENT_TYPE_MATCH_CHANGE_TYPE_MAP \
+                else CHANGE_TYPE_MAP.get(ct, "BugFix")
             inc_type = INCREMENT_TYPE_MATCH_CHANGE_TYPE_MAP.get(std_type, 1)
-            if inc_type < max_inc_type:
-                max_inc_type = inc_type
+            if inc_type < strictest:
+                strictest = inc_type
 
-        return IncrementType.from_int(max_inc_type)
+        return IncrementType.from_int(strictest)
 
 
 def get_version_str(version: dict) -> str:

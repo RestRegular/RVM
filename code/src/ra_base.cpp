@@ -63,18 +63,25 @@ namespace base
             throw std::runtime_error("Invalid file format!");
         }
         /*
-         * 版本必须【完全一致】。
+         * 版本兼容规则：**major 必须相等**，且文件版本不得高于 RVM 版本。
          *
-         * 原实现只在「文件版本高于 RVM 版本」时报错，于是低版本文件会一路通过校验，
-         * 然后在反序列化阶段以 std::bad_alloc 之类的形式炸掉——报错完全指不到原因。
+         * 为什么不是「完全一致」：
+         *   若逐段严格相等，任何一次 patch 修复都会让此前所有 `.rsi` 报废——
+         *   而这些产物本来是可以正常运行的。对纯修复版本过于激进。
          *
-         * 1.8.0 起 RSI 布局随静态槽位表改变，旧文件即便版本号更低也不再兼容，
-         * 所以这里改成逐段比较：只要文件版本与 RVM 版本不同就明确拒绝。
+         * 为什么 major 必须相等：
+         *   major 的语义就是「不兼容」——RSI 二进制布局只在 major 变更时改。
+         *   例如 1.x 与 2.0 的布局不同（2.0 的 RSI 携带槽位表并改用变长编码），
+         *   所以 1.7.0 的产物必须被 2.0.0 拒绝，而不是当成「低版本」放过。
+         *
+         * 为什么拒绝「文件版本更高」：
+         *   高版本产物可能用到本版无法解析的新字段，必须明确报错而不是错读成垃圾。
          */
-        const bool versionDiffers = major_ver != VERSION_MAJOR
-                                    || minor_ver != VERSION_MINOR
-                                    || patch_ver != VERSION_PATCH;
-        if (versionDiffers)
+        const bool incompatible =
+                major_ver != VERSION_MAJOR
+                || minor_ver > VERSION_MINOR
+                || (minor_ver == VERSION_MINOR && patch_ver > VERSION_PATCH);
+        if (incompatible)
         {
             throw std::runtime_error(
                 "Unsupported version\nRVM version: " + getRVMVersionInfo() + "\nRSI File Version: " +

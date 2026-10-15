@@ -1,21 +1,19 @@
 {
   "validate": true,
   "version": {
-    "vs_desc": "优化了并新增了错误处理相关功能",
+    "vs_desc": "静态槽位架构与 RSI 1.9.0 变长编码（RSI 格式不兼容变更）",
     "change_type": [
-      "opt",
-      "feat"
+      "break"
     ]
   },
   "update_log": {
     "author": "RestRegular",
     "log_contents": [
-      "统一内存空间ID命名风格，使用全大写命名规范。",
-      "扩展 `DetectBlock` 构造函数以支持内置类型检测。",
-      "调整 `DETECT` 指令参数数量限制并增强类型检查。",
-      "改进 `EXPOSE` 指令错误数据传递逻辑。",
-      "优化 `SR_SPACE_ID` 和 `SE_SPACE_ID` 的引用一致性。",
-      "完善文件写入异常抛出逻辑结构。"
+      "**不兼容变更**：变量存取改为解析期定址。新增静态槽位架构，解析期把名字换算成 (帧下标, 槽位号) 直接挂在每个参数上，运行期不再按名字查找；作用域语义由动态改为词法，函数体看定义处而非调用处。可通过 `--slot-mode` / `--legacy-mode` 切换，默认启用新架构。",
+      "**不兼容变更**：RSI 格式升级到 1.9.0。RSI 开始携带静态槽位表，并改用变长编码（LEB128 / zigzag）、新增文件路径表、`ArgType` 由 4 字节收窄为 1 字节。Debug 档位产物体积下降约 73%（`test_2.ra` 12169 B -> 3272 B）。旧版 RSI 一律被版本校验明确拒绝，需用新 RVM 重新 `--comp`。",
+      "移除 `SP_SET`、`SP_GET`、`SP_NEW`、`SP_DEL` 四条作用域操作指令，无实际使用场景。",
+      "新增 `--dump-rsi` / `--dump-rsi-to`，用于验证序列化与反序列化对称（正确实现下往返产物与输入逐字节相同）。",
+      "修复 `set_labels` 的序列化顺序不确定问题：原先直接迭代 `unordered_map`，其顺序取决于哈希与 rehash 历史，导致 `.ra -> .rsi` 与 `.rsi -> .rsi2` 产出不同字节序。改为按 key 排序后写出。"
     ]
   },
   "annotation": {

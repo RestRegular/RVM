@@ -5,6 +5,14 @@
 1.8.0 起携带静态槽位表；**1.9.0 起整数字段使用变长编码，不再是固定原生宽度**，
 字符串改由路径表去重，`ArgType` 由 4 字节收窄为 1 字节。
 
+> **RVM 版本与 RSI 格式版本是两个不同的号。**
+> 本文的「1.9.0」指 **RSI 格式版本**，随 `.rsi` 的二进制布局变化。
+> **RVM 程序版本**由 `code/include/rvm_version.h` 定义，通过
+> `RVMSerialHeader` 的 `major/minor/patch` 写入每个 `.rsi` 的头部并参与兼容校验。
+> 静态槽位架构 + RSI 1.9.0 作为一次**不兼容变更**发布，RVM 程序版本为 **v2.0.0**
+> （依据 `logs/update_logs.md` 的约定：Breaking → Major）。
+> 两者当前恰好都是「1.9 / 2.0」，但含义不同，不要混用。
+
 ---
 
 ## 编码约定
@@ -88,10 +96,13 @@ binary_file << body.rdbuf();
 | 偏移 | 大小 | 字段 | 说明 |
 |---|---|---|---|
 | 0 | 4 | `magic[4]` | 固定 `52 53 49 1A`（`'R','S','I',0x1A`） |
-| 4 | 2 | `major_ver` | 主版本，当前 `1` |
-| 6 | 2 | `minor_ver` | 次版本，当前 `9` |
-| 8 | 2 | `patch_ver` | 修订号，当前 `0` |
+| 4 | 2 | `major_ver` | RVM 主版本，当前 `2` |
+| 6 | 2 | `minor_ver` | RVM 次版本，当前 `0` |
+| 8 | 2 | `patch_ver` | RVM 修订号，当前 `0` |
 | 10 | 2 | `profile` | 序列化档位 |
+
+这三个版本字段来自 `rvm_version.h` 的 `VERSION_MAJOR/MINOR/PATCH`，即 **RVM 程序版本**
+（当前 v2.0.0），**不是**本文标题里的 RSI 格式版本（1.9.0）。
 
 结构体带 `static_assert(sizeof(RVMSerialHeader) == 12)`。
 
