@@ -344,6 +344,22 @@ namespace parser {
                 frame.frameRoot = (isRoot != 0);
             }
             rootFrameIndex = static_cast<uint32_t>(utils::readVarint(is));
+            if (rootFrameIndex >= frameCount) {
+                /*
+                 * 越界的 root_frame_index 必须在此拒绝。
+                 *
+                 * 原先这里不校验：setRootFrameIndex(999) 照样生效，frameAt(999) 返回 null，
+                 * 于是「把全局数据灌回根帧」整段被静默跳过；直到运行期某个无关指令
+                 * 因为取不到 DType 而报错——报错位置与真正原因毫无关系，极难排查。
+                 * 合法产物里 rootFrameIndex 必然是有效帧下标，越界只可能是文件损坏。
+                 */
+                throw base::RVM_Error(
+                        base::ErrorType::RuntimeError, {}, {},
+                        {"The RSI slot table has an out-of-range root frame index.",
+                         "Root frame index: " + std::to_string(rootFrameIndex),
+                         "Frame count: " + std::to_string(frameCount)},
+                        {"This indicates a corrupted RSI file. Recompile the source."});
+            }
 
             const auto slotNameCount =
                     utils::readCount(is, utils::RSI_MAX_NAME_COUNT, "root slot name count");
@@ -373,6 +389,13 @@ namespace parser {
                 }
                 const uint32_t index = runtimeMemory.addFrame(scope, std::string{});
                 if (index != i) {
+                    /*
+                     * 防御性检查：当前实现下不可达。
+                     *
+                     * addFrame 每次 push_back 并返回 frames.size()-1，而循环恰好在
+                     * clearAllFrames() 之后顺序执行 frameCount 次，所以 index 必然等于 i。
+                     * 保留是为了在未来改动 addFrame 语义（例如复用槽位、并发建帧）时立刻暴露问题。
+                     */
                     throw base::RVM_Error(base::ErrorType::RuntimeError, {}, {},
                                           {"Slot table frame indices are inconsistent."},
                                           {"This indicates a corrupted RSI file."});
@@ -382,7 +405,24 @@ namespace parser {
             for (uint32_t i = 0; i < frameCount; ++i) {
                 const uint32_t parentIndex = frames[i].parentFrameIndex;
                 if (parentIndex == core::memory::INVALID_INDEX) {
-                    continue;
+                    continue;   // 无父帧（词法链终点），是正常值
+                }
+                if (parentIndex >= frameCount) {
+                    /*
+                     * 越界父下标必须拒绝，不能静默跳过。
+                     *
+                     * 原先 `if (frame && parent)` 在越界时直接不做绑定，帧的词法链就断了，
+                     * 反序列化却一声不吭——运行期才会以取不到变量的形式暴露，
+                     * 报错位置与真正原因完全无关。合法产物里父下标要么是有效帧下标、
+                     * 要么是 INVALID_INDEX，越界只可能是文件损坏。
+                     */
+                    throw base::RVM_Error(
+                            base::ErrorType::RuntimeError, {}, {},
+                            {"The RSI slot table has an out-of-range parent frame index.",
+                             "Frame " + std::to_string(i) + " parent index: " +
+                             std::to_string(parentIndex),
+                             "Frame count: " + std::to_string(frameCount)},
+                            {"This indicates a corrupted RSI file. Recompile the source."});
                 }
                 const auto frame = runtimeMemory.frameAt(i);
                 const auto parent = runtimeMemory.frameAt(parentIndex);

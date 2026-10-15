@@ -3640,6 +3640,17 @@ namespace core::memory{
         return slotModeState().modeEnabled;
     }
 
+    /*
+     * 槽位模型错误。
+     *
+     * 这组异常表示「解析期算出的槽位地址在运行期用不了」，是 RVM 自身的模型不一致，
+     * 不是用户程序的问题。可达性说明：
+     *   - writeArgSlot / readArgSlot 只在参数确实带槽位引用、且帧表规模与解析期一致时调用，
+     *     正常运行不会触发；它们的作用是把"本应不可能"的情况变成明确报错，
+     *     而不是让运行期静默读写错误的槽位。
+     *   - 因此这几条路径【没有对应的可构造输入】用于端到端验证，属刻意保留的防御性检查。
+     *     若真的报出来，按 Tips 的指引当作 RVM 缺陷处理。
+     */
     void writeArgSlot(const utils::Arg &arg, std::shared_ptr<base::RVM_Data> data) {
         if (!arg.hasSlotRef()
             || !RVM_RUNTIME_MEMORY.writeSlot(arg.getFrameIndex(), arg.getSlotIndex(),
