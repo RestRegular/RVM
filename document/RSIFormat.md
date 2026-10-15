@@ -45,6 +45,47 @@
 `string` 的长度上限为 `2^28`，超过即抛异常——这是把损坏文件变成明确诊断、
 而不是 `bad_alloc` 的手段。
 
+### 数量字段的上限校验
+
+`.rsi` 里凡是**决定分配量**的数字（各类 count、`slot_span`）都来自文件，**完全由输入决定**。
+若不校验就送进 `vector::resize`/`reserve`，一个几 KB 的畸形文件声明 10 亿个帧就能让进程
+去申请几十 GB——表现为**整机卡死**，而不是一条可读的错误。
+
+因此这些字段一律通过 `utils::readCount()` 读取，**在分配之前**校验：
+
+| 字段 | 上限 | 校验位置 |
+|---|---|---|
+| 槽位表 `frame_count` | 65536 | `RVMSlotTable::deserialize` |
+| 帧 `slot_span` | 65536 | 同上 |
+| `root_slot_name_count` | 1048576 | 同上 |
+| 路径表 `path_count` | 1048576 | `PathTable::deserialize` |
+| `InsSet.ins_count` | 16777216 | `InsSet::deserialize` |
+| `Ins.label_count` | 1048576 | 同上 |
+| `Ins.args_count` | 1048576 | `Ins::deserialize` |
+| `string` 长度 | 2^28 | `readString` |
+
+超限时报出**读到多少、上限多少**，便于定位：
+
+```
+[RVM Error] >> RSI: slot table frame count is out of range
+               (read 1000000000, limit 65536).
+               The file is corrupted or was not produced by this RVM version.
+```
+
+**上限余量**（对现有产物实测）：帧数实际最大 **97**（676 倍余量）、
+`slot_span` 最大 **138**（475 倍余量）、槽位名 **138**（7598 倍余量）、路径 **1**。
+上限远高于任何真实产物，同时远低于会耗尽内存的规模。
+
+> 这些是防御性校验，不是格式的一部分，正常编译产物永远不会触及。
+> 若将来真有程序需要超过 65536 个槽位的帧，应连同上限一起上调。
+
+### 帧数为 0 与超限是两回事
+
+`frameCount == 0` 表示**文件里确实没有槽位表**，报
+`The RSI file carries no static slot table.`；
+超限则报 `out of range`。两者不可混为一谈——早期实现把超限也算进前者，
+于是报出「没有槽位表，帧数 = 1000000000」这种自相矛盾的话。
+
 ---
 
 ## 总体布局

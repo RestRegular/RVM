@@ -25,6 +25,26 @@ namespace utils {
     inline constexpr uint64_t RSI_MAX_STRING_LENGTH = 1ull << 28;
 
     /*
+     * 校验收自文件的「数量」字段，再据此分配内存。
+     *
+     * 为什么必须有这层校验：
+     *   这些数字来自 .rsi，**完全由输入决定**。若直接送进 vector::resize/reserve，
+     *   一个几 KB 的畸形文件就能声明 10 亿个元素，逼迫进程去申请几十 GB——
+     *   表现为整机卡死或 bad_alloc，而不是一条可读的错误。
+     *   即便最终报出 bad_alloc，那也是内存已被吃光之后的事。
+     *
+     * 上限取值远大于任何真实产物（帧/槽位虽是 4 字节索引，实际规模在千级），
+     * 同时远小于会耗尽内存的规模。超出即视为文件损坏，明确拒绝。
+     */
+    inline constexpr uint64_t RSI_MAX_FRAME_COUNT = 1ull << 16;   // 65536
+    inline constexpr uint64_t RSI_MAX_SLOT_SPAN = 1ull << 16;     // 65536
+    inline constexpr uint64_t RSI_MAX_NAME_COUNT = 1ull << 20;    // 1048576
+    inline constexpr uint64_t RSI_MAX_PATH_COUNT = 1ull << 20;    // 1048576
+    inline constexpr uint64_t RSI_MAX_INS_COUNT = 1ull << 24;     // 16777216
+    inline constexpr uint64_t RSI_MAX_ARGS_COUNT = 1ull << 20;    // 1048576
+    inline constexpr uint64_t RSI_MAX_LABEL_COUNT = 1ull << 20;   // 1048576
+
+    /*
      * 无符号 LEB128。
      * 与字节序无关，7 位一组、低位在前，最高位为续读标志。
      */
@@ -49,6 +69,23 @@ namespace utils {
             }
         }
         throw std::runtime_error("RSI: varint too long");
+    }
+
+    /*
+     * 读出数量字段并校验上限。
+     *
+     * 必须在 readVarint 之后定义（依赖它）。
+     * what 用于错误信息（如 "frame count"），让用户知道是哪个字段坏了。
+     */
+    inline uint64_t readCount(std::istream &in, const uint64_t limit, const char *what) {
+        const uint64_t value = readVarint(in);
+        if (value > limit) {
+            throw std::runtime_error(
+                    std::string("RSI: ") + what + " is out of range (read " +
+                    std::to_string(value) + ", limit " + std::to_string(limit) +
+                    "). The file is corrupted or was not produced by this RVM version.");
+        }
+        return value;
     }
 
     /*
@@ -145,7 +182,8 @@ namespace utils {
 
         void deserialize(std::istream &in) {
             clear();
-            const uint64_t count = readVarint(in);
+            // 上限校验：path_count 来自文件，直接 reserve 会被畸形输入逼到 OOM
+            const uint64_t count = readCount(in, RSI_MAX_PATH_COUNT, "path count");
             /*
              * 直接 push_back 而不建索引：文件里的顺序就是下标，
              * 若表内有重复项，用 intern 会把下标压歪，与写入端不一致。

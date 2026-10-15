@@ -165,8 +165,11 @@ namespace core::components {
         ri = RI::deserialize(is, profile);
 
         // 反序列化 StdArgs (std::vector<utils::Arg>)
-        const auto argsSize = utils::readVarint(is);
+        // 上限校验：argsSize 来自文件，不能直接拿来循环或 reserve
+        const auto argsSize = utils::readCount(is, utils::RSI_MAX_ARGS_COUNT,
+                                               "instruction argument count");
         args.clear();
+        args.reserve(static_cast<size_t>(argsSize));
         for (size_t i = 0; i < argsSize; ++i) {
             utils::Arg arg;
             arg.deserialize(is, profile, paths);
@@ -723,7 +726,9 @@ namespace core::components {
             scope_leader_file = paths.at(static_cast<uint32_t>(utils::readVarint(is)));
         }
 
-        const auto insSetSize = utils::readVarint(is);
+        // 上限校验：insSetSize / labelsSize 均来自文件
+        const auto insSetSize = utils::readCount(is, utils::RSI_MAX_INS_COUNT,
+                                                 "instruction set size");
         insSet.clear();
         insSet.reserve(static_cast<size_t>(insSetSize));
         for (size_t i = 0; i < insSetSize; ++i) {
@@ -732,7 +737,7 @@ namespace core::components {
             insSet.push_back(ins);
         }
 
-        const auto labelsSize = utils::readVarint(is);
+        const auto labelsSize = utils::readCount(is, utils::RSI_MAX_LABEL_COUNT, "label count");
         set_labels.clear();
         for (size_t i = 0; i < labelsSize; ++i) {
             std::string key = utils::readString(is);

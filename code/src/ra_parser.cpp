@@ -316,8 +316,17 @@ namespace parser {
         }
 
         void RVMSlotTable::deserialize(std::istream &is) {
-            const auto frameCount = static_cast<uint32_t>(utils::readVarint(is));
+            /*
+             * frameCount 来自文件，必须校验上限后再 resize。
+             * 未校验时，一个几 KB 的畸形文件声明 10 亿帧就能让进程申请几十 GB，
+             * 表现为整机卡死，而不是一条可读的错误。
+             */
+            const auto frameCount =
+                    static_cast<uint32_t>(utils::readCount(is, utils::RSI_MAX_FRAME_COUNT,
+                                                          "slot table frame count"));
             if (!is || frameCount == 0) {
+                // 只有「读到 0」才是真的没有槽位表；超限已在 readCount 里单独报错，
+                // 不能把两者混为一谈（否则会报出「没有槽位表，帧数=1000000000」这种自相矛盾的话）。
                 throw base::RVM_Error(
                         base::ErrorType::RuntimeError, {}, {},
                         {"The RSI file carries no static slot table.",
@@ -326,7 +335,9 @@ namespace parser {
             }
             frames.resize(frameCount);
             for (auto &frame: frames) {
-                frame.slotSpan = static_cast<uint32_t>(utils::readVarint(is));
+                // slotSpan 决定 RVM_RuntimeScope 的槽位数组规模，同样必须设限
+                frame.slotSpan = static_cast<uint32_t>(
+                        utils::readCount(is, utils::RSI_MAX_SLOT_SPAN, "frame slot span"));
                 frame.parentFrameIndex = utils::readIndexPlusOne(is);
                 uint8_t isRoot = 0;
                 is.read(reinterpret_cast<char *>(&isRoot), sizeof(isRoot));
@@ -334,7 +345,8 @@ namespace parser {
             }
             rootFrameIndex = static_cast<uint32_t>(utils::readVarint(is));
 
-            const auto slotNameCount = utils::readVarint(is);
+            const auto slotNameCount =
+                    utils::readCount(is, utils::RSI_MAX_NAME_COUNT, "root slot name count");
             rootSlotNames.resize(static_cast<size_t>(slotNameCount));
             for (auto &name: rootSlotNames) {
                 name = utils::readString(is);
