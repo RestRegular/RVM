@@ -41,7 +41,6 @@ namespace base
 #define pre_FUNI            "FUNI-"
 #define pre_REPEAT          "REPEAT-"
 #define pre_UNTIL           "UNTIL-"
-#define pre_SP_NEW          "SP_NEW-"
 #define pre_ATMP            "ATMP-"
 #define pre_DETECT          "DETECT-"
 #define pre_FINALLY         "FINALLY-"
@@ -386,7 +385,7 @@ namespace base
             immediateOutputImpl(out, args...);
         }
 
-        // 新增：获取输入流的通用方法
+        // 鏂板锛氳幏鍙栬緭鍏ユ祦鐨勯�氱敤鏂规硶
         std::istream& getInputStream();
     };
 

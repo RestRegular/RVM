@@ -8,7 +8,7 @@ namespace cc {
 
     bool enableColorfulOutput = true;
 
-    // TextColor¾²Ì¬³£Á¿¶¨Òå
+    // TextColoré™æ€å¸¸é‡å®šä¹‰
     constexpr std::string TextColor::RED = "\033[31m";
     constexpr std::string TextColor::GREEN = "\033[32m";
     constexpr std::string TextColor::YELLOW = "\033[33m";
@@ -25,7 +25,7 @@ namespace cc {
     constexpr std::string TextColor::LIGHT_CRAY = "\033[96m";
     constexpr std::string TextColor::LIGHT_GRAY = "\033[97m";
 
-    // BackgroundColor¾²Ì¬³£Á¿¶¨Òå
+    // BackgroundColoré™æ€å¸¸é‡å®šä¹‰
     constexpr std::string BackgroundColor::BLACK = "\033[40m";
     constexpr std::string BackgroundColor::RED = "\033[41m";
     constexpr std::string BackgroundColor::GREEN = "\033[42m";
@@ -35,7 +35,7 @@ namespace cc {
     constexpr std::string BackgroundColor::CYAN = "\033[46m";
     constexpr std::string BackgroundColor::GRAY = "\033[47m";
 
-    // Decoration¾²Ì¬³£Á¿¶¨Òå
+    // Decorationé™æ€å¸¸é‡å®šä¹‰
     constexpr std::string Decoration::BOLD = "\033[1m";
     constexpr std::string Decoration::ITALIC = "\033[3m";
     constexpr std::string Decoration::LIGHT_UNDERLINE = "\033[4m";
@@ -43,7 +43,7 @@ namespace cc {
     constexpr std::string Decoration::THROUGH_LINE = "\033[9m";
     constexpr std::string Decoration::BOLD_UNDERLINE = "\033[21m";
 
-    // ²ÊÉ«ÎÄ±¾º¯ÊıÊµÏÖ
+    // å½©è‰²æ–‡æœ¬å‡½æ•°å®ç°
     std::string
     colorfulText(const std::string &text, const std::string &color, const std::vector<std::string> &decorations,
                  const bool reset) {

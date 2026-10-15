@@ -9,38 +9,38 @@
 #include "ra_core.h"
 
 namespace core::components {
-    // È«¾Ö±äÁ¿
+    // å…¨å±€å˜é‡
     extern std::unordered_map<int, const RI*> insMap;
     extern std::unordered_map<std::string, const RI*> insNameMap;
     extern std::vector<RI *> ri_list;
     extern id::DataID SR_SPACE_ID;
     extern id::DataID SE_SPACE_ID;
 
-    // Ã¶¾ÙÀà£ºÖ´ĞĞ×´Ì¬
+    // æšä¸¾ç±»ï¼šæ‰§è¡ŒçŠ¶æ€
     enum class ExecutionStatus {
-        // Ö´ĞĞÍê³É
-        Success,                        // Ö´ĞĞÍê³É£¬ÇÒÎŞÒì³£
-        FinishedWithError,              // Ö´ĞĞÍê³É£¬µ«²¶»ñµ½Òì³£
-        FinishedWithUnknownError,       // Ö´ĞĞÍê³É£¬µ«²¶»ñµ½Î´ÖªÒì³£
+        // æ‰§è¡Œå®Œæˆ
+        Success,                        // æ‰§è¡Œå®Œæˆï¼Œä¸”æ— å¼‚å¸¸
+        FinishedWithError,              // æ‰§è¡Œå®Œæˆï¼Œä½†æ•è·åˆ°å¼‚å¸¸
+        FinishedWithUnknownError,       // æ‰§è¡Œå®Œæˆï¼Œä½†æ•è·åˆ°æœªçŸ¥å¼‚å¸¸
 
-        // Ö´ĞĞÖĞ¶Ï
-        Aborted,                        // Õı³£ÖĞ¶ÏÖ´ĞĞ
-        AbortedLoop,                    // Ñ­»·ÖĞ¶Ï
-        AbortedFunction,                // º¯ÊıÖĞ¶Ï
-        AbortedWithError,               // Òì³£ÖĞ¶ÏÖ´ĞĞ£¬²¢²¶»ñµ½Òì³£
-        AbortedWithUnknownError,        // Òì³£ÖĞ¶ÏÖ´ĞĞ£¬²¢²¶»ñµ½Î´ÖªÒì³£
+        // æ‰§è¡Œä¸­æ–­
+        Aborted,                        // æ­£å¸¸ä¸­æ–­æ‰§è¡Œ
+        AbortedLoop,                    // å¾ªç¯ä¸­æ–­
+        AbortedFunction,                // å‡½æ•°ä¸­æ–­
+        AbortedWithError,               // å¼‚å¸¸ä¸­æ–­æ‰§è¡Œï¼Œå¹¶æ•è·åˆ°å¼‚å¸¸
+        AbortedWithUnknownError,        // å¼‚å¸¸ä¸­æ–­æ‰§è¡Œï¼Œå¹¶æ•è·åˆ°æœªçŸ¥å¼‚å¸¸
 
-        // Ö´ĞĞÊ§°Ü
-        FailedWithError,                // Ö´ĞĞÊ§°Ü£¬²¢²¶»ñµ½Òì³£
-        FailedWithoutError,             // Ö´ĞĞÊ§°Ü£¬µ«Î´²¶»ñµ½Òì³£
-        FailedWithUnknownError,         // Ö´ĞĞÊ§°Ü£¬²¢²¶»ñµ½Î´ÖªÒì³£
+        // æ‰§è¡Œå¤±è´¥
+        FailedWithError,                // æ‰§è¡Œå¤±è´¥ï¼Œå¹¶æ•è·åˆ°å¼‚å¸¸
+        FailedWithoutError,             // æ‰§è¡Œå¤±è´¥ï¼Œä½†æœªæ•è·åˆ°å¼‚å¸¸
+        FailedWithUnknownError,         // æ‰§è¡Œå¤±è´¥ï¼Œå¹¶æ•è·åˆ°æœªçŸ¥å¼‚å¸¸
 
-        // ÆäËû
-        Unknown,                        // Î´Öª
-        NotExecuted,                    // Î´Ö´ĞĞ
+        // å…¶ä»–
+        Unknown,                        // æœªçŸ¥
+        NotExecuted,                    // æœªæ‰§è¡Œ
 
-        // Ìí¼ÓÆäËû×´Ì¬
-        ExposedError                    // ±©Â¶Òì³£
+        // æ·»åŠ å…¶ä»–çŠ¶æ€
+        ExposedError                    // æš´éœ²å¼‚å¸¸
     };
 
     struct RI {
@@ -114,7 +114,7 @@ namespace core::components {
         std::shared_ptr<InsSet> block_ins_set = nullptr;
         std::shared_ptr<InsSet> finally_block_ins_set = nullptr;
 
-        // ÃüÖĞµÄdetect
+        // å‘½ä¸­çš„detect
         std::shared_ptr<DetectBlock> hit_detect_block = nullptr;
 
         bool is_hit{false};
@@ -125,13 +125,13 @@ namespace core::components {
     };
 
     enum class DebugMode {
-        None, // ÎŞµ÷ÊÔ
-        Standard, // ±ê×¼µ÷ÊÔ
-        NormalSkip, // ±ê×¼Ìø¹ıÎŞ±ê×¢Ö¸Áî
-        FastSkip // ¿ìËÙÌø¹ıÎŞ±ê×¢Ö¸Áî
+        None, // æ— è°ƒè¯•
+        Standard, // æ ‡å‡†è°ƒè¯•
+        NormalSkip, // æ ‡å‡†è·³è¿‡æ— æ ‡æ³¨æŒ‡ä»¤
+        FastSkip // å¿«é€Ÿè·³è¿‡æ— æ ‡æ³¨æŒ‡ä»¤
     };
 
-    // InsSet ½á¹¹Ìå£º¿ÉÖ´ĞĞÖ¸Áî¼¯
+    // InsSet ç»“æ„ä½“ï¼šå¯æ‰§è¡ŒæŒ‡ä»¤é›†
     struct InsSet {
         explicit InsSet(std::string prefix) : scope_prefix(std::move(prefix)) {}
 
@@ -157,7 +157,7 @@ namespace core::components {
 
         [[nodiscard]] static std::string makeFileIdentiFromPath(const std::string &pos);
 
-        static void debug_process(const std::shared_ptr<Ins> &_, const bool &hasError = false); // Ö®ºó¿ÉÄÜ»áÓÃµ½ ins ²ÎÊı£¬ÔİÊ±ºöÂÔ
+        static void debug_process(const std::shared_ptr<Ins> &_, const bool &hasError = false); // ä¹‹åå¯èƒ½ä¼šç”¨åˆ° ins å‚æ•°ï¼Œæš‚æ—¶å¿½ç•¥
 
         static std::string getTraceInfo(
                 const std::string &file_record_, const std::string &error_pos_filepath,
@@ -178,11 +178,11 @@ namespace core::components {
 
         void deserialize(std::istream &is, const utils::SerializationProfile &profile);
 
-        static DebugMode debug_mode; // ÎŞĞèĞòÁĞ»¯
-        static std::string file_record; // ÎŞĞèĞòÁĞ»¯
-        static std::vector<InsSet*> exe_stack; // ÎŞĞèĞòÁĞ»¯
-        static std::vector<std::shared_ptr<AtmpBlock>> atmp_stack; // ÎŞĞèĞòÁĞ»¯
-        std::stack<std::string> scope_name_stack{}; // ÎŞĞèĞòÁĞ»¯
+        static DebugMode debug_mode; // æ— éœ€åºåˆ—åŒ–
+        static std::string file_record; // æ— éœ€åºåˆ—åŒ–
+        static std::vector<InsSet*> exe_stack; // æ— éœ€åºåˆ—åŒ–
+        static std::vector<std::shared_ptr<AtmpBlock>> atmp_stack; // æ— éœ€åºåˆ—åŒ–
+        std::stack<std::string> scope_name_stack{}; // æ— éœ€åºåˆ—åŒ–
 
         bool is_delayed_release_scope{false};
         int end_pointer{-1};
@@ -191,11 +191,29 @@ namespace core::components {
         std::string scope_leader_file;
         std::string scope_leader_pos;
         std::stack<std::shared_ptr<size_t>> pointers{};
+        /*
+         * æœ¬æŒ‡ä»¤é›†æ˜¯å¦æ˜¯ä¸€ä¸ªå¸§çš„æ ¹ä½œç”¨åŸŸï¼ˆæ–‡ä»¶æ ¹ / FUNC / FUNI ä½“ï¼‰ã€‚
+         * åªæœ‰å¸§æ ¹æ‰åœ¨ execute() é‡Œåˆ‡æ¢å½“å‰å¸§â€”â€”å—ä½œç”¨åŸŸï¼ˆREPEAT/UNTIL/...ï¼‰ä¸å¤–å±‚åŒå±ä¸€ä¸ªå¸§ã€‚
+         */
+        bool frameRootScope{false};
+        /*
+         * æœ¬æŒ‡ä»¤é›†æ‰€å±çš„å¸§ä¸‹æ ‡ï¼ˆè§£ææœŸåˆ†é…ï¼‰ã€‚
+         *
+         * å¸§çš„èº«ä»½æ˜¯ä¸‹æ ‡è€Œä¸æ˜¯è·¯å¾„ï¼šè¿è¡ŒæœŸå–å€¼åªéœ€ frames[idx]->slots[n]ï¼Œ
+         * ä¸åšä»»ä½•å­—ç¬¦ä¸²æˆ–å“ˆå¸ŒæŸ¥æ‰¾ã€‚ä»…å¸§æ ¹ä½œç”¨åŸŸä¼šåˆ‡æ¢å½“å‰å¸§ï¼Œå—ä½œç”¨åŸŸæ²¿ç”¨å¤–å±‚çš„å¸§ã€‚
+         *
+         * ä¸å‚ä¸åºåˆ—åŒ–â€”â€”'.rsi' ååºåˆ—åŒ–åè¿™é‡Œæ˜¯æ— æ•ˆå€¼ï¼Œå› æ­¤åªèƒ½èµ°æ—§ç³»ç»Ÿã€‚
+         */
+        uint32_t frameIndex{
+            std::numeric_limits<uint32_t>::max()
+        };
+        /* execute() å†…æ˜¯å¦å‹å…¥äº†å¸§åˆ‡æ¢ï¼ˆç”¨äºå¯¹ç§°å¼¹æ ˆï¼‰ */
+        bool currentFramePushed{false};
 
     private:
-        base::InstID instId = base::InstID(); // ÎŞĞèĞòÁĞ»¯
+        base::InstID instId = base::InstID(); // æ— éœ€åºåˆ—åŒ–
 
-        std::vector<std::shared_ptr<Ins>> insSet{}; // µ÷ÓÃInsµÄĞòÁĞ»¯º¯Êı£¬×¢ÒâvectorµÄĞòÁĞ»¯
+        std::vector<std::shared_ptr<Ins>> insSet{}; // è°ƒç”¨Insçš„åºåˆ—åŒ–å‡½æ•°ï¼Œæ³¨æ„vectorçš„åºåˆ—åŒ–
         mutable std::unordered_map<std::string, int> set_labels{};
 
         static void printDebugExeStackInfo(const bool& hasError);
@@ -225,10 +243,10 @@ namespace tools {
 
 }
 
-// Ö¸Áî¼¯
+// æŒ‡ä»¤é›†
 namespace ris {
     using namespace core::components;
-    // ±êÖ¾Ö¸Áî
+    // æ ‡å¿—æŒ‡ä»¤
     extern const RI S_M;
     extern const RI S_L;
     extern const RI S_F;
@@ -242,24 +260,24 @@ namespace ris {
     extern const RI RL;
     extern const RI RT;
     extern const RI RF;
-    extern const RI AND; // Âß¼­Óë
-    extern const RI OR; // Âß¼­»ò
+    extern const RI AND; // é€»è¾‘ä¸
+    extern const RI OR; // é€»è¾‘æˆ–
 
-    // ĞéÊ½Ö¸Áî
+    // è™šå¼æŒ‡ä»¤
     extern const RI PASS;
     extern const RI UNKNOWN;
     extern const RI BREAKPOINT;
 
-    // ²Ù×÷Ö¸Áî
+    // æ“ä½œæŒ‡ä»¤
 
-    /* ÄÚ´æ²Ù×÷Ö¸Áî */
+    /* å†…å­˜æ“ä½œæŒ‡ä»¤ */
     extern const RI ALLOT;
     extern const RI DELETE;
     extern const RI PUT;
     extern const RI COPY;
     extern const RI SET;
 
-    /* ËãÊõ²Ù×÷Ö¸Áî */
+    /* ç®—æœ¯æ“ä½œæŒ‡ä»¤ */
     extern const RI ADD;
     extern const RI OPP;
     extern const RI MUL;
@@ -268,21 +286,21 @@ namespace ris {
     extern const RI ROOT;
     extern const RI MOD;
 
-    /* ±È½Ï²Ù×÷Ö¸Áî */
+    /* æ¯”è¾ƒæ“ä½œæŒ‡ä»¤ */
     extern const RI CMP;
     extern const RI CREL;
 
-    /* ¿ØÖÆ²Ù×÷Ö¸Áî */
+    /* æ§åˆ¶æ“ä½œæŒ‡ä»¤ */
     extern const RI END;
     extern const RI EXIT;
 
-    /* Ìø×ª²Ù×÷Ö¸Áî */
+    /* è·³è½¬æ“ä½œæŒ‡ä»¤ */
     extern const RI JMP;
     extern const RI JR;
     extern const RI JT;
     extern const RI JF;
 
-    /* º¯Êı²Ù×÷Ö¸Áî */
+    /* å‡½æ•°æ“ä½œæŒ‡ä»¤ */
     extern const RI FUNC;
     extern const RI FUNI;
     extern const RI CALL;
@@ -292,15 +310,15 @@ namespace ris {
     extern const RI RET;
     extern const RI RET_FAST;
 
-    /* Ñ­»·²Ù×÷Ö¸Áî */
+    /* å¾ªç¯æ“ä½œæŒ‡ä»¤ */
     extern const RI REPEAT;
     extern const RI UNTIL;
 
-    /* IO²Ù×÷Ö¸Áî */
+    /* IOæ“ä½œæŒ‡ä»¤ */
     extern const RI SOUT;
     extern const RI SIN;
 
-    /* ÎÄ¼ş²Ù×÷Ö¸Áî */
+    /* æ–‡ä»¶æ“ä½œæŒ‡ä»¤ */
     extern const RI FILE_GET;
     extern const RI FILE_READ;
     extern const RI FILE_WRITE;
@@ -310,118 +328,112 @@ namespace ris {
     extern const RI FILE_SET_MODE;
     extern const RI FILE_SET_PATH;
 
-    /* ÀàĞÍ²Ù×÷Ö¸Áî */
+    /* ç±»å‹æ“ä½œæŒ‡ä»¤ */
     extern const RI TP_GET;
     extern const RI TP_SET;
 
-    /* ×Ô¶¨ÒåÀàĞÍ²Ù×÷Ö¸Áî */
-    extern const RI TP_DEF;                 // ´´½¨×Ô¶¨ÒåÀàĞÍ TP_DEF: <custom tp name>, (<parent tp>)
-    extern const RI TP_NEW;                 // ´´½¨×Ô¶¨ÒåÀàĞÍ TP_NEW ÊµÌå: <custom tp name>, <stored data>
-    extern const RI TP_ADD_INST_FIELD;      // Ôö¼Ó×Ô¶¨ÒåÀàĞÍÊµÀıÖĞµÄ×Ö¶Î TP_ADD_INST_FIELD: <custom tp inst>, <field name>, (<field value>)
-    extern const RI TP_ADD_TP_FIELD;        // Ôö¼Ó×Ô¶¨ÒåÀàĞÍÖĞµÄ×Ö¶Î TP_ADD_TP_FIELD: <custom tp name>, <field name>, (<field value>)
-    extern const RI TP_SET_FIELD;           // ĞŞ¸Ä×Ô¶¨ÒåÀàĞÍÊµÀıÖĞµÄ×Ö¶ÎÖµ TP_SET_FIELD: <custom tp inst>, <field name>, <field value>
-    extern const RI TP_GET_FIELD;           // »ñÈ¡×Ô¶¨ÒåÀàĞÍÖĞµÄ×Ö¶ÎÖµ TP_GET_FIELD: <custom tp name / inst>, <field name>, <stored data>
-    extern const RI TP_GET_SUPER_FIELD;     // »ñÈ¡×Ô¶¨ÒåÀàĞÍÖĞµÄ×Ö¶ÎÖµ TP_GET_SUPER_FIELD: <custom tp name / inst>, <super tp name>, <field name>, <stored data>
-    extern const RI TP_DERIVE;              // ÅÉÉú×Ô¶¨ÒåÀàĞÍ TP_DERIVE: <custom tp inst>, <child tp>
-    extern const RI TP_CHECK_RELATE;        // ¼ì²é×Ô¶¨ÒåÀàĞÍÊµÀıÊÇ·ñÓëÖ¸¶¨ÀàĞÍ¹ØÁª TP_CHECK_RELATE: <custom tp inst>, <tp name>, <stored data>
+    /* è‡ªå®šä¹‰ç±»å‹æ“ä½œæŒ‡ä»¤ */
+    extern const RI TP_DEF;                 // åˆ›å»ºè‡ªå®šä¹‰ç±»å‹ TP_DEF: <custom tp name>, (<parent tp>)
+    extern const RI TP_NEW;                 // åˆ›å»ºè‡ªå®šä¹‰ç±»å‹ TP_NEW å®ä½“: <custom tp name>, <stored data>
+    extern const RI TP_ADD_INST_FIELD;      // å¢åŠ è‡ªå®šä¹‰ç±»å‹å®ä¾‹ä¸­çš„å­—æ®µ TP_ADD_INST_FIELD: <custom tp inst>, <field name>, (<field value>)
+    extern const RI TP_ADD_TP_FIELD;        // å¢åŠ è‡ªå®šä¹‰ç±»å‹ä¸­çš„å­—æ®µ TP_ADD_TP_FIELD: <custom tp name>, <field name>, (<field value>)
+    extern const RI TP_SET_FIELD;           // ä¿®æ”¹è‡ªå®šä¹‰ç±»å‹å®ä¾‹ä¸­çš„å­—æ®µå€¼ TP_SET_FIELD: <custom tp inst>, <field name>, <field value>
+    extern const RI TP_GET_FIELD;           // è·å–è‡ªå®šä¹‰ç±»å‹ä¸­çš„å­—æ®µå€¼ TP_GET_FIELD: <custom tp name / inst>, <field name>, <stored data>
+    extern const RI TP_GET_SUPER_FIELD;     // è·å–è‡ªå®šä¹‰ç±»å‹ä¸­çš„å­—æ®µå€¼ TP_GET_SUPER_FIELD: <custom tp name / inst>, <super tp name>, <field name>, <stored data>
+    extern const RI TP_DERIVE;              // æ´¾ç”Ÿè‡ªå®šä¹‰ç±»å‹ TP_DERIVE: <custom tp inst>, <child tp>
+    extern const RI TP_CHECK_RELATE;        // æ£€æŸ¥è‡ªå®šä¹‰ç±»å‹å®ä¾‹æ˜¯å¦ä¸æŒ‡å®šç±»å‹å…³è” TP_CHECK_RELATE: <custom tp inst>, <tp name>, <stored data>
 
-    /* ×÷ÓÃÓò²Ù×÷Ö¸Áî */
-    extern const RI SP_SET;
-    extern const RI SP_GET;
-    extern const RI SP_NEW;
-    extern const RI SP_DEL;
-
-    /* ÒıÓÃ²Ù×÷Ö¸Áî */
+    /* å¼•ç”¨æ“ä½œæŒ‡ä»¤ */
     extern const RI QOT;
     extern const RI QOT_VAL;
 
-    /* Òì³£´¦ÀíÖ¸Áî */
+    /* å¼‚å¸¸å¤„ç†æŒ‡ä»¤ */
     extern const RI EXPOSE;
     extern const RI ATMP;
     extern const RI DETECT;
 
-    /* µü´úÆ÷²Ù×÷Ö¸Áî */
-    extern const RI ITER_APND;      // Ïò¿Éµü´úÊı¾İÌí¼ÓÊı¾İ
-    extern const RI ITER_SUB;       // »ñÈ¡¿Éµü´úÊı¾İÖ¸¶¨Ë÷Òı·¶Î§µÄÊı¾İ
-    extern const RI ITER_SIZE;      // »ñÈ¡¿Éµü´úÊı¾İ³¤¶È
-    extern const RI ITER_GET;       // »ñÈ¡¿Éµü´úÊı¾İÖ¸¶¨Ë÷Òı´¦µÄÊı¾İ
-    extern const RI ITER_TRAV;      // ±éÀú¿Éµü´úÊı¾İ
-    extern const RI ITER_REV_TRAV;  // µ¹Ğò±éÀú¿Éµü´úÊı¾İ
-    extern const RI ITER_SET;       // ÉèÖÃ¿Éµü´úÊı¾İÖ¸¶¨Ë÷Òı´¦µÄÊı¾İ
-    extern const RI ITER_DEL;       // É¾³ı¿Éµü´úÊı¾İÖ¸¶¨Ë÷Òı´¦µÄÊı¾İ
-    extern const RI ITER_INSERT;    // ÔÚ¿Éµü´úÊı¾İÖ¸¶¨Ë÷Òı´¦²åÈëÊı¾İ
-    extern const RI ITER_UNPACK;    // ½«¿Éµü´úÊı¾İ²ğ·ÖÎª¶à¸öÊı¾İ
-    extern const RI ITER_CONN;      // Á¬½Ó¿Éµü´úÊı¾İÎª×Ö·û´®
+    /* è¿­ä»£å™¨æ“ä½œæŒ‡ä»¤ */
+    extern const RI ITER_APND;      // å‘å¯è¿­ä»£æ•°æ®æ·»åŠ æ•°æ®
+    extern const RI ITER_SUB;       // è·å–å¯è¿­ä»£æ•°æ®æŒ‡å®šç´¢å¼•èŒƒå›´çš„æ•°æ®
+    extern const RI ITER_SIZE;      // è·å–å¯è¿­ä»£æ•°æ®é•¿åº¦
+    extern const RI ITER_GET;       // è·å–å¯è¿­ä»£æ•°æ®æŒ‡å®šç´¢å¼•å¤„çš„æ•°æ®
+    extern const RI ITER_TRAV;      // éå†å¯è¿­ä»£æ•°æ®
+    extern const RI ITER_REV_TRAV;  // å€’åºéå†å¯è¿­ä»£æ•°æ®
+    extern const RI ITER_SET;       // è®¾ç½®å¯è¿­ä»£æ•°æ®æŒ‡å®šç´¢å¼•å¤„çš„æ•°æ®
+    extern const RI ITER_DEL;       // åˆ é™¤å¯è¿­ä»£æ•°æ®æŒ‡å®šç´¢å¼•å¤„çš„æ•°æ®
+    extern const RI ITER_INSERT;    // åœ¨å¯è¿­ä»£æ•°æ®æŒ‡å®šç´¢å¼•å¤„æ’å…¥æ•°æ®
+    extern const RI ITER_UNPACK;    // å°†å¯è¿­ä»£æ•°æ®æ‹†åˆ†ä¸ºå¤šä¸ªæ•°æ®
+    extern const RI ITER_CONN;      // è¿æ¥å¯è¿­ä»£æ•°æ®ä¸ºå­—ç¬¦ä¸²
 
-    /* ¼üÖµ¶ÔÊı¾İ²Ù×÷Ö¸Áî */
-    extern const RI PAIR_SET;       // ÉèÖÃ¼üÖµ¶ÔÊı¾İ
-    extern const RI PAIR_SET_KEY;   // ÉèÖÃ¼üÖµ¶ÔÊı¾İµÄ KEY
-    extern const RI PAIR_SET_VALUE; // ÉèÖÃ¼üÖµ¶ÔÊı¾İµÄ VALUE
-    extern const RI PAIR_GET_KEY;   // »ñÈ¡¼üÖµ¶ÔÊı¾İµÄ KEY
-    extern const RI PAIR_GET_VALUE; // »ñÈ¡¼üÖµ¶ÔÊı¾İµÄ VALUE
+    /* é”®å€¼å¯¹æ•°æ®æ“ä½œæŒ‡ä»¤ */
+    extern const RI PAIR_SET;       // è®¾ç½®é”®å€¼å¯¹æ•°æ®
+    extern const RI PAIR_SET_KEY;   // è®¾ç½®é”®å€¼å¯¹æ•°æ®çš„ KEY
+    extern const RI PAIR_SET_VALUE; // è®¾ç½®é”®å€¼å¯¹æ•°æ®çš„ VALUE
+    extern const RI PAIR_GET_KEY;   // è·å–é”®å€¼å¯¹æ•°æ®çš„ KEY
+    extern const RI PAIR_GET_VALUE; // è·å–é”®å€¼å¯¹æ•°æ®çš„ VALUE
 
-    /* ×Öµä²Ù×÷Ö¸Áî */
-    extern const RI DICT_GET;       // »ñÈ¡×ÖµäÊı¾İ
-    extern const RI DICT_SET;       // ÉèÖÃ×ÖµäÊı¾İ
-    extern const RI DICT_DEL;       // É¾³ı×ÖµäÊı¾İ
-    extern const RI DICT_KEYS;      // »ñÈ¡×ÖµäËùÓĞ¼üÁĞ±í
-    extern const RI DICT_VALUES;    // »ñÈ¡×ÖµäËùÓĞÖµÁĞ±í
+    /* å­—å…¸æ“ä½œæŒ‡ä»¤ */
+    extern const RI DICT_GET;       // è·å–å­—å…¸æ•°æ®
+    extern const RI DICT_SET;       // è®¾ç½®å­—å…¸æ•°æ®
+    extern const RI DICT_DEL;       // åˆ é™¤å­—å…¸æ•°æ®
+    extern const RI DICT_KEYS;      // è·å–å­—å…¸æ‰€æœ‰é”®åˆ—è¡¨
+    extern const RI DICT_VALUES;    // è·å–å­—å…¸æ‰€æœ‰å€¼åˆ—è¡¨
 
-    /* Ëæ»úÖ¸Áî */
-    extern const RI RAND_INT;     // Éú³ÉËæ»úÕûÊı
-    extern const RI RAND_FLOAT;   // Éú³ÉËæ»ú¸¡µãÊı
+    /* éšæœºæŒ‡ä»¤ */
+    extern const RI RAND_INT;     // ç”Ÿæˆéšæœºæ•´æ•°
+    extern const RI RAND_FLOAT;   // ç”Ÿæˆéšæœºæµ®ç‚¹æ•°
 
-    /* Ê±¼äÈÕÆÚ²Ù×÷Ö¸Áî */
-    extern const RI TIME_NOW;     // »ñÈ¡µ±Ç°Ê±¼ä´Á
+    /* æ—¶é—´æ—¥æœŸæ“ä½œæŒ‡ä»¤ */
+    extern const RI TIME_NOW;     // è·å–å½“å‰æ—¶é—´æˆ³
 
-    /* Ö´ĞĞÄÚÁª´úÂë²Ù×÷Ö¸Áî */
+    /* æ‰§è¡Œå†…è”ä»£ç æ“ä½œæŒ‡ä»¤ */
     extern const RI EXE_RASM;
 
-    /* Ä£¿é»¯±à³Ì²Ù×÷Ö¸Áî */
-    extern const RI LOADIN;       // ¶¯Ì¬¼ÓÔØÀ©Õ¹£º³ÌĞòÔÚÔËĞĞ´ËÖ¸ÁîÊ±²Å»á¼ÓÔØÀ©Õ¹
+    /* æ¨¡å—åŒ–ç¼–ç¨‹æ“ä½œæŒ‡ä»¤ */
+    extern const RI LOADIN;       // åŠ¨æ€åŠ è½½æ‰©å±•ï¼šç¨‹åºåœ¨è¿è¡Œæ­¤æŒ‡ä»¤æ—¶æ‰ä¼šåŠ è½½æ‰©å±•
 
-    // ¾²Ì¬Á´½ÓÀ©Õ¹£º¿ÉÒÔÓÃÓÚ¾²Ì¬Á´½Ó RA ÎÄ¼şºÍ RSI ÎÄ¼ş
-    // 1. ÈôÖ±½ÓÔËĞĞ RA ÎÄ¼ş£¬ÄÇÃ´ LINK Ö¸Áî»áÔÚ½âÎö½×¶ÎÖ±½ÓÁ´½Óµ½Ö¸¶¨µÄÎÄ¼ş²¢½øĞĞÏàÓ¦µÄÁ´½Ó²Ù×÷
-    // 2. ÈôÊÇ±àÒë RA ÎÄ¼şÎª RSI ÎÄ¼ş£¬ÄÇÃ´ LINK Ö¸Áî»áÖ±½Óµİ¹éµÄ±àÒëËùĞèÒªÁ´½ÓµÄÎÄ¼ş£¬²¢ÔÚÖ÷ÎÄ¼şÖĞÉú³ÉÁ´½ÓµÄÎÄ¼şµÄ¿ÉÖ´ĞĞÖ¸Áî
+    // é™æ€é“¾æ¥æ‰©å±•ï¼šå¯ä»¥ç”¨äºé™æ€é“¾æ¥ RA æ–‡ä»¶å’Œ RSI æ–‡ä»¶
+    // 1. è‹¥ç›´æ¥è¿è¡Œ RA æ–‡ä»¶ï¼Œé‚£ä¹ˆ LINK æŒ‡ä»¤ä¼šåœ¨è§£æé˜¶æ®µç›´æ¥é“¾æ¥åˆ°æŒ‡å®šçš„æ–‡ä»¶å¹¶è¿›è¡Œç›¸åº”çš„é“¾æ¥æ“ä½œ
+    // 2. è‹¥æ˜¯ç¼–è¯‘ RA æ–‡ä»¶ä¸º RSI æ–‡ä»¶ï¼Œé‚£ä¹ˆ LINK æŒ‡ä»¤ä¼šç›´æ¥é€’å½’çš„ç¼–è¯‘æ‰€éœ€è¦é“¾æ¥çš„æ–‡ä»¶ï¼Œå¹¶åœ¨ä¸»æ–‡ä»¶ä¸­ç”Ÿæˆé“¾æ¥çš„æ–‡ä»¶çš„å¯æ‰§è¡ŒæŒ‡ä»¤
     extern const RI LINK;
 
     extern const RI EXT_GET;
 
-    /* ´ıÍê³ÉÖ¸Áî */
-    // TODO: Ìí¼Óµü´úÆ÷Ïà¹ØÖ¸Áî
+    /* å¾…å®ŒæˆæŒ‡ä»¤ */
+    // TODO: æ·»åŠ è¿­ä»£å™¨ç›¸å…³æŒ‡ä»¤
 
-    // TODO: Ìí¼Ó¶àÏß³ÌÏà¹ØÖ¸Áî
+    // TODO: æ·»åŠ å¤šçº¿ç¨‹ç›¸å…³æŒ‡ä»¤
     extern const RI THREAD_NEW;
     extern const RI THREAD_RUN;
 
-    // TODO: Ìí¼Óµ÷ÓÃ dll ÎÄ¼şº¯ÊıÏà¹ØÖ¸Áî
+    // TODO: æ·»åŠ è°ƒç”¨ dll æ–‡ä»¶å‡½æ•°ç›¸å…³æŒ‡ä»¤
     extern const RI DLL_CALL;
     extern const RI DLL_LOADIN;
     extern const RI DLL_UNLOAD;
 
-    // TODO: Ìí¼ÓÍøÂç´¦ÀíÏà¹ØÖ¸Áî
+    // TODO: æ·»åŠ ç½‘ç»œå¤„ç†ç›¸å…³æŒ‡ä»¤
     // ...
 }
 
-// Ö¸ÁîÖ´ĞĞº¯Êı
+// æŒ‡ä»¤æ‰§è¡Œå‡½æ•°
 namespace exes {
     using namespace core;
     using namespace core::components;
 
-    // ²»ÄÜÔì³ÉÊµ¼ÊÓ°ÏìµÄÖ¸ÁîÖ´ĞĞº¯Êı
+    // ä¸èƒ½é€ æˆå®é™…å½±å“çš„æŒ‡ä»¤æ‰§è¡Œå‡½æ•°
     ExecutionStatus ri_flag(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_pass(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_unknown(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_breakpoint(const Ins &ins, size_t &pointer, const StdArgs &args);
 
-    // ¿ÉÔì³ÉÊµ¼ÊÓ°ÏìµÄÖ¸ÁîÖ´ĞĞº¯Êı
+    // å¯é€ æˆå®é™…å½±å“çš„æŒ‡ä»¤æ‰§è¡Œå‡½æ•°
     ExecutionStatus ri_allot(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_delete(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_put(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_copy(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_add(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_opp(const Ins &ins, size_t &pointer, const StdArgs &args);
-    ExecutionStatus ri_repeat(const Ins &ins, size_t &pointer, const StdArgs &args); // repeat Ö¸Áî£ºÑ­»·Ö´ĞĞÖ¸Áî¼¯£¬ÖØ¸´Ö¸¶¨´ÎÊı
+    ExecutionStatus ri_repeat(const Ins &ins, size_t &pointer, const StdArgs &args); // repeat æŒ‡ä»¤ï¼šå¾ªç¯æ‰§è¡ŒæŒ‡ä»¤é›†ï¼Œé‡å¤æŒ‡å®šæ¬¡æ•°
     ExecutionStatus ri_end(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_func(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_funi(const Ins &ins, size_t &pointer, const StdArgs &args);
@@ -479,10 +491,6 @@ namespace exes {
     ExecutionStatus ri_tp_get_super_field(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_tp_derive(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_tp_check_relate(const Ins &ins, size_t &pointer, const StdArgs &args);
-    ExecutionStatus ri_sp_set(const Ins &ins, size_t &pointer, const StdArgs &args);
-    ExecutionStatus ri_sp_get(const Ins &ins, size_t &pointer, const StdArgs &args);
-    ExecutionStatus ri_sp_new(const Ins &ins, size_t &pointer, const StdArgs &args);
-    ExecutionStatus ri_sp_del(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_qot(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_qot_val(const Ins &ins, size_t &pointer, const StdArgs &args);
     ExecutionStatus ri_atmp(const Ins &ins, size_t &pointer, const StdArgs &args);

@@ -1,0 +1,45 @@
+FUNC: super_v6
+    PASS:
+    END: super_v6
+FUNC: export_v7
+    PASS:
+    END: export_v7
+FUNI: import_v8
+    PASS:
+    END: import_v8
+FUNC: sout_v10, args_v11, end_v12
+    END: sout_v10
+FUNI: test_v14, a_v15, b_v16
+    ALLOT: tv1_v17
+    ADD: a_v15, b_v16, tv1_v17
+    RET: tv1_v17
+    END: test_v14
+FUNC: main_v19
+    ALLOT: last_v20, sum_v21
+    TP_SET: tp-int, last_v20
+    PUT: 0, last_v20
+    TP_SET: tp-int, sum_v21
+    PUT: 0, sum_v21
+    ALLOT: i_v22
+    PUT: 1, i_v22
+    ALLOT: tv2_v23
+    CMP: true, false, tv2_v23
+    UNTIL: tv2_v23, RE
+        ALLOT: tv3_v24
+        CMP: i_v22, 100, tv3_v24
+        CREL: tv3_v24, RL, tv3_v24
+        JT: tv3_v24, sl1_s25
+        EXIT: UNTIL
+        SET: sl1_s25
+        ALLOT: tv4_v26
+        MUL: last_v20, i_v22, tv4_v26
+        ADD: sum_v21, tv4_v26, sum_v21
+        ALLOT: tv5_v27
+        TP_SET: tp-list, tv5_v27
+        ITER_APND: sum_v21, tv5_v27
+        SOUT: s-l, s-unpack, tv5_v27, "\n"
+        PUT: i_v22, last_v20
+        MUL: i_v22, 2, i_v22
+        END: UNTIL
+    END: main_v19
+CALL: main_v19

@@ -15,26 +15,29 @@ using namespace core;
 using namespace utils;
 using namespace parser;
 
-ProgArgParser argParser{};
+static ProgArgParser argParser{};
 
-std::string program_target_file_path_;
-std::string program_archive_file_path_;
-std::string program_help_option_name_;
-std::string program_environment_directory_;
-std::string program_output_redirect_;
-std::string program_input_redirect_;
-std::string program_working_directory_;
-bool program_run_executable_;
-bool program_serialize_;
-bool program_debug_option_;
-bool program_run_time_info_option_;
-bool program_help_option_;
-bool program_version_option_;
-bool program_vs_check_option_;
-bool program_rvm_work_directory_;
-bool program_get_ris_;
+static std::string program_target_file_path_;
+static std::string program_archive_file_path_;
+static std::string program_help_option_name_;
+static std::string program_environment_directory_;
+static std::string program_output_redirect_;
+static std::string program_input_redirect_;
+static std::string program_working_directory_;
+static bool program_run_executable_;
+static bool program_serialize_;
+static bool program_debug_option_;
+static bool program_run_time_info_option_;
+static bool program_help_option_;
+static bool program_version_option_;
+static bool program_vs_check_option_;
+static bool program_rvm_work_directory_;
+static bool program_get_ris_;
+static bool program_parse_info_;
+static bool program_slot_mode_;
+static bool program_legacy_mode_;
 
-void initializeArgumentParser() {
+static void initializeArgumentParser() {
     argParser.addFlag("help", &program_help_option_, false, true,
                       "Displays this help message and exits. "
                       "Use this flag to show a list of available options, flags, and their descriptions.",
@@ -79,6 +82,27 @@ void initializeArgumentParser() {
     argParser.addFlag("get-ris", &program_get_ris_, false, true,
                       "This flag is used to get the hole RI names.",
                       {"ris", "gr"});
+    argParser.addFlag("parse-info", &program_parse_info_, false, true,
+                      "Prints the parse-time variable slot registration for the target file. "
+                      "Every ALLOT / FUNC / FUNI / TP_DEF declaration is registered into a "
+                      "'name -> frame slot' table while parsing; this flag dumps that table "
+                      "(each scope's slot range, plus the symbol table visible from it). "
+                      "It is a read-only diagnostic: it does not change execution semantics. "
+                      "Use it together with '--run' or '--comp'.",
+                      {"pi", "psi", "parse-scope-info"});
+    argParser.addFlag("slot-mode", &program_slot_mode_, false, true,
+                      "Enables the static (parse-time) variable slot architecture. "
+                      "Variable names are resolved to (frame, slot) addresses while parsing, and the "
+                      "runtime performs no name lookup at all. Scoping becomes lexical: a function body "
+                      "sees its definition site rather than its call site. "
+                      "Only available for '.ra' sources: the slot tables are not serialized into '.rsi', "
+                      "so running a precompiled file always uses the legacy dynamic-scope system. "
+                      "Use '--legacy-mode' to force the legacy system for a '.ra' file.",
+                      {"sm", "slot"});
+    argParser.addFlag("legacy-mode", &program_legacy_mode_, false, true,
+                      "Forces the legacy dynamic-scope memory system, disabling the static slot "
+                      "architecture for '.ra' sources. Useful for A/B comparison against '--slot-mode'.",
+                      {"lm", "legacy"});
 
     argParser.addOption<std::string>("help-option", &program_help_option_name_,
                                                      "",
@@ -179,7 +203,11 @@ int main(const int argc, char *argv[]){
         if (program_serialize_) {
             auto file_ext = getFileExtFromPath(program_target_file_path_);
             env::initialize(program_target_file_path_, program_working_directory_);
-            const auto ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
+            const auto ins_set = parse::parseCodeFromPath(program_target_file_path_, program_parse_info_);
+            if (program_parse_info_) {
+                printParseScopeRecord(parse::last_parse_scope_record, std::cout,
+                                      program_target_file_path_);
+            }
             parse::serializeExecutableInsToBinaryFile(program_archive_file_path_, ins_set,
                                                       env::program_serialization_profile_);
             *io << "[RVM Msg] >> Compilation finished with ["
@@ -188,6 +216,9 @@ int main(const int argc, char *argv[]){
         if (program_run_executable_) {
             const auto file_ext = getFileExtFromPath(program_target_file_path_);
             appendProgramWorkingDir(program_target_file_path_);
+            // 环境必须在解析之前初始化：解析期要用全局名字集合补全根作用域，
+            // 否则 true / false / null / tp-* / SN / SE / SS 这些全局标识符解析不到槽位。
+            env::initialize(program_target_file_path_, program_working_directory_);
             std::shared_ptr<InsSet> ins_set;
             if (file_ext == RSI_EXT)
             {
@@ -195,7 +226,7 @@ int main(const int argc, char *argv[]){
                         program_target_file_path_, env::program_serialization_profile_);
             } else if (file_ext == RA_EXT)
             {
-                ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
+                ins_set = parse::parseCodeFromPath(program_target_file_path_, program_parse_info_);
             } else
             {
                 try
@@ -204,10 +235,41 @@ int main(const int argc, char *argv[]){
                         program_target_file_path_, env::program_serialization_profile_);
                 } catch (...)
                 {
-                    ins_set = parse::parseCodeFromPath(program_target_file_path_, false);
+                    ins_set = parse::parseCodeFromPath(program_target_file_path_, program_parse_info_);
                 }
             }
-            env::initialize(ins_set->scope_leader_file, program_working_directory_);
+            if (program_parse_info_) {
+                printParseScopeRecord(parse::last_parse_scope_record, std::cout,
+                                      program_target_file_path_);
+                core::memory::RVM_RUNTIME_MEMORY.printInfo(std::cout);
+            }
+            /*
+             * 决定运行期使用哪一套变量系统。
+             *
+             *   --legacy-mode 优先：显式要求旧系统时，即使解析期建好了槽位表也不启用。
+             *   其余情况启用静态槽位架构（这是 RVM 的目标架构，故为默认）。
+             *
+             * '.rsi' 是例外：槽位表不参与序列化，反序列化路径不会建立任何槽位信息，
+             * 此时启用只会让运行期查不到绑定，所以必须明确拒绝而不是静默降级。
+             */
+            if (program_legacy_mode_) {
+                core::memory::setSlotBindingModeEnabled(false);
+            } else if (file_ext == RSI_EXT || !parse::isSlotModeAvailable()) {
+                if (program_slot_mode_) {
+                    throw base::RVM_Error(
+                            base::ErrorType::RuntimeError, program_target_file_path_, {},
+                            {"Static slot mode is not available for this target.",
+                             "Target: " + program_target_file_path_,
+                             file_ext == RSI_EXT
+                                     ? "Reason: slot tables are not serialized into '.rsi'."
+                                     : "Reason: the parse-time slot tables were not built."},
+                            {"Run the '.ra' source with '--slot-mode', or drop '--slot-mode' to use "
+                             "the legacy dynamic-scope system."});
+                }
+                core::memory::setSlotBindingModeEnabled(false);
+            } else {
+                core::memory::setSlotBindingModeEnabled(true);
+            }
             ins_set->execute();
         }
         if (program_help_option_) {

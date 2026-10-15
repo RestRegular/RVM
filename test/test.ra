@@ -1,0 +1,21 @@
+FUNC: f
+SOUT: s-m, x
+END: f
+
+FUNC: g
+ALLOT: x
+PUT: 10, x
+CALL: f
+END: g
+
+FUNC: h
+ALLOT: x
+PUT: 20, x
+CALL: g
+END: h
+
+ALLOT: x
+PUT: 0, x
+CALL: f
+CALL: g
+CALL: h

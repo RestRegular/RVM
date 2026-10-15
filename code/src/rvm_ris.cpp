@@ -19,6 +19,10 @@ namespace core::components {
     id::DataID SR_SPACE_ID{};
     id::DataID SE_SPACE_ID{};
 
+    namespace {
+        // æ§½ä½åœ°å€åœ¨è§£ææœŸå·²ç›´æ¥æŒ‚åœ¨å‚æ•°ä¸Šï¼Œä¸å†éœ€è¦ä»»ä½•å›è°ƒæ¡¥æ¥ã€‚
+    }
+
     RI::RI(std::string name, const int arity,
         const ExecutorFunc executor,
         const bool isCreatedScope,
@@ -49,12 +53,12 @@ namespace core::components {
         return "[RI: " + this->name + "]";
     }
 
-    // ĞòÁĞ»¯º¯Êı£ºĞòÁĞ»¯ id
+    // åºåˆ—åŒ–å‡½æ•°ï¼šåºåˆ—åŒ– id
     void RI::serialize(std::ostream &os, const utils::SerializationProfile &profile) const {
         os.write(reinterpret_cast<const char *>(&id.dis_id), sizeof(id.dis_id));
     }
 
-    // ·´ĞòÁĞ»¯º¯Êı£ºÍ¨¹ı id ´Ó insMap »ñÈ¡¶ÔÏó
+    // ååºåˆ—åŒ–å‡½æ•°ï¼šé€šè¿‡ id ä» insMap è·å–å¯¹è±¡
     const RI* RI::deserialize(std::istream& is, const utils::SerializationProfile& profile)
     {
         int riid{};
@@ -69,11 +73,11 @@ namespace core::components {
     }
 
     const RI* RI::getRIByStr(const std::string& content) {
-        // ½«ÊäÈëÄÚÈİ×ª»»Îª´óĞ´ÒÔÊµÏÖ´óĞ¡Ğ´²»Ãô¸ĞÆ¥Åä
+        // å°†è¾“å…¥å†…å®¹è½¬æ¢ä¸ºå¤§å†™ä»¥å®ç°å¤§å°å†™ä¸æ•æ„ŸåŒ¹é…
         std::string upperContent = content;
         std::ranges::transform(upperContent, upperContent.begin(),
                                [](const unsigned char c) { return std::toupper(c); });
-        // ²éÕÒÖ¸ÁîÓ³Éä±í
+        // æŸ¥æ‰¾æŒ‡ä»¤æ˜ å°„è¡¨
         if (const auto &it = insNameMap.find(upperContent);
             it != insNameMap.end()) {
             return it->second;
@@ -81,7 +85,7 @@ namespace core::components {
         return nullptr;
     }
 
-    // Ins¾ßÌåÊµÏÖ
+    // Inså…·ä½“å®ç°
     Ins::Ins(utils::Pos pos, std::string raw_code, const RI *ri, StdArgs args,
              std::string ext)
             : pos(std::move(pos)), ri(ri), args(std::move(args)),
@@ -110,31 +114,31 @@ namespace core::components {
         }
     }
 
-    // ĞòÁĞ»¯º¯Êı
+    // åºåˆ—åŒ–å‡½æ•°
     void Ins::serialize(std::ostream &os, const utils::SerializationProfile &profile) const {
-        // ĞòÁĞ»¯ Pos
+        // åºåˆ—åŒ– Pos
         pos.serialize(os, profile);
 
-        // ĞòÁĞ»¯ RI
+        // åºåˆ—åŒ– RI
         ri->serialize(os, profile);
 
-        // ĞòÁĞ»¯ StdArgs (std::vector<utils::Arg>)
+        // åºåˆ—åŒ– StdArgs (std::vector<utils::Arg>)
         const size_t argsSize = args.size();
         os.write(reinterpret_cast<const char *>(&argsSize), sizeof(argsSize));
         for (const auto &arg: args) {
             arg.serialize(os, profile);
         }
 
-        // ĞòÁĞ»¯ scopeInsSet
+        // åºåˆ—åŒ– scopeInsSet
         const bool hasScopeInsSet = ri->hasScope;
         os.write(reinterpret_cast<const char *>(&hasScopeInsSet), sizeof(hasScopeInsSet));
         if (hasScopeInsSet) {
             scopeInsSet->serialize(os, profile);
         }
 
-        // ĞòÁĞ»¯ raw_code
+        // åºåˆ—åŒ– raw_code
         if (profile < utils::SerializationProfile::Testing) {
-            // ¸ßÓÚ²âÊÔÄ£Ê½ÏÂ£¬²»ĞòÁĞ»¯ raw_code
+            // é«˜äºæµ‹è¯•æ¨¡å¼ä¸‹ï¼Œä¸åºåˆ—åŒ– raw_code
             const size_t codeLength = raw_code.size();
             os.write(reinterpret_cast<const char *>(&codeLength), sizeof(codeLength));
             if (codeLength > 0) {
@@ -142,10 +146,10 @@ namespace core::components {
             }
         }
 
-        // ĞòÁĞ»¯²¼¶ûÖµ
+        // åºåˆ—åŒ–å¸ƒå°”å€¼
         os.write(reinterpret_cast<const char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
 
-        // ĞòÁĞ»¯ ext_info
+        // åºåˆ—åŒ– ext_info
         const size_t extLength = ext.size();
         os.write(reinterpret_cast<const char *>(&extLength), sizeof(extLength));
         if (extLength > 0) {
@@ -153,15 +157,15 @@ namespace core::components {
         }
     }
 
-    // ·´ĞòÁĞ»¯º¯Êı
+    // ååºåˆ—åŒ–å‡½æ•°
     void Ins::deserialize(std::istream &is, const utils::SerializationProfile &profile) {
-        // ·´ĞòÁĞ»¯ Pos
+        // ååºåˆ—åŒ– Pos
         pos.deserialize(is, profile);
 
-        // ·´ĞòÁĞ»¯ RI
+        // ååºåˆ—åŒ– RI
         ri = RI::deserialize(is, profile);
 
-        // ·´ĞòÁĞ»¯ StdArgs (std::vector<utils::Arg>)
+        // ååºåˆ—åŒ– StdArgs (std::vector<utils::Arg>)
         size_t argsSize;
         is.read(reinterpret_cast<char *>(&argsSize), sizeof(argsSize));
         args.clear();
@@ -171,7 +175,7 @@ namespace core::components {
             args.push_back(arg);
         }
 
-        // ·´ĞòÁĞ»¯ scopeInsSet
+        // ååºåˆ—åŒ– scopeInsSet
         bool hasScopeInsSet;
         is.read(reinterpret_cast<char *>(&hasScopeInsSet), sizeof(hasScopeInsSet));
         if (hasScopeInsSet) {
@@ -181,7 +185,7 @@ namespace core::components {
             scopeInsSet = nullptr;
         }
 
-        // ·´ĞòÁĞ»¯ raw_code
+        // ååºåˆ—åŒ– raw_code
         if (profile < utils::SerializationProfile::Testing) {
             size_t codeLength;
             is.read(reinterpret_cast<char *>(&codeLength), sizeof(codeLength));
@@ -193,10 +197,10 @@ namespace core::components {
             }
         }
 
-        // ·´ĞòÁĞ»¯²¼¶ûÖµ
+        // ååºåˆ—åŒ–å¸ƒå°”å€¼
         is.read(reinterpret_cast<char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
 
-        // ·´ĞòÁĞ»¯ ext_info
+        // ååºåˆ—åŒ– ext_info
         size_t extLength;
         is.read(reinterpret_cast<char *>(&extLength), sizeof(extLength));
         if (extLength > 0) {
@@ -265,16 +269,16 @@ namespace core::components {
     }
 
     const auto debug_command_help = cc::colorfulText(R"(Debug Command Info:
-    /?   -help              :´òÓ¡´Ë°ïÖúĞÅÏ¢
-    /p   -print             :´òÓ¡Êı¾İ³ØĞÅÏ¢
-    /e   -exit              :ÍË³ödebug»·¾³
-    /fs  -fastSkip          :¿ìËÙÌø¹ıÖ¸Áîµ½¶Ïµã´¦
-    /ns  -normalSkip        :ÆÕÍ¨Ìø¹ıÖ¸Áîµ½¶Ïµã´¦
-    /cls -cleanScreen       :Çå¿Õ¿ØÖÆÌ¨
-    /vn  -viewName          :¼ì²éÖ¸¶¨Ãû³ÆµÄÊı¾İ
-    /bp  -breakPoint        :Ìí¼Ó¶Ïµã£¬²ÎÊıÎª¶ÏµãĞĞºÅ£¬¿Õ¸ñ·Ö¸ô
-    /rp  -removePoint       :ÒÆ³ı¶Ïµã£¬²ÎÊıÎª¶ÏµãĞĞºÅ£¬¿Õ¸ñ·Ö¸ô
-    /pcc -printCallChain    :´òÓ¡º¯Êıµ÷ÓÃÁ´ĞÅÏ¢
+    /?   -help              :æ‰“å°æ­¤å¸®åŠ©ä¿¡æ¯
+    /p   -print             :æ‰“å°æ•°æ®æ± ä¿¡æ¯
+    /e   -exit              :é€€å‡ºdebugç¯å¢ƒ
+    /fs  -fastSkip          :å¿«é€Ÿè·³è¿‡æŒ‡ä»¤åˆ°æ–­ç‚¹å¤„
+    /ns  -normalSkip        :æ™®é€šè·³è¿‡æŒ‡ä»¤åˆ°æ–­ç‚¹å¤„
+    /cls -cleanScreen       :æ¸…ç©ºæ§åˆ¶å°
+    /vn  -viewName          :æ£€æŸ¥æŒ‡å®šåç§°çš„æ•°æ®
+    /bp  -breakPoint        :æ·»åŠ æ–­ç‚¹ï¼Œå‚æ•°ä¸ºæ–­ç‚¹è¡Œå·ï¼Œç©ºæ ¼åˆ†éš”
+    /rp  -removePoint       :ç§»é™¤æ–­ç‚¹ï¼Œå‚æ•°ä¸ºæ–­ç‚¹è¡Œå·ï¼Œç©ºæ ¼åˆ†éš”
+    /pcc -printCallChain    :æ‰“å°å‡½æ•°è°ƒç”¨é“¾ä¿¡æ¯
 )", cc::TextColor::GREEN);
 
     std::unordered_set<int> break_points{};
@@ -292,60 +296,60 @@ namespace core::components {
                     cc::TextColor::LIGHT_GREEN,
                     {cc::Decoration::BOLD}));
         } else {
-            // ¼ÇÂ¼Ã¿¸ö InsSet ÊµÀıÔÚÕ»ÖĞµÄ³öÏÖ´ÎÊı£¨¼´µİ¹éÉî¶È£©
+            // è®°å½•æ¯ä¸ª InsSet å®ä¾‹åœ¨æ ˆä¸­çš„å‡ºç°æ¬¡æ•°ï¼ˆå³é€’å½’æ·±åº¦ï¼‰
             std::unordered_map<InsSet*, int> instance_counts;
-            // ´æ´¢Ö´ĞĞÕ»µÄÔªËØ¼°ÆäÔÚÕ»ÖĞµÄÎ»ÖÃ£¨´ÓÕ»µ×µ½Õ»¶¥µÄË÷Òı£©
+            // å­˜å‚¨æ‰§è¡Œæ ˆçš„å…ƒç´ åŠå…¶åœ¨æ ˆä¸­çš„ä½ç½®ï¼ˆä»æ ˆåº•åˆ°æ ˆé¡¶çš„ç´¢å¼•ï¼‰
             std::vector<std::pair<InsSet*, int>> stack_elements;
-            // ¸´ÖÆÖ´ĞĞÕ»µ½ÁÙÊ±Õ»
+            // å¤åˆ¶æ‰§è¡Œæ ˆåˆ°ä¸´æ—¶æ ˆ
             std::vector<InsSet*> temp_stack = exe_stack;
             int stack_index = 0;
-            // ÊÕ¼¯Ö´ĞĞÕ»ÖĞµÄÔªËØ¼°ÆäÎ»ÖÃĞÅÏ¢
+            // æ”¶é›†æ‰§è¡Œæ ˆä¸­çš„å…ƒç´ åŠå…¶ä½ç½®ä¿¡æ¯
             while (!temp_stack.empty()) {
                 InsSet* ins_set = temp_stack.back();
                 stack_elements.emplace_back(ins_set, instance_counts[ins_set]);
-                // ¸üĞÂ¸Ã InsSet ÊµÀıµÄ³öÏÖ´ÎÊı
+                // æ›´æ–°è¯¥ InsSet å®ä¾‹çš„å‡ºç°æ¬¡æ•°
                 instance_counts[ins_set]++;
                 temp_stack.pop_back();
                 stack_index++;
             }
-            // ·´Ïò±éÀú£¨´ÓÕ»µ×µ½Õ»¶¥£©´òÓ¡ĞÅÏ¢
+            // åå‘éå†ï¼ˆä»æ ˆåº•åˆ°æ ˆé¡¶ï¼‰æ‰“å°ä¿¡æ¯
             size_t last = stack_elements.size() - 1;
             for (auto & stack_element : std::ranges::reverse_view(stack_elements)) {
                 const InsSet *ins_set = stack_element.first;
-                const int target_depth = stack_element.second; // ¸ÃÔªËØµÄµİ¹éÉî¶È
-                // ¸´ÖÆ pointers Õ»²¢µ¯³öµ½Ä¿±êÉî¶È
+                const int target_depth = stack_element.second; // è¯¥å…ƒç´ çš„é€’å½’æ·±åº¦
+                // å¤åˆ¶ pointers æ ˆå¹¶å¼¹å‡ºåˆ°ç›®æ ‡æ·±åº¦
                 std::stack<std::shared_ptr<size_t> > temp_pointers = ins_set->pointers;
                 for (int i = 0; i < target_depth && !temp_pointers.empty(); i++) {
                     temp_pointers.pop();
                 }
-                // È·±£Ö¸ÕëÕ»·Ç¿Õ
+                // ç¡®ä¿æŒ‡é’ˆæ ˆéç©º
                 if (!temp_pointers.empty()) {
                     const auto &ins = ins_set->insSet[*temp_pointers.top()];
-                    const bool is_top_element = (last == 0); // ÊÇ·ñÎªÕ»¶¥ÔªËØ
-                    // Êä³ö¸ñÊ½£ºÕ»µ×ÔªËØÓÃ"->"±ê¼Ç£¬ÆäËûÓÃ"v"±ê¼Ç
+                    const bool is_top_element = (last == 0); // æ˜¯å¦ä¸ºæ ˆé¡¶å…ƒç´ 
+                    // è¾“å‡ºæ ¼å¼ï¼šæ ˆåº•å…ƒç´ ç”¨"->"æ ‡è®°ï¼Œå…¶ä»–ç”¨"v"æ ‡è®°
                     io->immediateOutput(
                         identSpace,
-                        cc::colorfulText("| ", cc::TextColor::CYAN), // Ç³À¶É«ÊúÏß
+                        cc::colorfulText("| ", cc::TextColor::CYAN), // æµ…è“è‰²ç«–çº¿
                         target_depth == 0
                             ? (is_top_element
                                    ? cc::colorfulText(ins->pos.toString(), cc::TextColor(50, 150, 255),
                                                       {cc::Decoration::BOLD})
                                    : cc::colorfulText(ins->pos.toString(), cc::TextColor(100, 200, 255)))
-                            : // Ã÷ÁÁµÄÀ¶É«
-                            cc::colorfulText(ins->pos.toString(), cc::TextColor(150, 150, 150)), // »ÒÉ«
+                            : // æ˜äº®çš„è“è‰²
+                            cc::colorfulText(ins->pos.toString(), cc::TextColor(150, 150, 150)), // ç°è‰²
                         "\n",
                         identSpace,
                         is_top_element
                             ? cc::colorfulText("->", cc::TextColor(0, 255, 100), {cc::Decoration::BOLD})
-                            : // ÁÁÂÌÉ«¼ıÍ·
-                            cc::colorfulText("v ", cc::TextColor(100, 200, 255)), // Ç³À¶É«¼ıÍ·
+                            : // äº®ç»¿è‰²ç®­å¤´
+                            cc::colorfulText("v ", cc::TextColor(100, 200, 255)), // æµ…è“è‰²ç®­å¤´
                         target_depth == 0
                             ? (is_top_element
                                    ? cc::colorfulText(ins->raw_code, cc::TextColor(0, 255, 100), {cc::Decoration::BOLD})
-                                   : // ÁÁÀ¶É«´úÂë
+                                   : // äº®è“è‰²ä»£ç 
                                    cc::colorfulText(ins->raw_code, cc::TextColor(180, 180, 180)))
-                            : // Ç³»ÒÉ«´úÂë
-                            cc::colorfulText(ins->raw_code, cc::TextColor(120, 120, 120)), // Éî»ÒÉ«´úÂë
+                            : // æµ…ç°è‰²ä»£ç 
+                            cc::colorfulText(ins->raw_code, cc::TextColor(120, 120, 120)), // æ·±ç°è‰²ä»£ç 
                         "\n");
                 }
                 last--;
@@ -379,11 +383,11 @@ namespace core::components {
                     debug_mode = DebugMode::Standard;
                 }
                 break;
-            } else if (input == "/?" || input == "-help") { // °ïÖú
+            } else if (input == "/?" || input == "-help") { // å¸®åŠ©
                 io->immediateOutput(debug_command_help);
             } else if (input == "/p" || input == "-print")
             {
-                // ´òÓ¡Êı¾İ³Ø
+                // æ‰“å°æ•°æ®æ± 
                 data_space_pool.printPoolInfo();
                 io->flushOutputCache();
             } else if (input == "/ps" || input == "-print-space") {
@@ -400,13 +404,13 @@ namespace core::components {
                         io->immediateOutputError("Invalid space name: '", viewSpace, "'\n");
                     }
                 }
-            } else if (input == "/e" || input == "-exit") { // ÍË³ö³ÌĞò
+            } else if (input == "/e" || input == "-exit") { // é€€å‡ºç¨‹åº
                 data_space_pool.clearAllScopes();
                 *io << ">> " << cc::colorfulText("Exit RVM Debug Environment.", cc::TextColor::GREEN, {cc::Decoration::BOLD});
                 io->flushOutputCache();
                 io->flashInputCache();
                 exit(-1);
-            } else if (input == "/fs" || input == "-fastSkip") { // ¿ìËÙÌø¹ı
+            } else if (input == "/fs" || input == "-fastSkip") { // å¿«é€Ÿè·³è¿‡
                 debug_mode = DebugMode::FastSkip;
                 break;
             } else if (input == "/ns" || input == "-normalSkip") {
@@ -424,7 +428,7 @@ namespace core::components {
                         io->immediateOutputError("Invalid data name: '", viewItem, "'\n");
                     }
                 }
-            } else if (input == "/bp" || input == "-breakPoint") { // Ìí¼Ó¶Ïµã
+            } else if (input == "/bp" || input == "-breakPoint") { // æ·»åŠ æ–­ç‚¹
                 while (io->hasNextString()) {
                     if (const auto &break_point = utils::stringToInt(io->nextString());
                         break_point > 0 && !break_points.contains(break_point)) {
@@ -547,10 +551,28 @@ namespace core::components {
     }
 
     ExecutionStatus InsSet::execute() {
-        // ¸üĞÂµ±Ç°³ÌĞòµÄ¹¤×÷Ä¿Â¼
+        // æ›´æ–°å½“å‰ç¨‹åºçš„å·¥ä½œç›®å½•
         base::PROGRAM_WORKING_DIRECTORY_STACK.push(utils::getFileDirFromPath(this->scope_leader_file));
         scope_name_stack.push(data_space_pool.getCurrentScopeNoLock()->getName());
         const std::string &ext_name = insSet.empty() ? "" : insSet[0]->ext.empty() ? "" : insSet[0]->ext;
+
+        /*
+         * æ§½ä½å¯»å€çš„ä¸Šä¸‹æ–‡ã€‚
+         *
+         * å¸§åˆ‡æ¢åªå‘ç”Ÿåœ¨å¸§æ ¹ä½œç”¨åŸŸï¼ˆæ–‡ä»¶æ ¹ / FUNC / FUNI ä½“ï¼‰ï¼›å—ä½œç”¨åŸŸï¼ˆREPEAT/UNTIL/ITER_TRAVâ€¦ï¼‰
+         * ä¸å¤–å±‚åŒå±ä¸€ä¸ªå¸§ï¼Œå…¶æ§½ä½åç§»å·²ç”±è§£ææœŸç®—è¿›åŒä¸€ä¸ª slots æ•°ç»„ã€‚
+         *
+         * å¸§èº«ä»½æ˜¯ã€ä¸‹æ ‡ã€‘ï¼šè§£ææœŸå·²æŠŠ frameIndex å†™åœ¨æœ¬æŒ‡ä»¤é›†ä¸Šï¼Œè¿™é‡Œç›´æ¥ç”¨ï¼Œ
+         * ä¸åšä»»ä½•è·¯å¾„æŸ¥æ‰¾ã€‚
+         */
+        const bool slotMode = core::memory::isSlotBindingModeEnabled()
+                              && frameIndex != core::memory::INVALID_INDEX;
+        if (slotMode) {
+            if (frameRootScope) {
+                currentFramePushed = true;
+                core::memory::RVM_RUNTIME_MEMORY.pushCurrentFrameIndex(frameIndex);
+            }
+        }
         const auto &ext_scope = loadinExtension(ext_name);
         exe_stack.push_back(this);
         ExecutionStatus resultStatus{};
@@ -611,21 +633,26 @@ namespace core::components {
                         cc::TextColor::GREEN, {cc::Decoration::BOLD}));
             }
         }
-        // »Ö¸´³ÌĞòµÄÉÏ²ã¹¤×÷Ä¿Â¼
+        // æ¢å¤ç¨‹åºçš„ä¸Šå±‚å·¥ä½œç›®å½•
         base::PROGRAM_WORKING_DIRECTORY_STACK.pop();
+        // å¸§åˆ‡æ¢ä¸ä½œç”¨åŸŸä¸Šä¸‹æ–‡å¿…é¡»å¯¹ç§°å¼¹å‡ºï¼Œå¦åˆ™å¤–å±‚æŒ‡ä»¤é›†ä¼šä»¥é”™è¯¯çš„çŠ¶æ€ç»§ç»­æ‰§è¡Œ
+        if (currentFramePushed) {
+            core::memory::RVM_RUNTIME_MEMORY.popCurrentFrameIndex();
+            currentFramePushed = false;
+        }
         unloadExtension(ext_scope);
         return resultStatus;
     }
 
     void InsSet::serialize(std::ostream &os, const utils::SerializationProfile &profile) const {
-        // ĞòÁĞ»¯²¼¶ûÖµ
+        // åºåˆ—åŒ–å¸ƒå°”å€¼
         os.write(reinterpret_cast<const char *>(&is_delayed_release_scope), sizeof(is_delayed_release_scope));
 
-        // ĞòÁĞ»¯ÕûÊı
+        // åºåˆ—åŒ–æ•´æ•°
         os.write(reinterpret_cast<const char *>(&end_pointer), sizeof(end_pointer));
 
         if (profile < utils::SerializationProfile::Testing) {
-            // ĞòÁĞ»¯×Ö·û´®
+            // åºåˆ—åŒ–å­—ç¬¦ä¸²
             const size_t prefixLength = scope_prefix.size();
             os.write(reinterpret_cast<const char *>(&prefixLength), sizeof(prefixLength));
             if (prefixLength > 0) {
@@ -659,14 +686,14 @@ namespace core::components {
 //            }
         }
 
-        // ĞòÁĞ»¯ vector<std::shared_ptr<Ins>>
+        // åºåˆ—åŒ– vector<std::shared_ptr<Ins>>
         size_t insSetSize = insSet.size();
         os.write(reinterpret_cast<const char *>(&insSetSize), sizeof(insSetSize));
         for (const auto &ins: insSet) {
             ins->serialize(os, profile);
         }
 
-        // ĞòÁĞ»¯ unordered_map<string, int>
+        // åºåˆ—åŒ– unordered_map<string, int>
         size_t labelsSize = set_labels.size();
         os.write(reinterpret_cast<const char *>(&labelsSize), sizeof(labelsSize));
         for (const auto &[key, value]: set_labels) {
@@ -784,30 +811,30 @@ namespace ris {
     const RI AND{"AND", 0, exes::ri_flag};
     const RI OR{"OR", 0, exes::ri_flag};
 
-    // ÎŞÊµ¼ÊÓ°ÏìµÄÖ¸Áî¼¯
+    // æ— å®é™…å½±å“çš„æŒ‡ä»¤é›†
     const RI PASS{"PASS", -1, exes::ri_pass};
     const RI UNKNOWN{"UNKNOWN", -1, exes::ri_unknown};
     const RI BREAKPOINT{"BREAKPOINT", -1, exes::ri_breakpoint};
 
-    // ¿ÉÔì³ÉÊµ¼ÊÓ°ÏìµÄÖ¸Áî¼¯
+    // å¯é€ æˆå®é™…å½±å“çš„æŒ‡ä»¤é›†
     const RI ALLOT{"ALLOT", -1, exes::ri_allot};
     const RI DELETE{"Delete", -1, exes::ri_delete};
     const RI PUT{"PUT", 2, exes::ri_put};
     const RI COPY{"COPY", 2, exes::ri_copy};
     const RI ADD{"ADD", 3, exes::ri_add};
     const RI OPP{"OPP", 2, exes::ri_opp};
-    const RI REPEAT{"REPEAT", -1, exes::ri_repeat, true, true}; // repeat Ö¸Áî£ºÑ­»·Ö´ĞĞÖ¸Áî¼¯£¬ÖØ¸´Ö¸¶¨´ÎÊı£¬Ö»¿É½ÓÊÜ 1/2 ¸ö²ÎÊı
+    const RI REPEAT{"REPEAT", -1, exes::ri_repeat, true, true}; // repeat æŒ‡ä»¤ï¼šå¾ªç¯æ‰§è¡ŒæŒ‡ä»¤é›†ï¼Œé‡å¤æŒ‡å®šæ¬¡æ•°ï¼Œåªå¯æ¥å— 1/2 ä¸ªå‚æ•°
     const RI END{"END", -1, exes::ri_end};
-    const RI FUNC{"FUNC", -1, exes::ri_func, true}; // func Ö¸Áî£º¶¨Òåº¯Êı£¬¿É½ÓÊÜ¶à¸ö²ÎÊı
-    const RI FUNI{"FUNI", -1, exes::ri_funi, true}; // funi Ö¸Áî£º¶¨Òåº¯Êı£¬¿É½ÓÊÜ¶à¸ö²ÎÊı
-    const RI CALL{"CALL", -1, exes::ri_call}; // call Ö¸Áî£ºµ÷ÓÃº¯Êı£¬¿É½ÓÊÜ¶à¸ö²ÎÊı£¬ÓÃÓÚÎŞ·µ»ØÖµµÄµ÷ÓÃ
-    const RI CALL_FAST{"CALL_FAST", -1, exes::ri_call_fast}; // call Ö¸Áî£ºµ÷ÓÃº¯Êı£¬¿É½ÓÊÜ¶à¸ö²ÎÊı£¬ÓÃÓÚÎŞ·µ»ØÖµµÄµ÷ÓÃ
-    const RI IVOK{"IVOK", -1, exes::ri_ivok}; // ivok Ö¸Áî£ºµ÷ÓÃº¯Êı£¬¿É½ÓÊÜ¶à¸ö²ÎÊı£¬ÓÃÓÚÓĞ·µ»ØÖµµÄµ÷ÓÃ
-    const RI IVOK_FAST{"IVOK_FAST", -1, exes::ri_ivok_fast}; // ivok Ö¸Áî£ºµ÷ÓÃº¯Êı£¬¿É½ÓÊÜ¶à¸ö²ÎÊı£¬ÓÃÓÚÓĞ·µ»ØÖµµÄµ÷ÓÃ
-    const RI UNTIL{"UNTIL", 2, exes::ri_until, true, true}; // until Ö¸Áî£ºÑ­»·Ö´ĞĞÖ¸Áî¼¯£¬Ö±µ½Ìõ¼şÎªÕæ
-    const RI EXIT{"EXIT", -1, exes::ri_exit}; // exit Ö¸Áî£ºÍË³ö¾Ö²¿Óò
-    const RI SOUT{"SOUT", -1, exes::ri_sout}; // sout Ö¸Áî£ºÊä³ö×Ö·û´®£¬¿É½ÓÊÜ¶à¸ö²ÎÊı
-    const RI SIN{"SIN", -1, exes::ri_sin}; // sin Ö¸Áî£ºÊäÈë×Ö·û´®£¬¿É½ÓÊÜ¶à¸ö²ÎÊı
+    const RI FUNC{"FUNC", -1, exes::ri_func, true}; // func æŒ‡ä»¤ï¼šå®šä¹‰å‡½æ•°ï¼Œå¯æ¥å—å¤šä¸ªå‚æ•°
+    const RI FUNI{"FUNI", -1, exes::ri_funi, true}; // funi æŒ‡ä»¤ï¼šå®šä¹‰å‡½æ•°ï¼Œå¯æ¥å—å¤šä¸ªå‚æ•°
+    const RI CALL{"CALL", -1, exes::ri_call}; // call æŒ‡ä»¤ï¼šè°ƒç”¨å‡½æ•°ï¼Œå¯æ¥å—å¤šä¸ªå‚æ•°ï¼Œç”¨äºæ— è¿”å›å€¼çš„è°ƒç”¨
+    const RI CALL_FAST{"CALL_FAST", -1, exes::ri_call_fast}; // call æŒ‡ä»¤ï¼šè°ƒç”¨å‡½æ•°ï¼Œå¯æ¥å—å¤šä¸ªå‚æ•°ï¼Œç”¨äºæ— è¿”å›å€¼çš„è°ƒç”¨
+    const RI IVOK{"IVOK", -1, exes::ri_ivok}; // ivok æŒ‡ä»¤ï¼šè°ƒç”¨å‡½æ•°ï¼Œå¯æ¥å—å¤šä¸ªå‚æ•°ï¼Œç”¨äºæœ‰è¿”å›å€¼çš„è°ƒç”¨
+    const RI IVOK_FAST{"IVOK_FAST", -1, exes::ri_ivok_fast}; // ivok æŒ‡ä»¤ï¼šè°ƒç”¨å‡½æ•°ï¼Œå¯æ¥å—å¤šä¸ªå‚æ•°ï¼Œç”¨äºæœ‰è¿”å›å€¼çš„è°ƒç”¨
+    const RI UNTIL{"UNTIL", 2, exes::ri_until, true, true}; // until æŒ‡ä»¤ï¼šå¾ªç¯æ‰§è¡ŒæŒ‡ä»¤é›†ï¼Œç›´åˆ°æ¡ä»¶ä¸ºçœŸ
+    const RI EXIT{"EXIT", -1, exes::ri_exit}; // exit æŒ‡ä»¤ï¼šé€€å‡ºå±€éƒ¨åŸŸ
+    const RI SOUT{"SOUT", -1, exes::ri_sout}; // sout æŒ‡ä»¤ï¼šè¾“å‡ºå­—ç¬¦ä¸²ï¼Œå¯æ¥å—å¤šä¸ªå‚æ•°
+    const RI SIN{"SIN", -1, exes::ri_sin}; // sin æŒ‡ä»¤ï¼šè¾“å…¥å­—ç¬¦ä¸²ï¼Œå¯æ¥å—å¤šä¸ªå‚æ•°
     const RI FILE_GET{"FILE_GET", 3, exes::ri_file_get};
     const RI FILE_READ{"FILE_READ", 2, exes::ri_file_read};
     const RI FILE_WRITE{"FILE_WRITE", 2, exes::ri_file_write};
@@ -829,17 +856,17 @@ namespace ris {
     const RI ITER_SIZE{"ITER_SIZE", 2, exes::ri_iter_size};
     const RI ITER_GET{"ITER_GET", 3, exes::ri_iter_get};
     const RI ITER_TRAV{"ITER_TRAV", 3, exes::ri_iter_trav, true,
-                       true}; // iter_trav Ö¸Áî£º±éÀúµü´úÆ÷£¬½ÓÊÜÈı¸ö²ÎÊı£¬arg1£ºµü´úÈİÆ÷£¬arg2£º´æ´¢µü´úÔªËØ£¬arg3£º´æ´¢µü´úË÷Òı
+                       true}; // iter_trav æŒ‡ä»¤ï¼šéå†è¿­ä»£å™¨ï¼Œæ¥å—ä¸‰ä¸ªå‚æ•°ï¼Œarg1ï¼šè¿­ä»£å®¹å™¨ï¼Œarg2ï¼šå­˜å‚¨è¿­ä»£å…ƒç´ ï¼Œarg3ï¼šå­˜å‚¨è¿­ä»£ç´¢å¼•
     const RI ITER_REV_TRAV{"ITER_REV_TRAV", 3, exes::ri_iter_rev_trav, true,
-                       true}; // iter_rev_trav Ö¸Áî£º±éÀúµü´úÆ÷£¬½ÓÊÜÈı¸ö²ÎÊı£¬arg1£ºµü´úÈİÆ÷£¬arg2£º´æ´¢µü´úÔªËØ£¬arg3£º´æ´¢µü´úË÷Òı
+                       true}; // iter_rev_trav æŒ‡ä»¤ï¼šéå†è¿­ä»£å™¨ï¼Œæ¥å—ä¸‰ä¸ªå‚æ•°ï¼Œarg1ï¼šè¿­ä»£å®¹å™¨ï¼Œarg2ï¼šå­˜å‚¨è¿­ä»£å…ƒç´ ï¼Œarg3ï¼šå­˜å‚¨è¿­ä»£ç´¢å¼•
     const RI ITER_SET{"ITER_SET", 3,
-                      exes::ri_iter_set}; // iter_trav Ö¸Áî£º±éÀúµü´úÆ÷£¬½ÓÊÜÈı¸ö²ÎÊı£¬arg1£ºµü´úÈİÆ÷£¬arg2£º´æ´¢µü´úÔªËØ£¬arg3£º´æ´¢µü´úË÷Òı
+                      exes::ri_iter_set}; // iter_trav æŒ‡ä»¤ï¼šéå†è¿­ä»£å™¨ï¼Œæ¥å—ä¸‰ä¸ªå‚æ•°ï¼Œarg1ï¼šè¿­ä»£å®¹å™¨ï¼Œarg2ï¼šå­˜å‚¨è¿­ä»£å…ƒç´ ï¼Œarg3ï¼šå­˜å‚¨è¿­ä»£ç´¢å¼•
     const RI ITER_DEL{"ITER_DEL", -1, exes::ri_iter_del};
     const RI ITER_INSERT{"ITER_INSERT", 3, exes::ri_iter_insert};
     const RI ITER_UNPACK{"ITER_UNPACK", -1, exes::ri_iter_unpack};
-    const RI RAND_INT{"RAND_INT", 3, exes::ri_rand_int}; // rand_int Ö¸Áî£ºÉú³ÉËæ»úÊı£¬¿É½ÓÊÜÈı¸ö²ÎÊı£¬arg1£ºËæ»úÊı×îĞ¡Öµ£¬arg2£ºËæ»úÊı×î´óÖµ£¬arg3£º´æ´¢Ëæ»úÊı
-    const RI RAND_FLOAT{"RAND_FLOAT", 4, exes::ri_rand_float}; // rand_float Ö¸Áî£ºÉú³ÉËæ»úÊı£¬¿É½ÓÊÜÈı¸ö²ÎÊı£¬arg1£ºËæ»úÊı×îĞ¡Öµ£¬arg2£ºËæ»úÊı×î´óÖµ£¬arg3£º´æ´¢Ëæ»úÊı
-    const RI TIME_NOW{"TIME_NOW", 4, exes::ri_rand_float}; // rand_float Ö¸Áî£ºÉú³ÉËæ»úÊı£¬¿É½ÓÊÜÈı¸ö²ÎÊı£¬arg1£ºËæ»úÊı×îĞ¡Öµ£¬arg2£ºËæ»úÊı×î´óÖµ£¬arg3£º´æ´¢Ëæ»úÊı
+    const RI RAND_INT{"RAND_INT", 3, exes::ri_rand_int}; // rand_int æŒ‡ä»¤ï¼šç”Ÿæˆéšæœºæ•°ï¼Œå¯æ¥å—ä¸‰ä¸ªå‚æ•°ï¼Œarg1ï¼šéšæœºæ•°æœ€å°å€¼ï¼Œarg2ï¼šéšæœºæ•°æœ€å¤§å€¼ï¼Œarg3ï¼šå­˜å‚¨éšæœºæ•°
+    const RI RAND_FLOAT{"RAND_FLOAT", 4, exes::ri_rand_float}; // rand_float æŒ‡ä»¤ï¼šç”Ÿæˆéšæœºæ•°ï¼Œå¯æ¥å—ä¸‰ä¸ªå‚æ•°ï¼Œarg1ï¼šéšæœºæ•°æœ€å°å€¼ï¼Œarg2ï¼šéšæœºæ•°æœ€å¤§å€¼ï¼Œarg3ï¼šå­˜å‚¨éšæœºæ•°
+    const RI TIME_NOW{"TIME_NOW", 4, exes::ri_rand_float}; // rand_float æŒ‡ä»¤ï¼šç”Ÿæˆéšæœºæ•°ï¼Œå¯æ¥å—ä¸‰ä¸ªå‚æ•°ï¼Œarg1ï¼šéšæœºæ•°æœ€å°å€¼ï¼Œarg2ï¼šéšæœºæ•°æœ€å¤§å€¼ï¼Œarg3ï¼šå­˜å‚¨éšæœºæ•°
     const RI LOADIN{"LOADIN", -1, exes::ri_loadin};
     const RI LINK{"LINK", -1, exes::ri_link};
     const RI EXT_GET{"EXT_GET", 3, exes::ri_ext_get};
@@ -859,11 +886,7 @@ namespace ris {
     const RI TP_GET_SUPER_FIELD{"TP_GET_SUPER_FIELD", 4, exes::ri_tp_get_super_field};
     const RI TP_DERIVE{"TP_DERIVE", 2, exes::ri_tp_derive};
     const RI TP_CHECK_RELATE{"TP_CHECK_RELATE", 3, exes::ri_tp_check_relate};
-    const RI SP_SET{"SP_SET", 1, exes::ri_sp_set};
-    const RI SP_GET{"SP_GET", 1, exes::ri_sp_get};
-    const RI SP_NEW{"SP_NEW", 1, exes::ri_sp_new}; // sp_new Ö¸Áî£º´´½¨Ò»¸öĞÂÓò²¢×Ô¶¯ÉèÖÃÎªµ±Ç°×÷ÓÃÓò£¬½ÓÊÜÒ»¸ö²ÎÊı£¬Ö¸Áî½«ĞÂÓòµÄID´æ´¢µ½²ÎÊıÖĞ
-    const RI SP_DEL{"SP_DEL", 1, exes::ri_sp_del}; // sp_del Ö¸Áî£ºÊÍ·ÅÖ¸¶¨µÄÓò£¬½ÓÊÜÒ»¸ö²ÎÊı
-    const RI QOT{"QOT", 2, exes::ri_qot}; // qot Ö¸Áî£º½«Ö¸¶¨Êı¾İµÄID´æ´¢µ½²ÎÊıÖĞ£¬¿É½ÓÊÜÁ½¸ö²ÎÊı
+    const RI QOT{"QOT", 2, exes::ri_qot}; // qot æŒ‡ä»¤ï¼šå°†æŒ‡å®šæ•°æ®çš„IDå­˜å‚¨åˆ°å‚æ•°ä¸­ï¼Œå¯æ¥å—ä¸¤ä¸ªå‚æ•°
     const RI QOT_VAL{"QOT_VAL", 2, exes::ri_qot_val};
     const RI EXPOSE{"EXPOSE", 1, exes::ri_expose};
     const RI ATMP{"ATMP", 0, exes::ri_atmp, true};
@@ -880,7 +903,7 @@ namespace ris {
     const RI DICT_DEL{"DICT_DEL", -1, exes::ri_dict_del};
     const RI DICT_KEYS{"DICT_KEYS", 2, exes::ri_dict_keys};
     const RI DICT_VALUES{"DICT_VALUES", 2, exes::ri_dict_values};
-    // ToDo: Ìí¼Óµü´úÆ÷Ïà¹ØÖ¸Áî
+    // ToDo: æ·»åŠ è¿­ä»£å™¨ç›¸å…³æŒ‡ä»¤
 }
 
 namespace core::data {
@@ -1001,9 +1024,27 @@ namespace tools {
         switch (arg.getType()) {
             case utils::ArgType::keyword:
             case utils::ArgType::identifier: {
+                /*
+                 * æ§½ä½å¯»å€ï¼šè§£ææœŸå·²æŠŠ (å¸§ä¸‹æ ‡, æ§½ä½å·) ç›´æ¥æŒ‚åœ¨å‚æ•°ä¸Šã€‚
+                 *
+                 * æœ¬å‡½æ•°æ˜¯ noexceptï¼Œä¸èƒ½æŠ›å¼‚å¸¸ï¼Œæ‰€ä»¥åœ°å€ä¸å¯ç”¨æ—¶æŒ‰ç±»å‹åˆ†å¼€å¤„ç†ï¼š
+                 *   - keywordï¼šå¤šä¸ºå…¨å±€ DType åï¼ˆtp-int / tp-list â€¦ï¼‰æˆ–æ“ä½œæ•°å…³é”®å­—ï¼Œ
+                 *     å®ƒä»¬æœ¬æ¥å°±å¸¸é©» globalScope_ï¼Œå›é€€åˆ°æŒ‰åå­—æŸ¥æ‰¾å³å¯ï¼Œè¯­ä¹‰ä¸å˜ï¼›
+                 *   - identifierï¼šæœ¬åœ°/å‚æ•°å˜é‡ï¼Œå¿…é¡»æœ‰åœ°å€ï¼›ç¼ºå¤±æ—¶è¿”å›ç©ºï¼Œ
+                 *     ç”±è°ƒç”¨æ–¹ï¼ˆgetArgOriginDataï¼‰æŠ›å‡ºæ˜ç¡®é”™è¯¯ã€‚
+                 */
+                if (core::memory::isSlotBindingModeEnabled()) {
+                    if (arg.hasSlotRef()) {
+                        return core::memory::RVM_RUNTIME_MEMORY.readSlot(arg.getFrameIndex(),
+                                                                         arg.getSlotIndex());
+                    }
+                    if (arg.getType() == utils::ArgType::identifier) {
+                        return nullptr;
+                    }
+                }
                 auto [dataID, data] = data_space_pool.findDataByNameNoLock(arg.getValue());
                 if (!data) {
-                    return nullptr; // ·µ»Ø nullptr ±íÊ¾ÕÒ²»µ½Êı¾İ
+                    return nullptr; // è¿”å› nullptr è¡¨ç¤ºæ‰¾ä¸åˆ°æ•°æ®
                 }
                 return data;
             }
@@ -1015,21 +1056,21 @@ namespace tools {
                     case utils::NumType::double_type:
                         return std::make_shared<data::Float>(num.double_value);
                     default:
-                        return nullptr; // ·µ»Ø nullptr ±íÊ¾ÎŞĞ§µÄÊı×ÖÀàĞÍ
+                        return nullptr; // è¿”å› nullptr è¡¨ç¤ºæ— æ•ˆçš„æ•°å­—ç±»å‹
                 }
             }
             case utils::ArgType::string: {
                 return std::make_shared<data::String>(arg.getValue());
             }
             default:
-                return nullptr; // ·µ»Ø nullptr ±íÊ¾ÎŞĞ§µÄ²ÎÊıÀàĞÍ
+                return nullptr; // è¿”å› nullptr è¡¨ç¤ºæ— æ•ˆçš„å‚æ•°ç±»å‹
         }
     }
 
     std::shared_ptr<base::RVM_Data> getArgOriginData(const utils::Arg &arg) {
         auto result = getArgOriginDataNoError(arg);
         if (!result) {
-            // ¸ù¾İ²»Í¬µÄÇé¿öÅ×³ö¶ÔÓ¦µÄÒì³£
+            // æ ¹æ®ä¸åŒçš„æƒ…å†µæŠ›å‡ºå¯¹åº”çš„å¼‚å¸¸
             switch (arg.getType()) {
                 case utils::ArgType::keyword:
                 case utils::ArgType::identifier:
@@ -1124,7 +1165,7 @@ namespace tools {
                                       const components::Ins& ins, const utils::Arg& arg,
                                       const int& argIndex, const std::unordered_set<id::TypeID*>& allowedTypeIds)
     {
-        // ¼ì²éÊı¾İÖ¸ÕëÊÇ·ñÓĞĞ§
+        // æ£€æŸ¥æ•°æ®æŒ‡é’ˆæ˜¯å¦æœ‰æ•ˆ
         if (!arg_data) {
             throw base::errors::DataTypeMismatchError(
                 arg.getPosStr(), ins.raw_code,
@@ -1133,13 +1174,13 @@ namespace tools {
             );
         }
 
-        // ¼ì²éÊµ¼ÊÀàĞÍÊÇ·ñÔÚÔÊĞíµÄÀàĞÍ¼¯ºÏÖĞ
+        // æ£€æŸ¥å®é™…ç±»å‹æ˜¯å¦åœ¨å…è®¸çš„ç±»å‹é›†åˆä¸­
         if (const auto& actualTypeId = arg_data->getTypeID();
             !std::ranges::any_of(allowedTypeIds, [&](const auto &item)
             {
                 return item->fullEqualWith(actualTypeId);
             })) {
-            // ¹¹½¨ÔÊĞíµÄÀàĞÍÁĞ±í×Ö·û´®
+            // æ„å»ºå…è®¸çš„ç±»å‹åˆ—è¡¨å­—ç¬¦ä¸²
             std::string allowedTypesStr;
             for (const auto& typeId : allowedTypeIds) {
                 if (!allowedTypesStr.empty()) {
@@ -1148,13 +1189,13 @@ namespace tools {
                 allowedTypesStr += typeId->toString();
             }
 
-            // ×îºóÒ»¸ö¶ººÅÌæ»»Îª"»ò"£¬Ê¹´íÎóĞÅÏ¢¸ü×ÔÈ»
+            // æœ€åä¸€ä¸ªé€—å·æ›¿æ¢ä¸º"æˆ–"ï¼Œä½¿é”™è¯¯ä¿¡æ¯æ›´è‡ªç„¶
             if (const size_t lastCommaPos = allowedTypesStr.find_last_of(',');
                 lastCommaPos != std::string::npos) {
                 allowedTypesStr.replace(lastCommaPos, 2, " or");
             }
 
-            // Å×³öÀàĞÍ²»Æ¥ÅäÒì³£
+            // æŠ›å‡ºç±»å‹ä¸åŒ¹é…å¼‚å¸¸
             throw base::errors::DataTypeMismatchError(
                 arg.getPosStr(), ins.raw_code,
                 {"Argument at position " + std::to_string(argIndex) + " of " + ins.ri->toString() +
@@ -1211,7 +1252,7 @@ namespace tools {
 
 }
 
-// Ö¸ÁîÖ´ĞĞº¯Êı
+// æŒ‡ä»¤æ‰§è¡Œå‡½æ•°
 namespace exes {
 
     ExecutionStatus ri_flag(const Ins &ins, size_t &pointer, const StdArgs &args) {
@@ -1238,7 +1279,23 @@ namespace exes {
         return ExecutionStatus::Success;
     }
 
-    // ´´½¨±äÁ¿
+    // åˆ›å»ºå˜é‡
+    namespace {
+        /*
+         * å£°æ˜ç±»æŒ‡ä»¤ï¼ˆALLOT / FUNC / FUNI / TP_DEFï¼‰çš„å…¬å…±åŠ¨ä½œï¼š
+         * æŠŠæ–°åå­—çš„æ•°æ®å†™è¿›è§£ææœŸå°±ä¸ºå®ƒå®šå¥½çš„æ§½ä½ã€‚
+         *
+         * åœ°å€å·²ç›´æ¥æŒ‚åœ¨å‚æ•°ä¸Šï¼Œè¿™é‡Œä¸åšä»»ä½•æŸ¥æ‰¾ï¼›ä¸åœ¨æ§½ä½æ¨¡å¼æ—¶è¿”å› falseï¼Œç”±è°ƒç”¨æ–¹èµ°æ—§è·¯å¾„ã€‚
+         */
+        bool writeDeclarationSlot(const utils::Arg &arg, std::shared_ptr<base::RVM_Data> data) {
+            if (!core::memory::isSlotBindingModeEnabled() || !arg.hasSlotRef()) {
+                return false;
+            }
+            return core::memory::RVM_RUNTIME_MEMORY.writeSlot(arg.getFrameIndex(), arg.getSlotIndex(),
+                                                              std::move(data));
+        }
+    }
+
     ExecutionStatus ri_allot(const Ins &ins, size_t &pointer, const StdArgs &args) {
         for (const auto &arg: args) {
             if (arg.getType() != utils::ArgType::identifier) {
@@ -1251,6 +1308,10 @@ namespace exes {
                                                        utils::getTypeFormatString(utils::ArgType::identifier) +
                                                        "."});
                 return ExecutionStatus::FailedWithError;
+            }
+            // æ§½ä½æ¨¡å¼ï¼šæ–°åå­—çš„æ§½ä½åœ¨è§£ææœŸå°±å·²ç¡®å®šï¼Œç›´æ¥å†™å…¥æ§½ä½
+            if (writeDeclarationSlot(arg, std::make_shared<data::Null>(data::Null()))) {
+                continue;
             }
             try {
                 data_space_pool.addData(arg.getValue(), std::make_shared<data::Null>(data::Null()));
@@ -1268,7 +1329,7 @@ namespace exes {
         return ExecutionStatus::Success;
     }
 
-    // É¾³ı±äÁ¿
+    // åˆ é™¤å˜é‡
     ExecutionStatus ri_delete(const Ins &ins, size_t &pointer, const StdArgs &args) {
         utils::Arg error_arg;
         try {
@@ -1301,15 +1362,15 @@ namespace exes {
 
     ExecutionStatus mov(const std::shared_ptr<base::RVM_Data> &source_data,
                         const std::shared_ptr<base::RVM_Data> &target_data,
-                        const std::string &target_data_name, const bool is_copy){
+                        const utils::Arg &target_arg, const bool is_copy){
         if (is_copy) {
             if (const auto copied_data = source_data->copy_ptr();
                 !target_data->updateData(copied_data)){
-                data_space_pool.updateDataByNameNoLock(target_data_name, copied_data);
+                data_space_pool.updateDataByArgOrName(target_arg, target_arg.getValue(), copied_data);
             }
         } else {
             if (!target_data->updateData(source_data)){
-                data_space_pool.updateDataByNameNoLock(target_data_name, source_data);
+                data_space_pool.updateDataByArgOrName(target_arg, target_arg.getValue(), source_data);
             }
         }
         return ExecutionStatus::Success;
@@ -1334,7 +1395,7 @@ namespace exes {
             const auto &source_data = tools::getArgOriginData(arg1);
             error_arg = arg2;
             const auto &target_data = tools::getArgOriginData(arg2);
-            return mov(source_data, target_data, arg2.getValue(), !tools::isIterableData(source_data->getTypeID()));
+            return mov(source_data, target_data, arg2, !tools::isIterableData(source_data->getTypeID()));
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(error_arg.getPos().toString(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
@@ -1362,7 +1423,7 @@ namespace exes {
             const auto &source_data = tools::getArgOriginData(args[0]);
             error_arg = args[1];
             const auto &target_data = tools::getArgOriginData(args[1]);
-            return mov(source_data, target_data, args[1].getValue(), true);
+            return mov(source_data, target_data, args[1], true);
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(error_arg.getPos().toString(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
@@ -1394,7 +1455,7 @@ namespace exes {
         }();
 
         try {
-            // ¼ì²éÊÇ·ñÓĞÈÎºÎÒ»¸ö²ÎÊıÊÇIterableÀàĞÍ
+            // æ£€æŸ¥æ˜¯å¦æœ‰ä»»ä½•ä¸€ä¸ªå‚æ•°æ˜¯Iterableç±»å‹
             const auto &isData1Iterable = tools::isIterableData(data1->getTypeID());
             const auto &isData2Iterable = tools::isIterableData(data2->getTypeID());
             std::shared_ptr<base::RVM_Data> result;
@@ -1432,12 +1493,12 @@ namespace exes {
                 }
             } else
             {
-                // ¼ì²éÊÇ·ñ¶¼ÊÇNumericÀàĞÍ
+                // æ£€æŸ¥æ˜¯å¦éƒ½æ˜¯Numericç±»å‹
                 const auto numeric1 = dynamic_pointer_cast<data::Numeric>(data1);
                 const auto numeric2 = dynamic_pointer_cast<data::Numeric>(data2);
 
                 if (!numeric1 || !numeric2) {
-                    // ²»ÊÇÊıÖµÀàĞÍ£¬Å×³öÀàĞÍ²»Æ¥Åä´íÎó
+                    // ä¸æ˜¯æ•°å€¼ç±»å‹ï¼ŒæŠ›å‡ºç±»å‹ä¸åŒ¹é…é”™è¯¯
                     const auto &error_arg = (!numeric1 ? args[0] : args[1]);
                     const auto &error_data = !numeric1 ? data1 : data2;
                     throw base::errors::ArgTypeMismatchError(
@@ -1451,10 +1512,10 @@ namespace exes {
                              data::Iterable::typeId.toString() + "."});
                 }
 
-                // ¶¼ÊÇNumericÀàĞÍ£¬Ê¹ÓÃadd²Ù×÷
+                // éƒ½æ˜¯Numericç±»å‹ï¼Œä½¿ç”¨addæ“ä½œ
                 result = numeric1->add(numeric2);
             }
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(), result);
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), result);
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(args[2].getPosStr(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
@@ -1488,7 +1549,7 @@ namespace exes {
             throw std::runtime_error("Invalid argument types for addition: " + data1->getTypeID().toString());
             return ExecutionStatus::FailedWithError;
         }
-        data_space_pool.updateDataByNameNoLock(arg2.getValue(), result);
+        data_space_pool.updateDataByArgOrName(arg2, arg2.getValue(), result);
         return ExecutionStatus::Success;
     }
 
@@ -1501,7 +1562,7 @@ namespace exes {
         int repeat_times = 0;
         std::shared_ptr<base::RVM_Data> repeated_index = nullptr;
         if (args.size() == 2 && args[1].getValue() != "_") {
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(), std::make_shared<data::Int>(0));
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(), std::make_shared<data::Int>(0));
             repeated_index = tools::getArgOriginData(args[1]);
         }
         if (arg1.getType() == utils::ArgType::string) {
@@ -1535,6 +1596,20 @@ namespace exes {
     }
 
     ExecutionStatus ri_end(const Ins &ins, size_t &pointer, const StdArgs &args) {
+        /*
+         * æ§½ä½æ¨¡å¼ä¸‹ END ä¸èƒ½æ²¿ç”¨æ—§çš„ä½œç”¨åŸŸé‡Šæ”¾é€»è¾‘ã€‚
+         *
+         * æ—§ç³»ç»Ÿé æ¯æ¡ FUNC/REPEAT/UNTIL å¼€ä¸€ä¸ª RVM_Scopeï¼ŒEND è´Ÿè´£å›æ”¶å®ƒã€‚
+         * æ§½ä½æ¨¡å¼ä¸‹å‡½æ•°å¸§ç”±æ–°ç³»ç»Ÿç®¡ç†ã€æ ¹æœ¬æ²¡æœ‰å¯¹åº”çš„ RVM_Scopeï¼Œ
+         * æ­¤æ—¶ currentScope æ˜¯è°ƒç”¨æ–¹ï¼ˆæˆ–å¤–å±‚ï¼‰çš„ä½œç”¨åŸŸâ€”â€”æ— æ¡ä»¶é‡Šæ”¾ä¼šæŠŠåˆ«äººçš„ä½œç”¨åŸŸæ¯æ‰ï¼Œ
+         * å¤–å±‚éšåçš„æ‰§è¡Œå°±ä¼šå´©æºƒï¼ˆè¡¨ç°ä¸ºç¬¬äºŒæ¬¡ CALL ç›´æ¥æ®µé”™è¯¯ï¼‰ã€‚
+         *
+         * åªæœ‰ã€Œå»¶è¿Ÿé‡Šæ”¾ã€çš„å—ä½œç”¨åŸŸï¼ˆREPEAT / UNTIL / ITER_TRAV â€¦ï¼‰ä»ç„¶éœ€è¦ clear()ï¼Œ
+         * å®ƒä»¬çš„ RVM_Scope æ˜¯æ—§ç³»ç»ŸçœŸå®åˆ›å»ºçš„ï¼Œæ¸…ç©ºæ˜¯ä¸ºäº†è®©ä¸‹ä¸€è½®è¿­ä»£ä»å¹²å‡€çŠ¶æ€å¼€å§‹ã€‚
+         */
+        if (core::memory::isSlotBindingModeEnabled() && !ins.is_delayed_release_scope) {
+            return ExecutionStatus::Success;
+        }
         data_space_pool.setCurrentScopeByName(InsSet::exe_stack.back()->scope_name_stack.top());
         if (ins.is_delayed_release_scope) {
             data_space_pool.getCurrentScopeNoLock()->clear();
@@ -1549,12 +1624,13 @@ namespace exes {
             throw std::runtime_error("Invalid argument type: " + args[0].toString());
         }
         const auto &func_name = args[0].getValue();
-        // Ê¹ÓÃ emplace Ö±½ÓÔÚÈİÆ÷ÖĞ¹¹Ôì¶ÔÏó£¬±ÜÃâ¶îÍâµÄ¿½±´»òÒÆ¶¯
-        data_space_pool.addData(func_name,
-                                std::make_shared<data::Function>(func_name,
-                                                                       std::move(StdArgs{args.begin() + 1,
-                                                                                         args.end()}),
-                                                                       ins.scopeInsSet));
+        auto function = std::make_shared<data::Function>(
+                func_name, std::move(StdArgs{args.begin() + 1, args.end()}), ins.scopeInsSet);
+        // æ§½ä½æ¨¡å¼ï¼šå‡½æ•°ååœ¨è§£ææœŸå·²å å¥½æ§½ä½
+        if (writeDeclarationSlot(args[0], function)) {
+            return ExecutionStatus::Success;
+        }
+        data_space_pool.addData(func_name, function);
         return ExecutionStatus::Success;
     }
 
@@ -1563,12 +1639,13 @@ namespace exes {
             throw std::runtime_error("Invalid argument type: " + args[0].toString());
         }
         const auto &func_name = args[0].getValue();
-        // Ê¹ÓÃ emplace Ö±½ÓÔÚÈİÆ÷ÖĞ¹¹Ôì¶ÔÏó£¬±ÜÃâ¶îÍâµÄ¿½±´»òÒÆ¶¯
-        data_space_pool.addData(func_name,
-                                std::make_shared<data::RetFunction>(func_name,
-                                                                          std::move(StdArgs{args.begin() + 1,
-                                                                                            args.end()}),
-                                                                          ins.scopeInsSet));
+        auto function = std::make_shared<data::RetFunction>(
+                func_name, std::move(StdArgs{args.begin() + 1, args.end()}), ins.scopeInsSet);
+        // æ§½ä½æ¨¡å¼ï¼šå‡½æ•°ååœ¨è§£ææœŸå·²å å¥½æ§½ä½
+        if (writeDeclarationSlot(args[0], function)) {
+            return ExecutionStatus::Success;
+        }
+        data_space_pool.addData(func_name, function);
         return ExecutionStatus::Success;
     }
 
@@ -1577,7 +1654,7 @@ namespace exes {
     executeFunctionCall(const Ins &ins, size_t &pointer, const StdArgs &args,
                         const std::string &funcTypeName)
     {
-        // ¼ì²éµÚÒ»¸ö²ÎÊıÊÇ·ñÎªºÏ·¨ÀàĞÍ
+        // æ£€æŸ¥ç¬¬ä¸€ä¸ªå‚æ•°æ˜¯å¦ä¸ºåˆæ³•ç±»å‹
         static auto checkArgType = [&ins](const utils::Arg &arg) {
             if (arg.getType() != utils::ArgType::identifier && arg.getType() != utils::ArgType::keyword) {
                 throw base::errors::ArgTypeMismatchError(arg.getPosStr(), ins.raw_code,
@@ -1604,8 +1681,26 @@ namespace exes {
         std::shared_ptr<memory::RVM_Scope> space = nullptr;
 
         try {
-            // ²éÕÒº¯Êı
-            auto [func_id, func] = data_space_pool.findDataByNameNoLock(func_name);
+            /*
+             * æŸ¥æ‰¾å‡½æ•°ã€‚
+             *
+             * æ§½ä½æ¨¡å¼ä¸‹å¿…é¡»ã€åªã€‘èµ°æ§½ä½ï¼Œä¸èƒ½å…ˆæŸ¥æ—§å†…å­˜ï¼šri_func / ri_funi åœ¨æ§½ä½æ¨¡å¼ä¸‹
+             * åªæŠŠå‡½æ•°å¯¹è±¡å†™è¿›å¸§æ§½ä½ã€ä¸å†™æ—§å†…å­˜ï¼Œæ‰€ä»¥æ—§å†…å­˜é‡Œæ ¹æœ¬æ²¡æœ‰è¿™ä¸ªåå­—ï¼Œ
+             * å…ˆæŸ¥æ—§å†…å­˜æ˜¯å¤šä½™ä¸”ä¼šå´©çš„ã€‚
+             */
+            std::shared_ptr<base::RVM_Data> func;
+            id::DataID func_id{};
+            if (core::memory::isSlotBindingModeEnabled()) {
+                // å‡½æ•°åå‚æ•°ä¸Šå·²å¸¦åœ°å€ï¼Œç›´æ¥è¯»æ§½ä½
+                if (args[0].hasSlotRef()) {
+                    func = core::memory::RVM_RUNTIME_MEMORY.readSlot(args[0].getFrameIndex(),
+                                                                    args[0].getSlotIndex());
+                }
+            } else {
+                auto [legacyId, legacyFunc] = data_space_pool.findDataByNameNoLock(func_name);
+                func = legacyFunc;
+                func_id = legacyId;
+            }
             if (func == nullptr) {
                 throw base::RVM_Error(base::ErrorType::MemoryError, args[0].getPosStr(), ins.raw_code,
                                       {"This error is caused by the access memory space does not exist.",
@@ -1630,7 +1725,7 @@ namespace exes {
 
             function = std::static_pointer_cast<FuncType>(func);
 
-            // ¼ì²é²ÎÊıÊıÁ¿
+            // æ£€æŸ¥å‚æ•°æ•°é‡
             const size_t requiredArgCount = function->args.size();
 
             std::vector<std::shared_ptr<base::RVM_Data>> arg_table{};
@@ -1666,12 +1761,40 @@ namespace exes {
                                                                                                "number of arguments defined by the function."});
             }
 
-            // °ó¶¨²ÎÊı
-            space = data_space_pool.acquireScope(pre_FUNC + function->func_name);
-            const auto &arg_size = args.size();
-            for (size_t i = 0; i < requiredArgCount; ++i) {
-                error_arg = args[i + 1 < arg_size ? i + 1 : arg_size - 1];
-                space->addDataByName(function->args[i].getValue(), arg_table[i]);
+            // ç»‘å®šå‚æ•°
+            if (core::memory::isSlotBindingModeEnabled()) {
+                /*
+                 * æ§½ä½å¯»å€ï¼šä¸æ–°å»ºè°ƒç”¨ä½œç”¨åŸŸã€ä¸æŒ‰åå­—ç»‘å®šå‚æ•°ã€‚
+                 * è¢«è°ƒå‡½æ•°çš„å¸§å·²åœ¨è§£ææœŸå»ºå¥½ï¼Œè¿™é‡ŒåªæŠŠå®å‚å†™è¿›å½¢å‚æ§½ä½ã€å¤ä½å…¶ä½™å±€éƒ¨æ§½ä½ã€‚
+                 * å½¢å‚æŒ‰å£°æ˜é¡ºåºå è¯¥å¸§æ§½ä½çš„æœ€å‰é¢ï¼ˆè§£ææœŸä¿è¯ï¼‰ã€‚
+                 */
+                // è¢«è°ƒå‡½æ•°ä½“çš„å¸§ä¸‹æ ‡è§£ææœŸå·²å†™åœ¨å®ƒçš„æŒ‡ä»¤é›†ä¸Š
+                const auto calleeFrame =
+                        core::memory::RVM_RUNTIME_MEMORY.frameAt(function->func_body->frameIndex);
+                if (!calleeFrame) {
+                    throw base::errors::MemoryError(
+                            error_arg.getPosStr(), ins.raw_code,
+                            {"No runtime frame for the callee", "Callee: " + function->func_name},
+                            {"This indicates a parse-time frame model error."});
+                }
+                calleeFrame->resetSlots();
+                for (size_t i = 0; i < requiredArgCount; ++i) {
+                    if (!calleeFrame->setSlot(i, arg_table[i])) {
+                        throw base::errors::MemoryError(
+                                error_arg.getPosStr(), ins.raw_code,
+                                {"Failed to bind parameter #" + std::to_string(i) +
+                                 " of function " + function->func_name,
+                                 "Frame slot: " + std::to_string(i)},
+                                {"This indicates a parse-time slot model error."});
+                    }
+                }
+            } else {
+                space = data_space_pool.acquireScope(pre_FUNC + function->func_name);
+                const auto &arg_size = args.size();
+                for (size_t i = 0; i < requiredArgCount; ++i) {
+                    error_arg = args[i + 1 < arg_size ? i + 1 : arg_size - 1];
+                    space->addDataByName(function->args[i].getValue(), arg_table[i]);
+                }
             }
         } catch (const base::errors::MemoryError &) {
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
@@ -1680,11 +1803,17 @@ namespace exes {
                                             {"Use the " + ris::ALLOT.toString() +
                                              " to allocate a memory space before manipulating it."});
         }
-        // µ÷ÓÃº¯Êı
+        // è°ƒç”¨å‡½æ•°
         const auto &res = function->func_body->execute();
         if (res == ExecutionStatus::AbortedFunction || res == ExecutionStatus::ExposedError)
         {
-            data_space_pool.releaseScopeNoLock(space);
+            /*
+             * åªæœ‰æ—§è·¯å¾„éœ€è¦é‡Šæ”¾è°ƒç”¨ä½œç”¨åŸŸã€‚æ§½ä½æ¨¡å¼ä¸‹æ²¡æœ‰æ–°å»ºè°ƒç”¨ä½œç”¨åŸŸï¼ˆspace ä¸ºç©ºï¼‰ï¼Œ
+             * å‡½æ•°å¸§ç”±æ–°ç³»ç»Ÿç®¡ç†ï¼›è¿™é‡Œå¿…é¡»åˆ¤ç©ºï¼Œå¦åˆ™ releaseScopeNoLock ä¼šè§£å¼•ç”¨ç©ºæŒ‡é’ˆã€‚
+             */
+            if (space != nullptr) {
+                data_space_pool.releaseScopeNoLock(space);
+            }
         }
         return {res, function};
     }
@@ -1705,7 +1834,7 @@ namespace exes {
                                   {"Check that the argument passed into the invoking func match the " +
                                    ins.ri->toString() + " defined by the func."});
         }
-        // ¼ì²é×îºóÒ»¸ö²ÎÊıÊÇ·ñÎªºÏ·¨ÀàĞÍ
+        // æ£€æŸ¥æœ€åä¸€ä¸ªå‚æ•°æ˜¯å¦ä¸ºåˆæ³•ç±»å‹
         auto &ret_name_arg = args[args.size() - 1];
         if (ret_name_arg.getType() != utils::ArgType::identifier &&
             ret_name_arg.getType() != utils::ArgType::keyword) {
@@ -1731,8 +1860,19 @@ namespace exes {
         }
         if (func && func->getTypeID() == data::RetFunction::typeId) {
             try {
-                data_space_pool.updateDataByNameNoLock(ret_name_arg.getValue(),
-                                                       data_space_pool.findDataByIDNoLock(SR_SPACE_ID)->copy_ptr());
+                // æ§½ä½æ¨¡å¼ï¼šè¿”å›å€¼ç›´æ¥å†™è¿›ç›®æ ‡æ§½ä½ï¼Œä¸ç»è¿‡æ—§å†…å­˜
+                if (core::memory::isSlotBindingModeEnabled()) {
+                    if (!ret_name_arg.hasSlotRef()
+                        || !core::memory::RVM_RUNTIME_MEMORY.writeSlot(
+                                ret_name_arg.getFrameIndex(), ret_name_arg.getSlotIndex(),
+                                data_space_pool.findDataByIDNoLock(SR_SPACE_ID)->copy_ptr())) {
+                        throw core::memory::makeSlotModelError("ivok-return",
+                                                              ret_name_arg.getValue());
+                    }
+                } else {
+                    data_space_pool.updateDataByArgOrName(ret_name_arg, ret_name_arg.getValue(),
+                            data_space_pool.findDataByIDNoLock(SR_SPACE_ID)->copy_ptr());
+                }
                 data_space_pool.updateDataByIDNoLock(SR_SPACE_ID, data::nullInstance.copy_ptr());
             } catch (const base::errors::MemoryError &) {
                 throw base::errors::MemoryError(ret_name_arg.getPosStr(), ins.raw_code,
@@ -1752,14 +1892,36 @@ namespace exes {
     {
         const auto& func_name = args[0].getValue();
 
-        // ²éÕÒº¯Êı
-        auto [func_id, func] = data_space_pool.findDataByNameNoLock(func_name);
+        /*
+         * æŸ¥æ‰¾å‡½æ•°ã€‚
+         *
+         * æ§½ä½æ¨¡å¼ä¸‹å¿…é¡»ã€åªã€‘èµ°æ§½ä½ï¼šri_func / ri_funi åœ¨æ§½ä½æ¨¡å¼ä¸‹åªæŠŠå‡½æ•°å¯¹è±¡å†™è¿›å¸§æ§½ä½ã€
+         * ä¸å†™æ—§å†…å­˜ï¼Œå…ˆæŸ¥æ—§å†…å­˜æ—¢å¤šä½™åˆä¼šå´©ã€‚
+         */
+        std::shared_ptr<base::RVM_Data> func;
+        if (core::memory::isSlotBindingModeEnabled()) {
+            // å‡½æ•°åå‚æ•°ä¸Šå·²å¸¦åœ°å€ï¼Œç›´æ¥è¯»æ§½ä½
+            if (args[0].hasSlotRef()) {
+                func = core::memory::RVM_RUNTIME_MEMORY.readSlot(args[0].getFrameIndex(),
+                                                                args[0].getSlotIndex());
+            }
+        } else {
+            auto [legacyId, legacyFunc] = data_space_pool.findDataByNameNoLock(func_name);
+            func = legacyFunc;
+        }
         tools::processQuotedData(func);
+        if (func == nullptr) {
+            throw base::RVM_Error(base::ErrorType::MemoryError, args[0].getPosStr(), ins.raw_code,
+                                  {"This error is caused by the access memory space does not exist.",
+                                   "Nonexistent Function Name: " + args[0].toString()},
+                                  {"The function is defined using the " + ris::FUNC.toString() +
+                                   " before it is called."});
+        }
 
         std::shared_ptr<FuncType> function = std::static_pointer_cast<FuncType>(func);
         const size_t requiredArgCount = function->args.size();
 
-        // ×¼±¸²ÎÊı±í
+        // å‡†å¤‡å‚æ•°è¡¨
         std::vector<std::shared_ptr<base::RVM_Data>> arg_table{};
         for (int i = 1; i < args.size(); ++i)
         {
@@ -1787,14 +1949,43 @@ namespace exes {
         const bool is_ret_func = func->getTypeID().fullEqualWith(data::RetFunction::typeId);
         const size_t providedArgCount = is_ret_func ? arg_table.size() - 1 : arg_table.size();
 
-        // °ó¶¨²ÎÊıµ½×÷ÓÃÓò
+        // ç»‘å®šå‚æ•°åˆ°ä½œç”¨åŸŸ
+        if (core::memory::isSlotBindingModeEnabled()) {
+            /*
+             * æ§½ä½å¯»å€ï¼šä¸æ–°å»ºè°ƒç”¨ä½œç”¨åŸŸã€ä¸æŒ‰åå­—ç»‘å®šå‚æ•°ã€‚
+             * è¢«è°ƒå‡½æ•°çš„å¸§å·²åœ¨è§£ææœŸå»ºå¥½ï¼Œè¿™é‡ŒåªæŠŠå®å‚å†™è¿›å½¢å‚æ§½ä½ã€å¤ä½å…¶ä½™å±€éƒ¨æ§½ä½ã€‚
+             */
+            // è¢«è°ƒå‡½æ•°ä½“çš„å¸§ä¸‹æ ‡è§£ææœŸå·²å†™åœ¨å®ƒçš„æŒ‡ä»¤é›†ä¸Š
+            const auto calleeFrame =
+                    core::memory::RVM_RUNTIME_MEMORY.frameAt(function->func_body->frameIndex);
+            if (!calleeFrame) {
+                throw base::errors::MemoryError(
+                        args[0].getPosStr(), ins.raw_code,
+                        {"No runtime frame for the callee", "Callee: " + function->func_name},
+                        {"This indicates a parse-time frame model error."});
+            }
+            calleeFrame->resetSlots();
+            for (size_t i = 0; i < requiredArgCount; ++i) {
+                if (!calleeFrame->setSlot(i, arg_table[i])) {
+                    throw base::errors::MemoryError(
+                            args[0].getPosStr(), ins.raw_code,
+                            {"Failed to bind parameter #" + std::to_string(i) +
+                             " of function " + function->func_name,
+                             "Frame slot: " + std::to_string(i)},
+                            {"This indicates a parse-time slot model error."});
+                }
+            }
+            const auto &res = function->func_body->execute();
+            return {res, function};
+        }
+
         auto space = data_space_pool.acquireScope(pre_FUNC + function->func_name);
         for (size_t i = 0; i < requiredArgCount; ++i)
         {
             space->addDataByName(function->args[i].getValue(), arg_table[i]);
         }
 
-        // µ÷ÓÃº¯Êı
+        // è°ƒç”¨å‡½æ•°
         const auto& res = function->func_body->execute();
         if (res == ExecutionStatus::AbortedFunction || res == ExecutionStatus::ExposedError)
         {
@@ -1821,7 +2012,19 @@ namespace exes {
 
         if (func && func->getTypeID() == data::RetFunction::typeId)
         {
-            data_space_pool.updateDataByNameNoLock(ret_name_arg.getValue(),
+            // æ§½ä½æ¨¡å¼ï¼šè¿”å›å€¼ç›´æ¥å†™è¿›ç›®æ ‡æ§½ä½ï¼Œä¸ç»è¿‡æ—§å†…å­˜
+            if (core::memory::isSlotBindingModeEnabled()) {
+                if (!ret_name_arg.hasSlotRef()
+                    || !core::memory::RVM_RUNTIME_MEMORY.writeSlot(
+                            ret_name_arg.getFrameIndex(), ret_name_arg.getSlotIndex(),
+                            data_space_pool.findDataByIDNoLock(SR_SPACE_ID)->copy_ptr())) {
+                    throw core::memory::makeSlotModelError("ivok-return",
+                                                          ret_name_arg.getValue());
+                }
+                data_space_pool.updateDataByIDNoLock(SR_SPACE_ID, data::nullInstance.copy_ptr());
+                return ExecutionStatus::Success;
+            }
+            data_space_pool.updateDataByArgOrName(ret_name_arg, ret_name_arg.getValue(),
                                                    data_space_pool.findDataByIDNoLock(SR_SPACE_ID)->copy_ptr());
             data_space_pool.updateDataByIDNoLock(SR_SPACE_ID, data::nullInstance.copy_ptr());
             return ExecutionStatus::Success;
@@ -1955,7 +2158,7 @@ namespace exes {
 
     ExecutionStatus ri_sin(const Ins &ins, size_t &pointer, const StdArgs &args) {
         io->flushOutputCache();
-        // Ê×ÏÈ¼ì²é²ÎÊıÀàĞÍÊÇ·ñÎª¹Ø¼ü×ÖÀàĞÍ
+        // é¦–å…ˆæ£€æŸ¥å‚æ•°ç±»å‹æ˜¯å¦ä¸ºå…³é”®å­—ç±»å‹
         if (args[0].getType() != utils::ArgType::keyword) {
             throw base::RVM_Error(
                     base::ErrorType::SyntaxError,
@@ -1970,7 +2173,7 @@ namespace exes {
             );
             return ExecutionStatus::FailedWithError;
         }
-        // ÀàĞÍÕıÈ·£¬³¢ÊÔ½âÎö²ÎÊıÖµ
+        // ç±»å‹æ­£ç¡®ï¼Œå°è¯•è§£æå‚æ•°å€¼
         const auto ri_opt = RI::getRIByStr(args[0].getValue());
         const auto &flag = ri_opt;
         if (!flag) {
@@ -1987,7 +2190,7 @@ namespace exes {
             );
             return ExecutionStatus::FailedWithError;
         }
-        // ¼ì²é½âÎöºóµÄÖµÊÇ·ñÔÚÔÊĞí·¶Î§ÄÚ
+        // æ£€æŸ¥è§£æåçš„å€¼æ˜¯å¦åœ¨å…è®¸èŒƒå›´å†…
         if (!ris::S_L.equalWith(flag) && !ris::S_M.equalWith(flag)) {
             throw base::RVM_Error(
                     base::ErrorType::SyntaxError,
@@ -2002,7 +2205,7 @@ namespace exes {
             );
             return ExecutionStatus::FailedWithError;
         }
-        // ¶¨ÒåÊı¾İÀàĞÍÓ³Éä
+        // å®šä¹‰æ•°æ®ç±»å‹æ˜ å°„
         static const std::unordered_map<std::string, base::IODataType> type_map = {
                 {data::Int::typeId.toString(),    base::IODataType::Int},
                 {data::Float::typeId.toString(),  base::IODataType::Float},
@@ -2011,12 +2214,12 @@ namespace exes {
                 {data::Null::typeId.toString(),   base::IODataType::Null},
                 {data::String::typeId.toString(), base::IODataType::String}
         };
-        auto input_type = base::IODataType::String; // Ä¬ÈÏÎª×Ö·û´®ÀàĞÍ
+        auto input_type = base::IODataType::String; // é»˜è®¤ä¸ºå­—ç¬¦ä¸²ç±»å‹
         auto updateData = [&input_type](const utils::Arg &arg) {
             const auto &input_str = io->nextString();
             switch (input_type) {
                 case base::IODataType::String: {
-                    data_space_pool.updateDataByNameNoLock(arg.getValue(),
+                    data_space_pool.updateDataByArgOrName(arg, arg.getValue(),
                                                            std::make_shared<data::String>(input_str));
                     break;
                 }
@@ -2024,13 +2227,13 @@ namespace exes {
                     if (!utils::isNumber(input_str)) {
                         throw base::errors::ArgTypeMismatchError(unknown_, input_str, {}, {});
                     }
-                    data_space_pool.updateDataByNameNoLock(arg.getValue(),
+                    data_space_pool.updateDataByArgOrName(arg, arg.getValue(),
                                                            std::make_shared<data::Int>(
                                                                    utils::stringToInt(input_str)));
                     break;
                 }
                 case base::IODataType::Null: {
-                    data_space_pool.updateDataByNameNoLock(arg.getValue(),
+                    data_space_pool.updateDataByArgOrName(arg, arg.getValue(),
                                                            std::make_shared<data::Null>());
                     break;
                 }
@@ -2039,7 +2242,7 @@ namespace exes {
                         throw base::errors::ArgTypeMismatchError(unknown_, input_str, {}, {});
                     }
                     const auto &input_float = utils::stringToDouble(input_str);
-                    data_space_pool.updateDataByNameNoLock(arg.getValue(),
+                    data_space_pool.updateDataByArgOrName(arg, arg.getValue(),
                                                            std::make_shared<data::Float>(input_float));
                     break;
                 }
@@ -2047,7 +2250,7 @@ namespace exes {
                     if (!utils::isNumber(input_str)) {
                         throw base::errors::ArgTypeMismatchError(unknown_, input_str, {}, {});
                     }
-                    data_space_pool.updateDataByNameNoLock(arg.getValue(),
+                    data_space_pool.updateDataByArgOrName(arg, arg.getValue(),
                                                            std::make_shared<data::Char>(
                                                                    utils::stringToChar(input_str)));
                     break;
@@ -2056,7 +2259,7 @@ namespace exes {
                     if (!utils::isNumber(input_str)) {
                         throw base::errors::ArgTypeMismatchError(unknown_, input_str, {}, {});
                     }
-                    data_space_pool.updateDataByNameNoLock(arg.getValue(),
+                    data_space_pool.updateDataByArgOrName(arg, arg.getValue(),
                                                            std::make_shared<data::Bool>(
                                                                    utils::stringToBool(input_str)));
                     break;
@@ -2145,7 +2348,7 @@ namespace exes {
             if (args[2].getType() != utils::ArgType::identifier && args[2].getType() != utils::ArgType::keyword) {
                 throw std::runtime_error("Invalid argument type: " + args[2].toString());
             }
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(),
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(),
                                                    std::make_shared<data::File>(filemode, filepath->getValStr()));
             return ExecutionStatus::Success;
         } catch (const base::errors::MemoryError &_) {
@@ -2166,7 +2369,7 @@ namespace exes {
             throw std::runtime_error("Invalid argument type: " + args[1].toString());
         }
         try {
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(),
                                                    std::make_shared<data::String>(
                                                            static_pointer_cast<data::File>(filedata)->readFile()));
         } catch (const base::errors::FileReadError &_) {
@@ -2221,7 +2424,7 @@ namespace exes {
             if (args[1].getType() != utils::ArgType::identifier && args[1].getType() != utils::ArgType::keyword) {
                 throw std::runtime_error("Invalid argument type: " + args[1].toString());
             }
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(),
                                                    std::make_shared<data::String>(
                                                            static_pointer_cast<data::File>(file)->filepath));
         } catch (const base::errors::MemoryError &_) {
@@ -2246,7 +2449,7 @@ namespace exes {
                 throw std::runtime_error("Invalid argument type: " + args[0].toString());
             }
             error_arg = args[1];
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(),
                                                    std::make_shared<data::String>(
                                                            data::File::fileModeToString(
                                                                    static_pointer_cast<data::File>(
@@ -2374,7 +2577,7 @@ namespace exes {
             }
         } else if (est_type_id.fullEqualWith(data::Float::typeId)) {
             auto est_value = static_pointer_cast<data::Float>(est)->getValue();
-            est_value = std::abs(est_value); // Ê¹ÓÃ±ê×¼¿âº¯Êı¸ü¼ò½à
+            est_value = std::abs(est_value); // ä½¿ç”¨æ ‡å‡†åº“å‡½æ•°æ›´ç®€æ´
             if (est_value >= 0.0000001) {
                 pointer = label;
             }
@@ -2383,7 +2586,7 @@ namespace exes {
                 pointer = label;
             }
         } else if (!est_type_id.fullEqualWith(data::Null::typeId)) {
-            // ·ÇNullÀàĞÍÊÓÎªÕæ£¬Ö´ĞĞÌø×ª
+            // éNullç±»å‹è§†ä¸ºçœŸï¼Œæ‰§è¡Œè·³è½¬
             pointer = label;
         }
 
@@ -2394,11 +2597,17 @@ namespace exes {
         auto error_arg = args[0];
         try
         {
-            static auto data_check = [&args](
+            // æ§½ä½æ¨¡å¼ä¸‹æ¯”è¾ƒæ“ä½œä¹Ÿè¦èµ°ç»Ÿä¸€å–å‚è·¯å¾„ï¼šè§£ææœŸå·²æŠŠ identifier ç»‘å®šåˆ° (å¸§, æ§½ä½)ï¼Œ
+            // ä¸èƒ½å†æŒ‰åå­—åˆ°æ—§å†…å­˜é‡ŒæŸ¥ï¼Œå¦åˆ™æœ¬åœ°å˜é‡æŸ¥ä¸åˆ°ã€‚
+            const bool slotMode = core::memory::isSlotBindingModeEnabled();
+            auto data_check = [&args, slotMode](
                     const utils::Arg &arg) -> std::pair<id::DataID, std::shared_ptr<base::RVM_Data>> {
                 switch (arg.getType()) {
                 case utils::ArgType::identifier:
                 case utils::ArgType::keyword: {
+                        if (slotMode) {
+                            return {id::DataID{}, tools::getArgOriginData(arg)};
+                        }
                         auto [id, data] = data_space_pool.findDataByNameNoLock(arg.getValue());
                         return {id, data};
                 }
@@ -2424,10 +2633,19 @@ namespace exes {
             tools::checkArgumentType(ins, args[2], 3,
                                          {utils::ArgType::keyword, utils::ArgType::identifier});
             const auto& dataName = args[2].getValue();
-            data_space_pool.updateDataByNameNoLock(dataName,
-                                                   std::make_shared<data::CompareGroup>(
-                                                       std::make_shared<id::DataID>(leftID),
-                                                       std::make_shared<id::DataID>(rightID)));
+            /*
+             * æ§½ä½æ¨¡å¼ä¸‹æ¯”è¾ƒç»„å¿…é¡»ç›´æ¥æŒæœ‰æ•°æ®ï¼šå†™å›ç›®æ ‡ä¹Ÿåœ¨å¸§æ§½ä½é‡Œï¼Œ
+             * è€Œ CompareGroup è‹¥åªå­˜ DataIDï¼Œä¹‹å compare() ä¼šåˆ°æ—§å†…å­˜é‡Œå›æŸ¥è€ŒæŸ¥ä¸åˆ°ã€‚
+             */
+            std::shared_ptr<base::RVM_Data> cmpGroup;
+            if (slotMode) {
+                cmpGroup = std::make_shared<data::CompareGroup>(dataLeft, dataRight);
+            } else {
+                cmpGroup = std::make_shared<data::CompareGroup>(
+                        std::make_shared<id::DataID>(leftID),
+                        std::make_shared<id::DataID>(rightID));
+            }
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), cmpGroup);
         }
         catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
@@ -2454,7 +2672,7 @@ namespace exes {
             error_arg = args[1];
             const auto &relational = base::stringToRelational(args[1].getValue());
             error_arg = args[2];
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(),
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(),
                                                    std::make_shared<data::Bool>(cmp_data->compare(relational)));
         } catch (const base::errors::MemoryError &_){
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
@@ -2474,7 +2692,7 @@ namespace exes {
         auto [data1, data2] = [&args]() -> std::pair<std::shared_ptr<data::Numeric>, std::shared_ptr<data::Numeric>> {
             auto d1 = tools::getArgNewData(args[0]);
             auto d2 = tools::getArgNewData(args[1]);
-            // ÌáÇ°½øĞĞÀàĞÍ¼ì²é£¬±ÜÃâ¶à´Îdynamic_cast
+            // æå‰è¿›è¡Œç±»å‹æ£€æŸ¥ï¼Œé¿å…å¤šæ¬¡dynamic_cast
             if (d1->getTypeID() != data::Numeric::typeId ||
                 d2->getTypeID() != data::Numeric::typeId) {
                 throw std::runtime_error("Both arguments must be numeric");
@@ -2484,7 +2702,7 @@ namespace exes {
                     static_pointer_cast<data::Numeric>(d2)
             };
         }();
-        data_space_pool.updateDataByNameNoLock(args[2].getValue(), data1->multiply(data2));
+        data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), data1->multiply(data2));
         return ExecutionStatus::Success;
     }
 
@@ -2610,7 +2828,7 @@ namespace exes {
                                        "Available Range: [0, " + std::to_string(target_data->size()) + ")"},
                                       {"Modify the range of indexes to be obtained."});
             }
-            data_space_pool.updateDataByNameNoLock(args[3].getValue(), target_data->subpart(begin, end));
+            data_space_pool.updateDataByArgOrName(args[3], args[3].getValue(), target_data->subpart(begin, end));
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
@@ -2646,7 +2864,7 @@ namespace exes {
                                                        " instruction is of iterable type."});
             }
             error_arg = args[1];
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(),
                                                    std::make_shared<data::Int>(
                                                            std::static_pointer_cast<data::Iterable>(data)->
                                                                    size()));
@@ -2662,7 +2880,7 @@ namespace exes {
 
     ExecutionStatus ri_iter_get(const Ins &ins, size_t &pointer, const StdArgs &args)
     {
-        // ÌáÇ°¼ì²é args[2] µÄÀàĞÍ
+        // æå‰æ£€æŸ¥ args[2] çš„ç±»å‹
         const auto &targetArg = args[2];
         if (targetArg.getType() != utils::ArgType::identifier && targetArg.getType() != utils::ArgType::keyword) {
             throw base::errors::ArgTypeMismatchError(
@@ -2674,7 +2892,7 @@ namespace exes {
                      " instruction is of mutable type."});
         }
 
-        // »ñÈ¡µü´úÊı¾İ
+        // è·å–è¿­ä»£æ•°æ®
         const auto &iterArg = args[0];
         const auto iterData = tools::getArgOriginData(iterArg);
         if (!tools::isIterableData(iterData->getTypeID())) {
@@ -2688,7 +2906,7 @@ namespace exes {
         }
         const auto &iter = std::static_pointer_cast<data::Iterable>(iterData);
 
-        // »ñÈ¡Ë÷ÒıÊı¾İ
+        // è·å–ç´¢å¼•æ•°æ®
         const auto &indexArg = args[1];
         std::shared_ptr<base::RVM_Data> data;
         try
@@ -2711,7 +2929,7 @@ namespace exes {
                             {"Check whether the target data of the " + ins.ri->toString() +
                              " instruction is of " + data::Int::typeId.toString() + "."});
                 }
-                // ¼ì²éË÷Òı·¶Î§
+                // æ£€æŸ¥ç´¢å¼•èŒƒå›´
                 const auto &index = std::static_pointer_cast<data::Int>(indexData);
                 if (index->getValue() >= iter->size() || index->getValue() < 0) {
                     throw base::RVM_Error(
@@ -2724,8 +2942,8 @@ namespace exes {
                 data = iter->getDataAt(index->getValue());
             }
 
-            // »ñÈ¡Êı¾İ²¢¸üĞÂÄÚ´æ³Ø
-            data_space_pool.updateDataByNameNoLock(targetArg.getValue(), data);
+            // è·å–æ•°æ®å¹¶æ›´æ–°å†…å­˜æ± 
+            data_space_pool.updateDataByArgOrName(targetArg, targetArg.getValue(), data);
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(targetArg.getPosStr(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
@@ -2747,7 +2965,7 @@ namespace exes {
             error_arg = args[2];
             tools::getArgOriginData(error_arg);
 
-            // ¼ì²éµü´úÈİÆ÷µÄÀàĞÍ
+            // æ£€æŸ¥è¿­ä»£å®¹å™¨çš„ç±»å‹
             if (!tools::isIterableData(iter_container->getTypeID())) {
                 throw base::errors::ArgTypeMismatchError(
                         args[0].getPosStr(), ins.raw_code,
@@ -2761,7 +2979,7 @@ namespace exes {
 
             const auto &iter_container_data = std::static_pointer_cast<data::Iterable>(iter_container);
 
-            // ¸ù¾İ reverse ²ÎÊı¾ö¶¨Ê¹ÓÃÕıÏò»¹ÊÇ·´Ïò±éÀú
+            // æ ¹æ® reverse å‚æ•°å†³å®šä½¿ç”¨æ­£å‘è¿˜æ˜¯åå‘éå†
             data_space_pool.acquireScope(reverse ? pre_ITER_REV_TRAV : pre_ITER_TRAV);
 
             const int &container_size = static_cast<int>(iter_container_data->size());
@@ -2769,9 +2987,9 @@ namespace exes {
             const int end = reverse ? -1 : container_size;
             const int step = reverse ? -1 : 1;
             for (int i = start; i != end; i += step) {
-                data_space_pool.updateDataByNameNoLock(iter_elem.getValue(),
+                data_space_pool.updateDataByArgOrName(iter_elem, iter_elem.getValue(),
                                                        iter_container_data->getDataAt(i)->copy_ptr());
-                data_space_pool.updateDataByNameNoLock(iter_index.getValue(),
+                data_space_pool.updateDataByArgOrName(iter_index, iter_index.getValue(),
                                                        std::make_shared<data::Int>(reverse ? start - i : i));
                 if (ins.scopeInsSet->execute() == ExecutionStatus::Aborted) {
                     break;
@@ -2918,7 +3136,7 @@ namespace exes {
             {
                 const auto& data = iter_container_data->getDataAt(i);
                 error_arg = args[i + 1];
-                data_space_pool.updateDataByNameNoLock(args[i + 1].getValue(), data);
+                data_space_pool.updateDataByArgOrName(args[i + 1], args[i + 1].getValue(), data);
             }
         }
         catch (base::errors::MemoryError &_){
@@ -2945,13 +3163,13 @@ namespace exes {
         const auto &min_data = tools::check_arg_data_type<data::Int>(ins, args[0], min);
         const auto &max = tools::getArgOriginData(args[1]);
         const auto &max_data = tools::check_arg_data_type<data::Int>(ins, args[1], max);
-        data_space_pool.updateDataByNameNoLock(args[2].getValue(),
+        data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(),
                                                std::make_shared<data::Int>(utils::getRandomInt(min_data->getValue(), max_data->getValue())));
         return ExecutionStatus::Success;
     }
 
     ExecutionStatus ri_rand_float(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        // ÌáÈ¡Í¨ÓÃº¯Êı£¬ÓÃÓÚ»ñÈ¡²ÎÊıµÄÊıÖµ
+        // æå–é€šç”¨å‡½æ•°ï¼Œç”¨äºè·å–å‚æ•°çš„æ•°å€¼
         const auto& getArgumentValue = [&](const auto& arg_data, const auto& type_id)
         {
             if (type_id == data::Int::typeId) {
@@ -2961,7 +3179,7 @@ namespace exes {
             }
         };
 
-        // ¶¨ÒåÔÊĞíµÄÊı¾İÀàĞÍ¼¯ºÏ£¬±ÜÃâÖØ¸´¹¹Ôì
+        // å®šä¹‰å…è®¸çš„æ•°æ®ç±»å‹é›†åˆï¼Œé¿å…é‡å¤æ„é€ 
         const auto &allowed_types = std::unordered_set {
             &data::Int::typeId,
             &data::Float::typeId,
@@ -2969,13 +3187,13 @@ namespace exes {
             &data::Char::typeId
         };
 
-        // ´¦Àímin²ÎÊı
+        // å¤„ç†minå‚æ•°
         const auto& min = tools::getArgOriginData(args[0]);
         const auto& min_type_id = tools::checkArgumentDataType(
             min, ins, args[0], 1, allowed_types);
         double min_data = getArgumentValue(min, min_type_id);
 
-        // ´¦Àímax²ÎÊı
+        // å¤„ç†maxå‚æ•°
         const auto& max = tools::getArgOriginData(args[1]);
         const auto& max_type_id = tools::checkArgumentDataType(
             max, ins, args[1], 2, allowed_types);
@@ -2983,8 +3201,7 @@ namespace exes {
 
         const auto &decimal_places = tools::getArgOriginData(args[2]);
         const auto &decimal_places_data = tools::check_arg_data_type<data::Int>(ins, args[2], decimal_places);
-        data_space_pool.updateDataByNameNoLock(
-                args[3].getValue(),
+        data_space_pool.updateDataByArgOrName(args[3], args[3].getValue(),
                 std::make_shared<data::Float>(
                         utils::getRandomFloat(min_data,
                                               max_data,
@@ -3038,7 +3255,7 @@ namespace exes {
                     break;
             }
             error_arg = target_arg;
-            data_space_pool.updateDataByNameNoLock(target_arg.getValue(), type_info);
+            data_space_pool.updateDataByArgOrName(target_arg, target_arg.getValue(), type_info);
         } catch ([[maybe_unused]] const base::errors::MemoryError &e) {
             throw base::errors::MemoryError(error_arg.getPos().toString(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
@@ -3054,7 +3271,7 @@ namespace exes {
         auto [data1, data2] = [&args]() -> std::pair<std::shared_ptr<data::Numeric>, std::shared_ptr<data::Numeric>> {
             const auto d1 = tools::getArgNewData(args[0]);
             const auto d2 = tools::getArgNewData(args[1]);
-            // ÌáÇ°½øĞĞÀàĞÍ¼ì²é£¬±ÜÃâ¶à´Îcast
+            // æå‰è¿›è¡Œç±»å‹æ£€æŸ¥ï¼Œé¿å…å¤šæ¬¡cast
             if (d1->getTypeID() != data::Numeric::typeId ||
                 d2->getTypeID() != data::Numeric::typeId) {
                 throw std::runtime_error("Both arguments must be numeric");
@@ -3065,7 +3282,7 @@ namespace exes {
             };
         }();
         try {
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(), data1->divide(data2));
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), data1->divide(data2));
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(args[2].getPos().toString(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
@@ -3091,8 +3308,12 @@ namespace exes {
             }
         };
 
-        auto updateDataSpace = [&](const std::string &name, const std::shared_ptr<base::RVM_Data>& newData) {
-            data_space_pool.updateDataByNameNoLock(name, newData);
+        /*
+         * æ§½ä½æ¨¡å¼çš„å†™å…¥ï¼šç›®æ ‡å°±æ˜¯å‚æ•°æœ¬èº«ï¼Œåœ°å€æŒ‚åœ¨å®ƒä¸Šé¢ã€‚
+         * ri_tp_set çš„äºŒåå¤šå¤„å†™å…¥å…¨éƒ¨ç»ç”±è¿™ä¸ª lambdaã€‚
+         */
+        auto updateDataSpace = [](const utils::Arg &target, const std::shared_ptr<base::RVM_Data>& newData) {
+            data_space_pool.updateDataByArgOrName(target, target.getValue(), newData);
         };
 
         validateFirstArg();
@@ -3117,12 +3338,12 @@ namespace exes {
                 {
                     const auto &custom_inst = static_pointer_cast<data::CustomInst>(data);
                     custom_inst->customType = static_pointer_cast<data::CustomType>(type);
-                    updateDataSpace(args[0].getValue(), custom_inst);
+                    updateDataSpace(args[0], custom_inst);
                     return ExecutionStatus::Success;
                 }
                 const auto &custom_type = static_pointer_cast<data::CustomType>(type);
                 const auto &custom_inst = std::make_shared<data::CustomInst>(custom_type);
-                updateDataSpace(args[0].getValue(), custom_inst);
+                updateDataSpace(args[0], custom_inst);
                 return ExecutionStatus::Success;
             } else {
                 throw base::errors::ArgumentError(error_arg.getPosStr(), ins.raw_code,
@@ -3137,51 +3358,51 @@ namespace exes {
                                                                             const utils::Number &)>> typeHandlers = {
                     {data::Int::typeId.dis_id,          [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
-                        updateDataSpace(args[1].getValue(), std::make_shared<data::Int>(
+                        updateDataSpace(args[1], std::make_shared<data::Int>(
                                 data_val.type == utils::NumType::int_type
                                 ? data_val.int_value : data_val.type == utils::NumType::double_type
                                 ? static_cast<int>(data_val.double_value) : 0));
                     }},
                     {data::Float::typeId.dis_id,        [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
-                        updateDataSpace(args[1].getValue(), std::make_shared<data::Float>(
+                        updateDataSpace(args[1], std::make_shared<data::Float>(
                                 data_val.type == utils::NumType::int_type ?
                                 static_cast<double>(data_val.int_value) : data_val.double_value));
                     }},
                     {data::String::typeId.dis_id,       [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
-                        updateDataSpace(args[1].getValue(), std::make_shared<data::String>(
+                        updateDataSpace(args[1], std::make_shared<data::String>(
                                 data->getValStr() == null_ ? "" : data->getValStr()));
                     }},
                     {data::Bool::typeId.dis_id,         [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
                         if (data::String::typeId.fullEqualWith(data->getTypeID())){
                             const auto &data_val_str = data->getValStr();
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Bool>(
+                            updateDataSpace(args[1], std::make_shared<data::Bool>(
                                     utils::stringToBool(data_val_str == null_ ? "0" : data_val_str)));
                         } else {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Bool>(data->convertToBool()));
+                            updateDataSpace(args[1], std::make_shared<data::Bool>(data->convertToBool()));
                         }
                     }},
                     {data::Char::typeId.dis_id,         [&updateDataSpace](const auto &data, const auto &args,
                                                                                const utils::Number &data_val) {
                         if (data->getTypeID().fullEqualWith(data::Int::typeId) || data->getTypeID().fullEqualWith(data::Bool::typeId)) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Char>(
+                            updateDataSpace(args[1], std::make_shared<data::Char>(
                                     static_cast<char>(static_pointer_cast<data::Int>(data)->getValue())));
                         } else {
                             const auto &data_val_str = data->getValStr();
                             if (data_val.type == utils::NumType::int_type) {
-                                updateDataSpace(args[1].getValue(), std::make_shared<data::Char>(
+                                updateDataSpace(args[1], std::make_shared<data::Char>(
                                         static_cast<char>(data_val.int_value)));
                             } else {
-                                updateDataSpace(args[1].getValue(), std::make_shared<data::Char>(
+                                updateDataSpace(args[1], std::make_shared<data::Char>(
                                         utils::stringToChar(data_val_str == null_ ? "\000" : data_val_str)));
                             }
                         }
                     }},
                     {data::Null::typeId.dis_id,         [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
-                        updateDataSpace(args[1].getValue(), std::make_shared<data::Null>());
+                        updateDataSpace(args[1], std::make_shared<data::Null>());
                     }},
                     {data::List::typeId.dis_id,         [&updateDataSpace](const auto &data, const auto &args,
                                                                                const auto &data_val) {
@@ -3190,12 +3411,12 @@ namespace exes {
                             throw base::errors::ArgTypeMismatchError(unknown_, unknown_, {}, {});
                         }
                         if (data::Null::typeId.fullEqualWith(data_type)) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::List>());
+                            updateDataSpace(args[1], std::make_shared<data::List>());
                         } else if (data::String::typeId.fullEqualWith(data_type)) {
-                            updateDataSpace(args[1].getValue(),
+                            updateDataSpace(args[1],
                                             std::static_pointer_cast<data::String>(data)->trans_to_list());
                         } else if (data::Series::typeId.fullEqualWith(data_type)) {
-                            updateDataSpace(args[1].getValue(),
+                            updateDataSpace(args[1],
                                             std::make_shared<data::List>(
                                                     std::static_pointer_cast<data::Series>(data)->getDataList()));
                         }
@@ -3206,12 +3427,12 @@ namespace exes {
                             throw base::errors::ArgTypeMismatchError(unknown_, unknown_, {}, {});
                         }
                         if (data->getTypeID() == data::Null::typeId) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Series>());
+                            updateDataSpace(args[1], std::make_shared<data::Series>());
                         } else if (data::List::typeId.fullEqualWith(data->getTypeID())) {
-                            updateDataSpace(args[1].getValue(),
+                            updateDataSpace(args[1],
                                             std::make_shared<data::Series>(std::static_pointer_cast<data::List>(data)));
                         } else if (data::String::typeId.fullEqualWith(data->getTypeID())) {
-                            updateDataSpace(args[1].getValue(),
+                            updateDataSpace(args[1],
                                             std::make_shared<data::Series>(
                                                     std::static_pointer_cast<data::String>(data)->trans_to_list()));
                         }
@@ -3228,15 +3449,15 @@ namespace exes {
                                  "must be of 'tp-null' type or 'tp-list', 'tp-series', 'tp-str'."});
                         }
                         if (data_type.fullEqualWith(data::Null::typeId)) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Dict>());
+                            updateDataSpace(args[1], std::make_shared<data::Dict>());
                         } else if (data_type.fullEqualWith(data::List::typeId)) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Dict>(
+                            updateDataSpace(args[1], std::make_shared<data::Dict>(
                                     static_pointer_cast<data::List>(data)));
                         } else if (data_type.fullEqualWith(data::Series::typeId)) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Dict>(
+                            updateDataSpace(args[1], std::make_shared<data::Dict>(
                                     static_pointer_cast<data::Series>(data)));
                         } else if (data_type.fullEqualWith(data::String::typeId)) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Dict>(
+                            updateDataSpace(args[1], std::make_shared<data::Dict>(
                                     static_pointer_cast<data::String>(data)->trans_to_list()));
                         }
                     }},
@@ -3250,7 +3471,7 @@ namespace exes {
                                  "must be of 'tp-null' type or 'tp-pair'."});
                         }
                         if (data_type == data::Null::typeId) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::KeyValuePair>());
+                            updateDataSpace(args[1], std::make_shared<data::KeyValuePair>());
                         }
                     }},
                     {data::Time::typeId.dis_id,          [&updateDataSpace](const auto &data, const auto &args,
@@ -3260,9 +3481,9 @@ namespace exes {
                             throw base::errors::ArgTypeMismatchError(unknown_, unknown_, {}, {});
                         }
                         if (data->getTypeID() == data::Null::typeId) {
-                            updateDataSpace(args[1].getValue(), std::make_shared<data::Time>());
+                            updateDataSpace(args[1], std::make_shared<data::Time>());
                         } else if (data->getTypeID() == data::String::typeId) {
-                            updateDataSpace(args[1].getValue(),
+                            updateDataSpace(args[1],
                                             std::make_shared<data::Time>(data::Time::fromString(
                                                     data->getValStr())));
                         }
@@ -3332,6 +3553,10 @@ namespace exes {
                                                                 parent_type
                                                                 ? static_pointer_cast<data::CustomType>(parent_type)
                                                                 : nullptr);
+        // æ§½ä½æ¨¡å¼ï¼šç±»å‹ååœ¨è§£ææœŸå·²å å¥½æ§½ä½ï¼Œç›´æ¥å†™å…¥
+        if (writeDeclarationSlot(args[0], new_data_type)) {
+            return ExecutionStatus::Success;
+        }
         const auto &_ = data_space_pool.addData(tp_name, new_data_type);
         return ExecutionStatus::Success;
     }
@@ -3350,7 +3575,7 @@ namespace exes {
         const auto &type = static_pointer_cast<data::CustomType>(type_data);
         const auto &new_inst = std::make_shared<data::CustomInst>(type);
         try{
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(), new_inst);
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(), new_inst);
         } catch (const base::errors::MemoryError &) {
             throw base::errors::MemoryError(
                     args[1].getPosStr(), ins.raw_code,
@@ -3461,9 +3686,9 @@ namespace exes {
     }
 
     ExecutionStatus ri_tp_set_field(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        int current_arg_index = 0;  // ĞÂÔö£º¸ú×Ùµ±Ç°·ÃÎÊµÄ²ÎÊıË÷Òı
+        int current_arg_index = 0;  // æ–°å¢ï¼šè·Ÿè¸ªå½“å‰è®¿é—®çš„å‚æ•°ç´¢å¼•
 
-        // ´¦Àí×Ö¶ÎÃû³Æ²ÎÊı(args[1])
+        // å¤„ç†å­—æ®µåç§°å‚æ•°(args[1])
         current_arg_index = 1;
         auto field_name = args[current_arg_index].getValue();
         auto arg_data = tools::getArgOriginDataNoError(args[current_arg_index]);
@@ -3481,17 +3706,17 @@ namespace exes {
         }
 
         try {
-            // ´¦ÀíÄ¿±ê¶ÔÏó²ÎÊı(args[0])
+            // å¤„ç†ç›®æ ‡å¯¹è±¡å‚æ•°(args[0])
             current_arg_index = 0;
             arg_data = tools::getArgOriginData(args[current_arg_index]);
-            // ´¦Àí×Ö¶ÎÖµ²ÎÊı(args[2])
+            // å¤„ç†å­—æ®µå€¼å‚æ•°(args[2])
             current_arg_index = 2;
             auto field_data = tools::getArgOriginData(args[current_arg_index]);
             if (!tools::isMutableData(field_data->getTypeID())) {
                 field_data = field_data->copy_ptr();
             }
 
-            // ÉèÖÃ×Ö¶ÎÖµ
+            // è®¾ç½®å­—æ®µå€¼
             if (arg_data->getTypeID() == data::CustomType::typeId) {
                 static_pointer_cast<data::CustomType>(arg_data)->setTpField(field_name, field_data);
             } else if (arg_data->getTypeID() == data::CustomInst::typeId) {
@@ -3507,14 +3732,14 @@ namespace exes {
                                                        data::CustomInst::typeId.toString() + "."});
             }
         } catch (const base::errors::FieldNotFoundError &_) {
-            // Ê¹ÓÃµ±Ç°²ÎÊıË÷Òı¾«È·¶¨Î»´íÎó
+            // ä½¿ç”¨å½“å‰å‚æ•°ç´¢å¼•ç²¾ç¡®å®šä½é”™è¯¯
             throw base::errors::FieldNotFoundError(args[current_arg_index].getPosStr(), ins.raw_code,
                                                    arg_data->toString(), field_name,
                                                    {"Please ensure that the accessed fields have been defined by the " +
                                                     ris::TP_ADD_INST_FIELD.toString() + " or " +
                                                     ris::TP_ADD_TP_FIELD.toString() + "."});
         } catch (const base::errors::MemoryError &e) {
-            // Ê¹ÓÃµ±Ç°²ÎÊıË÷Òı¾«È·¶¨Î»´íÎó
+            // ä½¿ç”¨å½“å‰å‚æ•°ç´¢å¼•ç²¾ç¡®å®šä½é”™è¯¯
             throw base::errors::MemoryError(args[current_arg_index].getPosStr(), ins.raw_code,
                                             {"This error is caused by using an non-existent memory space.",
                                              "Error Arg: " + args[current_arg_index].toString()},
@@ -3522,7 +3747,7 @@ namespace exes {
                                              ins.ri->toString() + " has been allocated by " + ris::ALLOT.toString() +
                                              "."});
         } catch (const std::exception &e) {
-            // ²¶»ñÆäËûÒì³£Ê±Ò²Ê¹ÓÃµ±Ç°²ÎÊıË÷Òı
+            // æ•è·å…¶ä»–å¼‚å¸¸æ—¶ä¹Ÿä½¿ç”¨å½“å‰å‚æ•°ç´¢å¼•
             throw base::RVM_Error(base::ErrorType::RuntimeError, args[current_arg_index].getPosStr(), ins.raw_code,
                                              {"Unexpected error occurred while processing argument",
                                               "Error Arg: " + args[current_arg_index].toString(),
@@ -3570,7 +3795,7 @@ namespace exes {
                                                        data::CustomInst::typeId.toString() + "."});
             }
             error_arg = args[2];
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(), field_data);
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), field_data);
         } catch (const base::errors::MemoryError &_){
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
                                             {"This error is caused by the getting field was not exist.",
@@ -3651,7 +3876,7 @@ namespace exes {
 
             // Store target is now args[3] instead of args[2]
             error_arg = args[3];
-            data_space_pool.updateDataByNameNoLock(args[3].getValue(), field_data);
+            data_space_pool.updateDataByArgOrName(args[3], args[3].getValue(), field_data);
         } catch ([[maybe_unused]] const base::errors::MemoryError &e) {
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
                                             {"This error is caused by the getting field was not exist.",
@@ -3703,7 +3928,7 @@ namespace exes {
             if (!inst->getTypeID().fullEqualWith(data::CustomInst::typeId))
             {
                 error_index = 2;
-                data_space_pool.updateDataByNameNoLock(args[2].getValue(), std::make_shared<data::Bool>(false));
+                data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), std::make_shared<data::Bool>(false));
                 return ExecutionStatus::Success;
             }
             const auto &instData = std::static_pointer_cast<data::CustomInst>(inst);
@@ -3712,123 +3937,19 @@ namespace exes {
             if (!type->getTypeID().fullEqualWith(data::CustomType::typeId))
             {
                 error_index = 2;
-                data_space_pool.updateDataByNameNoLock(args[2].getValue(), std::make_shared<data::Bool>(false));
+                data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), std::make_shared<data::Bool>(false));
                 return ExecutionStatus::Success;
             }
             const auto& typeData = std::static_pointer_cast<data::CustomType>(type);
             const auto& relate = instData->customType->checkBelongTo(typeData);
             error_index = 2;
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(), std::make_shared<data::Bool>(relate));
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), std::make_shared<data::Bool>(relate));
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(args[error_index].getPosStr(), ins.raw_code,
                                             {"This error is caused by accessing memory space that does not exist.",
                                              "Nonexistent Space Name: '" + args[error_index].getValue() + "'"},
                                             { "Please use " + ris::ALLOT.toString() +
                                             " directive to allocate memory spaces before manipulating it."});
-        }
-        return ExecutionStatus::Success;
-    }
-
-    ExecutionStatus ri_sp_get(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        if (args[0].getType() != utils::ArgType::keyword && args[0].getType() != utils::ArgType::identifier) {
-            throw base::errors::ArgTypeMismatchError(args[0].getPosStr(), ins.raw_code,
-                                                  {"Error Arg: " + args[0].toString(),
-                                                   "Expected Type: " +
-                                                   getTypeFormatString(utils::ArgType::keyword) +
-                                                   " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri->toString() +
-                                                   " is of " + getTypeFormatString(utils::ArgType::keyword) +
-                                                   " or " +
-                                                   getTypeFormatString(utils::ArgType::identifier) + "."});
-        }
-        auto scopeName = data_space_pool.getCurrentScopeNoLock()->getName();
-        try {
-            data_space_pool.updateDataByNameNoLock(args[0].getValue(),
-                                                   std::make_shared<data::String>(scopeName));
-        } catch (const base::errors::MemoryError &_) {
-            throw base::errors::MemoryError(args[0].getPos().toString(), ins.raw_code,
-                                            {"This error is caused by accessing memory space that does not exist.",
-                                             "Nonexistent Space Name: " + args[0].toString()},
-                                            {"Use the " + ris::ALLOT.toString() +
-                                             " to manually allocate a named memory space before accessing it."});
-        }
-        return ExecutionStatus::Success;
-    }
-
-    ExecutionStatus ri_sp_set(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        if (args[0].getType() != utils::ArgType::keyword && args[0].getType() != utils::ArgType::identifier) {
-            throw base::errors::ArgTypeMismatchError(args[0].getPosStr(), ins.raw_code,
-                                                  {"Error Arg: " + args[0].toString(),
-                                                   "Expected Type: " +
-                                                   getTypeFormatString(utils::ArgType::keyword) +
-                                                   " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri->toString() +
-                                                   " is of " + getTypeFormatString(utils::ArgType::keyword) +
-                                                   " or " +
-                                                   getTypeFormatString(utils::ArgType::identifier) + "."});
-        }
-        auto data = tools::getArgOriginData(args[0]);
-        try {
-            data_space_pool.setCurrentScopeByName(data->getValStr());
-        } catch (const base::errors::MemoryError &_) {
-            throw base::errors::MemoryError(args[0].getPos().toString(), ins.raw_code,
-                                            {"This error is caused by the fact that the target scope of the " +
-                                             ins.ri->toString() + " does not exist.",
-                                             "Nonexistent Scope ID: " + args[0].toString()},
-                                            {"Before setting the scope, ensure that the ID of the target scope "
-                                             "exists and is correct."});
-        }
-        return ExecutionStatus::Success;
-    }
-
-    ExecutionStatus ri_sp_new(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        if (args[0].getType() != utils::ArgType::keyword && args[0].getType() != utils::ArgType::identifier) {
-            throw base::errors::ArgTypeMismatchError(args[0].getPosStr(), ins.raw_code,
-                                                  {"Error Arg: " + args[0].toString(),
-                                                   "Expected Type: " +
-                                                   getTypeFormatString(utils::ArgType::keyword) +
-                                                   " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri->toString() +
-                                                   " is of " + getTypeFormatString(utils::ArgType::keyword) +
-                                                   " or " +
-                                                   getTypeFormatString(utils::ArgType::identifier) + "."});
-        }
-        try {
-            auto new_scope = data_space_pool.acquireScope(pre_SP_NEW);
-            data_space_pool.updateDataByNameNoLock(args[0].getValue(),
-                                                   std::make_shared<data::String>(
-                                                           new_scope->getInstID().toString()));
-        } catch (const base::errors::MemoryError &_) {
-            throw base::errors::MemoryError(args[0].getPos().toString(), ins.raw_code,
-                                            {"This error is caused by accessing memory space that does not exist.",
-                                             "Nonexistent Space Name: " + args[0].toString()},
-                                            {"Use the " + ris::ALLOT.toString() +
-                                             " to manually allocate a named memory space before accessing it."});
-        }
-        return ExecutionStatus::Success;
-    }
-
-    ExecutionStatus ri_sp_del(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        if (args[0].getType() != utils::ArgType::keyword && args[0].getType() != utils::ArgType::identifier) {
-            throw base::errors::ArgTypeMismatchError(args[0].getPosStr(), ins.raw_code,
-                                                  {"Error Arg: " + args[0].toString(),
-                                                   "Expected Type: " +
-                                                   getTypeFormatString(utils::ArgType::keyword) +
-                                                   " or " + getTypeFormatString(utils::ArgType::identifier)},
-                                                  {"Check whether the first data of the " + ins.ri->toString() +
-                                                   " is of " + getTypeFormatString(utils::ArgType::keyword) +
-                                                   " or " +
-                                                   getTypeFormatString(utils::ArgType::identifier) + "."});
-        }
-        try {
-            auto data = tools::getArgOriginData(args[0]);
-            data_space_pool.releaseScope(data_space_pool.findScopeByNameNoLock(data->getValStr()));
-        } catch (const base::errors::MemoryError &_) {
-            throw base::errors::MemoryError(args[0].getPos().toString(), ins.raw_code,
-                                            {"This error is caused by deleting memory space that does not exist.",
-                                             "Nonexistent Scope ID: " + args[0].toString()},
-                                            {"Use the " + ris::SP_GET.toString() + " or " + ris::SP_NEW.toString() +
-                                             " to get a scope ID before manipulate it."});
         }
         return ExecutionStatus::Success;
     }
@@ -3858,7 +3979,7 @@ namespace exes {
                 throw base::errors::MemoryError(unknown_, unknown_, {}, {});
             }
             error_arg = args[1];
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(),
                                                    std::make_shared<data::Quote>(id));
         } catch (const base::errors::MemoryError &_) {
             throw base::errors::MemoryError(error_arg.getPos().toString(), ins.raw_code,
@@ -3931,12 +4052,12 @@ namespace exes {
     }
 
     ExecutionStatus ri_ret_fast(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        // Ê¹ÓÃÌáÇ°·µ»Ø±ÜÃâ²»±ØÒªµÄ else
+        // ä½¿ç”¨æå‰è¿”å›é¿å…ä¸å¿…è¦çš„ else
         if (args.empty()) {
             return ExecutionStatus::AbortedFunction;
         }
 
-        // Ö»ÓĞÒ»¸ö²ÎÊıµÄÇé¿ö
+        // åªæœ‰ä¸€ä¸ªå‚æ•°çš„æƒ…å†µ
         data_space_pool.updateDataNoLock(SR_SPACE_ID, tools::getArgNewData(args[0]));
         return ExecutionStatus::AbortedFunction;
     }
@@ -3973,7 +4094,7 @@ namespace exes {
                                                    "."});
         }
         try {
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(),
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(),
                                                    static_pointer_cast<data::Numeric>(data1)->pow(
                                                            static_pointer_cast<data::Numeric>(data2)));
         } catch (const base::errors::MemoryError &_) {
@@ -4018,7 +4139,7 @@ namespace exes {
                                                    "."});
         }
         try {
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(),
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(),
                                                    static_pointer_cast<data::Numeric>(data1)->root(
                                                            static_pointer_cast<data::Numeric>(data2)));
         } catch (const base::errors::MemoryError &_) {
@@ -4063,7 +4184,7 @@ namespace exes {
                                                    "."});
         }
         try {
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(),
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(),
                                                    static_pointer_cast<data::Numeric>(data1)->mod(
                                                            static_pointer_cast<data::Numeric>(data2)));
         } catch (const base::errors::MemoryError &_) {
@@ -4077,21 +4198,21 @@ namespace exes {
     }
 
     ExecutionStatus ri_atmp(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        // ³õÊ¼»¯±ØÒªµÄ±äÁ¿
+        // åˆå§‹åŒ–å¿…è¦çš„å˜é‡
         auto atmp_block_ins_set = std::make_shared<InsSet>("ATMP");
         auto finally_ins_set = std::make_shared<InsSet>("FINALLY");
         std::vector<std::shared_ptr<DetectBlock>> detect_blocks;
         bool has_detect = false;
 
-        // ±éÀúÖ¸Áî¼¯
+        // éå†æŒ‡ä»¤é›†
         for (const auto &inner_ins: ins.scopeInsSet->getInsSet()) {
             if (ris::DETECT.equalWith(inner_ins->ri)) {
-                // Èç¹ûÊÇ DETECT Ö¸Áî
+                // å¦‚æœæ˜¯ DETECT æŒ‡ä»¤
                 if (!has_detect) {
-                    has_detect = true; // ±ê¼ÇÒÑ½øÈë DETECT ¿é
+                    has_detect = true; // æ ‡è®°å·²è¿›å…¥ DETECT å—
                 }
 
-                // ¼ì²é²ÎÊıÊÇ·ñºÏ·¨
+                // æ£€æŸ¥å‚æ•°æ˜¯å¦åˆæ³•
                 if (inner_ins->args.size() != 1 && inner_ins->args.size() != 2)
                 {
                     throw base::errors::ArgumentNumberError(
@@ -4112,7 +4233,7 @@ namespace exes {
                             {"Check the type of the target argument of the " + ris::DETECT.toString() + "."});
                 }
 
-                // »ñÈ¡¼ì²âÀàĞÍ²¢´´½¨ DetectBlock
+                // è·å–æ£€æµ‹ç±»å‹å¹¶åˆ›å»º DetectBlock
                 std::shared_ptr<base::RVM_Data> detect_custom_type = nullptr;
                 std::optional<id::TypeID> detect_builtin_type = std::nullopt;
                 if (inner_ins->args.size() == 2)
@@ -4142,19 +4263,19 @@ namespace exes {
                         inner_ins->args[inner_ins->args.size() == 1 ? 0 : 1],
                         inner_ins->scopeInsSet));
             } else if (!has_detect) {
-                // Èç¹ûÉĞÎ´½øÈë DETECT ¿é£¬½«Ö¸ÁîÌí¼Óµ½ atmp_block_ins_set
+                // å¦‚æœå°šæœªè¿›å…¥ DETECT å—ï¼Œå°†æŒ‡ä»¤æ·»åŠ åˆ° atmp_block_ins_set
                 atmp_block_ins_set->addIns(inner_ins);
                 if (ris::SET.equalWith(inner_ins->ri))
                 {
                     atmp_block_ins_set->setLabel(inner_ins->args[0].getValue(), atmp_block_ins_set->getInsSet().size());
                 }
             } else {
-                // Èç¹ûÒÑ½øÈë DETECT ¿é£¬½«Ö¸ÁîÌí¼Óµ½ finally_ins_set
+                // å¦‚æœå·²è¿›å…¥ DETECT å—ï¼Œå°†æŒ‡ä»¤æ·»åŠ åˆ° finally_ins_set
                 finally_ins_set->addIns(inner_ins);
             }
         }
 
-        // ´´½¨ AtmpBlock ²¢Ö´ĞĞ
+        // åˆ›å»º AtmpBlock å¹¶æ‰§è¡Œ
         const auto &atmp_block = std::make_shared<AtmpBlock>(detect_blocks, atmp_block_ins_set, finally_ins_set);
         InsSet::atmp_stack.push_back(atmp_block);
         atmp_block_ins_set->setScopeLeader(ins);
@@ -4182,8 +4303,8 @@ namespace exes {
         const auto error_data = std::make_shared<data::Error>(
                 ins.pos.toString(), ins.raw_code,
                 std::vector{argData->getValStr()});
-        data_space_pool.updateDataByNameNoLock("SE", error_data);
-        data_space_pool.updateDataByNameNoLock("_SE", error_data);
+        data_space_pool.updateGlobalByName("SE", error_data);
+        data_space_pool.updateGlobalByName("_SE", error_data);
         for (const auto& atmp: InsSet::atmp_stack | std::views::reverse) {
             for (const auto &detect_block: atmp->detect_blocks) {
                 if ((detect_block->detected_type == nullptr && detect_block->detected_builtin_type.has_value() &&
@@ -4204,14 +4325,14 @@ namespace exes {
     }
 
     ExecutionStatus ri_loadin(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        // ¼ì²é²ÎÊıÊıÁ¿ÊÇ·ñºÏ·¨
+        // æ£€æŸ¥å‚æ•°æ•°é‡æ˜¯å¦åˆæ³•
         if (args.empty() || args.size() > 2) {
             throw base::errors::ArgumentNumberError(
                     ins.pos.toString(), ins.raw_code, "1 / 2",
                     static_cast<int>(args.size()), ins.ri->toString(), {});
         }
 
-        // »ñÈ¡²¢ÑéÖ¤µÚÒ»¸ö²ÎÊı£¨ÎÄ¼şÂ·¾¶£©µÄÀàĞÍ
+        // è·å–å¹¶éªŒè¯ç¬¬ä¸€ä¸ªå‚æ•°ï¼ˆæ–‡ä»¶è·¯å¾„ï¼‰çš„ç±»å‹
         auto filePathData = tools::getArgOriginData(args[0]);
         if (filePathData->getTypeID() != data::String::typeId) {
             throw base::errors::ArgTypeMismatchError(args[0].getPos().toString(), ins.raw_code,
@@ -4221,61 +4342,61 @@ namespace exes {
                                                   {"Check the type of the arguments of the " + ins.ri->toString() + "."});
         }
 
-        // ¹¹½¨ÍêÕûÎÄ¼şÂ·¾¶
+        // æ„å»ºå®Œæ•´æ–‡ä»¶è·¯å¾„
         const std::string& filePath = utils::getAbsolutePath(
                 static_pointer_cast<data::String>(filePathData)->getValStr(),
                 base::PROGRAM_WORKING_DIRECTORY_STACK.top());
 
-        // ¼ì²éÊÇ·ñÌá¹©ÁËÀ©Õ¹´æ´¢²ÎÊı
+        // æ£€æŸ¥æ˜¯å¦æä¾›äº†æ‰©å±•å­˜å‚¨å‚æ•°
         const bool hasExtensionStore = (args.size() == 2);
         std::shared_ptr<base::RVM_Data> extensionData = nullptr;
         if (hasExtensionStore) {
             extensionData = tools::getArgOriginDataNoError(args[1]);
         }
 
-        // ¼ì²éÎÄ¼şÀ©Õ¹ÃûÊÇ·ñÒÑ´æÔÚ
+        // æ£€æŸ¥æ–‡ä»¶æ‰©å±•åæ˜¯å¦å·²å­˜åœ¨
         auto [extensionExists, extensionUnicPath] = tools::checkExtensionExist(filePath);
 
         if (extensionExists) {
-            // Èç¹ûÀ©Õ¹ÃûÒÑ´æÔÚÇÒÌá¹©ÁË´æ´¢²ÎÊı£¬Ôò¸üĞÂÊı¾İ
+            // å¦‚æœæ‰©å±•åå·²å­˜åœ¨ä¸”æä¾›äº†å­˜å‚¨å‚æ•°ï¼Œåˆ™æ›´æ–°æ•°æ®
             if (hasExtensionStore) {
                 const auto& existingExtension = memory::loadedExtensions[extensionUnicPath];
                 if (!extensionData) {
                     const auto &_ = data_space_pool.addGlobalData(args[1].getValue(), existingExtension);
                 } else {
-                    data_space_pool.updateDataByNameNoLock(args[1].getValue(), existingExtension);
+                    data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(), existingExtension);
                 }
             }
             return ExecutionStatus::Success;
         }
 
-        // ´´½¨ĞÂµÄÀ©Õ¹²¢Ìí¼Óµ½Êı¾İ³Ø
+        // åˆ›å»ºæ–°çš„æ‰©å±•å¹¶æ·»åŠ åˆ°æ•°æ®æ± 
         std::shared_ptr<data::Extension> newExtension = nullptr;
         if (hasExtensionStore) {
             newExtension = std::make_shared<data::Extension>(args[1].getValue(), filePath);
             if (!extensionData) {
                 const auto &_ = data_space_pool.addGlobalData(args[1].getValue(), newExtension);
             } else {
-                data_space_pool.updateDataByNameNoLock(args[1].getValue(), newExtension);
+                data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(), newExtension);
             }
         }
 
-        // ½«ĞÂÀ©Õ¹Ìí¼Óµ½ÒÑ¼ÓÔØÀ©Õ¹ÁĞ±í
+        // å°†æ–°æ‰©å±•æ·»åŠ åˆ°å·²åŠ è½½æ‰©å±•åˆ—è¡¨
         memory::loadedExtensions.emplace(extensionUnicPath, newExtension);
 
         try {
-            // ½âÎö²¢Ö´ĞĞÎÄ¼şÖĞµÄ´úÂë
+            // è§£æå¹¶æ‰§è¡Œæ–‡ä»¶ä¸­çš„ä»£ç 
             const auto& instructionSet = parser::parse::parseCodeFromPath(
                     filePath, false,
                     hasExtensionStore ? args[1].getValue() : "");
             instructionSet->execute();
 
-            // Èç¹ûÌá¹©ÁË´æ´¢²ÎÊı£¬ÔòÒÆ³ıµ±Ç°×÷ÓÃÓò
+            // å¦‚æœæä¾›äº†å­˜å‚¨å‚æ•°ï¼Œåˆ™ç§»é™¤å½“å‰ä½œç”¨åŸŸ
             if (hasExtensionStore) {
                 data_space_pool.removeScopeNoLock(newExtension->extension_scope);
             }
         } catch ([[maybe_unused]] const base::errors::FileReadError &e) {
-            // ÖØĞÂÅ×³öÎÄ¼ş¶ÁÈ¡´íÎó²¢Ìí¼Ó¸ü¶àÉÏÏÂÎÄĞÅÏ¢
+            // é‡æ–°æŠ›å‡ºæ–‡ä»¶è¯»å–é”™è¯¯å¹¶æ·»åŠ æ›´å¤šä¸Šä¸‹æ–‡ä¿¡æ¯
             throw base::errors::FileReadError(ins.pos.toString(), ins.raw_code,
                                               {"Error file path: " + utils::getEscapedPathFormatString(filePath),
                                                "Program entry directory: " + utils::getEscapedPathFormatString(base::PROGRAM_WORKING_DIRECTORY_STACK.top())},
@@ -4319,8 +4440,7 @@ namespace exes {
                     ->findDataByName(field->getValStr());
 
             error_arg = args[2];
-            data_space_pool.updateDataByNameNoLock(
-                    args[2].getValue(), res_data);
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), res_data);
         } catch (const base::errors::MemoryError&) {
             throw base::errors::MemoryError(error_arg.getPosStr(), ins.raw_code,
                                             {"This error is caused by manipulating memory space that does not exist.",
@@ -4332,7 +4452,7 @@ namespace exes {
     }
 
     ExecutionStatus ri_pair_set(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        // ToDo: ×¢Òâ´íÎó´¦Àí
+        // ToDo: æ³¨æ„é”™è¯¯å¤„ç†
         auto error_arg = args[0];
         tools::checkArgumentType(ins, args[2], 3,
             {utils::ArgType::identifier, utils::ArgType::keyword});
@@ -4341,13 +4461,13 @@ namespace exes {
         const auto &pair_data = std::make_shared<data::KeyValuePair>(key_data, value_data);
         if (const auto &target_data = tools::getArgOriginData(args[2]);
             !target_data->updateData(pair_data)) {
-            data_space_pool.updateDataByNameNoLock(args[2].getValue(), pair_data);
+            data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), pair_data);
         }
         return ExecutionStatus::Success;
     }
 
     ExecutionStatus ri_pair_set_key(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        // ToDo: ×¢Òâ´íÎó´¦Àí
+        // ToDo: æ³¨æ„é”™è¯¯å¤„ç†
         auto error_arg = args[0];
         tools::checkArgumentType(ins, args[1], 2,
             {utils::ArgType::identifier, utils::ArgType::keyword});
@@ -4359,7 +4479,7 @@ namespace exes {
     }
 
     ExecutionStatus ri_pair_set_value(const Ins &ins, size_t &pointer, const StdArgs &args) {
-        // ToDo: ×¢Òâ´íÎó´¦Àí
+        // ToDo: æ³¨æ„é”™è¯¯å¤„ç†
         auto error_arg = args[0];
         tools::checkArgumentType(ins, args[1], 2,
             {utils::ArgType::identifier, utils::ArgType::keyword});
@@ -4379,7 +4499,7 @@ namespace exes {
                 tools::getArgOriginData(args[0]),
                 ins, args[0], 1, true);
         if (! tools::getArgOriginData(args[1])->updateData(pair_data->getKey())) {
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(), pair_data->getKey());
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(), pair_data->getKey());
         }
         return ExecutionStatus::Success;
     }
@@ -4393,7 +4513,7 @@ namespace exes {
                 tools::getArgOriginData(args[0]),
                 ins, args[0], 1, true);
         if (! tools::getArgOriginData(args[1])->updateData(pair_data->getValue())) {
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(), pair_data->getValue());
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(), pair_data->getValue());
         }
         return ExecutionStatus::Success;
     }
@@ -4420,7 +4540,7 @@ namespace exes {
             !tools::getArgOriginData(args[1])->updateData(value_data)) {
             try
             {
-                data_space_pool.updateDataByNameNoLock(args[2].getValue(), value_data);
+                data_space_pool.updateDataByArgOrName(args[2], args[2].getValue(), value_data);
             } catch (const base::errors::MemoryError &)
             {
                 throw base::errors::MemoryError(args[2].getPosStr(), ins.raw_code,
@@ -4451,7 +4571,7 @@ namespace exes {
             ins, args[0], 1, true);
         try
         {
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(),
                dictData->getKeyDataList());
         } catch (const base::errors::MemoryError &)
         {
@@ -4471,7 +4591,7 @@ namespace exes {
             ins, args[0], 1, true);
         try
         {
-            data_space_pool.updateDataByNameNoLock(args[1].getValue(),
+            data_space_pool.updateDataByArgOrName(args[1], args[1].getValue(),
                dictData->getValueDataList());
         } catch (const base::errors::MemoryError &)
         {

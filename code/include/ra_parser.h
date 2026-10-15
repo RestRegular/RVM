@@ -5,7 +5,9 @@
 #ifndef RA_PARSER_H
 #define RA_PARSER_H
 
+#include <algorithm>
 #include <iostream>
+#include <map>
 #include "ra_base.h"
 #include "ra_core.h"
 #include "rvm_ris.h"
@@ -66,6 +68,15 @@ namespace parser {
 
         void initialize(const std::string &executed_file_path, const std::string &working_directory);
 
+        /* 运行环境是否已经初始化过（决定解析期是否需要把全局名字并入根作用域） */
+        [[nodiscard]] bool isInitialized();
+
+        /*
+         * 运行期全局数据名的单一事实来源。
+         * 解析期用它把同名变量登记进文件根作用域，使每个标识符都能被解析成槽位。
+         */
+        [[nodiscard]] const std::vector<std::string> &getRuntimeGlobalDataNames();
+
         void addIns(const utils::Pos &pos, const std::string& raw_code, const RI *ri, const StdArgs &args);
 
         void serializeLinkedExtensions(std::ostream &out);
@@ -75,6 +86,101 @@ namespace parser {
 
     namespace parse {
         using namespace core::components;
+
+        /*
+         * 解析期槽位注册的结果快照。
+         *
+         * parseCode 内部的 RVM_ParseScope 链是函数局部对象，解析中途抛异常就会全部丢失。
+         * 这个结构把「已成功关闭的作用域」的分配结果留存下来，供诊断与后续按名字查槽位使用，
+         * 不参与任何运行期逻辑。
+         */
+        struct ParseScopeRecord {
+            /* 槽位分配：帧内起始偏移 + 该作用域登记的名字（下标即局部槽位号） */
+            std::vector<std::pair<size_t, std::vector<std::string>>> closedScopes;
+
+            /* 从每个已关闭作用域出发、本帧内可见的符号表（名字 → 帧内槽位号） */
+            std::vector<std::pair<size_t, std::unordered_map<std::string, size_t>>> visibleSymbols;
+
+            /* 最外层作用域（文件根帧）的分配结果 */
+            size_t rootStartIndex{0};
+            size_t rootFrameNextSlot{0};
+            std::vector<std::string> rootSlotNames;
+            std::unordered_map<std::string, size_t> rootVisibleSymbols;
+
+            /*
+             * 每个已关闭作用域的词法解析结果文本。
+             * 词法（静态）作用域下，名字沿解析期的 parentScope 链（= 定义处的外层作用域）解析，
+             * 与调用处的动态作用域无关。
+             */
+            std::vector<std::string> lexicalResolutions;
+            std::string rootLexicalResolution;
+
+            /*
+             * 解析期无法解析到槽位的标识符（名字 → 首次出现的指令原始文本）。
+             *
+             * 槽位替换要求每个标识符都能翻成 (帧, 槽位)；任何解析不到的名字都必须在这里暴露出来，
+             * 否则运行期会静默按错槽位取值。切换运行期之前这个表必须为空。
+             */
+            std::vector<std::pair<std::string, std::string>> unresolvedIdentifiers;
+
+            /* 根作用域里那些来自运行期全局数据的名字（便于核对全局是否已并入） */
+            std::vector<std::string> seededGlobalNames;
+
+            /*
+             * 帧清单：帧身份在解析期就已完全确定，运行期一次性把帧建好即可。
+             * parentFramePath 是「词法父帧」——函数体看定义处的落点。
+             */
+            struct FrameInfo {
+                std::string framePath;
+                size_t slotSpan{0};             // 帧内槽位规模（最大槽位号 + 1）
+                std::string parentFramePath;    // 词法父帧；文件根帧为空
+            };
+            std::map<std::string, FrameInfo> frames;
+
+            /* 每个已关闭作用域的链路径，下标与 closedScopes 一致；根作用域另见 rootScopePath */
+            std::vector<std::string> closedScopePaths;
+            std::string rootScopePath;
+
+            void clear();
+        };
+
+        /* 最近一次 parseCode 的解析期槽位注册结果 */
+        extern ParseScopeRecord last_parse_scope_record;
+
+        /*
+         * 把解析期槽位注册结果打印成人类可读形式。
+         * 只读，不修改 record；供 --parse-info 开关与诊断使用。
+         */
+        void printParseScopeRecord(const ParseScopeRecord &record, std::ostream &os = std::cout,
+                                   const std::string &source_name = "");
+
+        /*
+         * 用解析期确定的帧表建立运行期帧实例（RVM_RuntimeMemory 的帧注册表）。
+         *
+         * 帧身份在解析期就已完全确定，所以运行期一次性建好，函数调用时不需要新建帧——
+         * 只按参数绑定写入既有帧的槽位。
+         *
+         * 帧的词法父链在此建立：函数帧的父 = 定义处外层作用域所属的帧。
+         * 这正是「函数体看定义处、不看调用处」的落点。
+         */
+        void prepareRuntimeFrames(const ParseScopeRecord &record);
+
+        /*
+         * 运行期槽位绑定的全局开关。
+         *
+         * 切换之后，变量存取一律走「解析期绑定表 → 帧 + 槽位」，不再有任何按名字查找；
+         * 绑定缺失时直接报错，不回退到旧路径——静默回退会把模型错误藏起来。
+         */
+        void setSlotModeEnabled(bool enabled);
+        [[nodiscard]] bool isSlotModeEnabled();
+        /*
+         * 槽位表是否已建立且可用（'.rsi' 反序列化路径不会建立它们）。
+         * 供调用方在决定是否启用静态槽位架构前判断。
+         */
+        [[nodiscard]] bool isSlotModeAvailable();
+
+        /* 取得最近一次解析的完整记录（运行期读帧表用） */
+        [[nodiscard]] const ParseScopeRecord &getLastParseScopeRecord();
 
         enum class ParseType {
             File,

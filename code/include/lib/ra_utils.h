@@ -5,11 +5,13 @@
 #ifndef RVM_RA_UTILS_H
 #define RVM_RA_UTILS_H
 
+#include <cstdint>
+#include <limits>
 #include <map>
 
 namespace utils {
 
-    // === �������Ͷ��� ===
+    // === 基础类型定义 ===
     struct Number;
     enum class NumType {
         double_type,
@@ -31,10 +33,10 @@ namespace utils {
     };
 
     enum class SerializationProfile {
-        Debug,         // ������Ϣ��Դ�롢���ű����кš��汾������/���ԣ�
-        Testing,       // �Ƴ�Դ�뵫�������ű� & �кţ�CI/CD�Զ������ԣ�
-        Release,       // ��ָ���� + ��ҪԪ���� + �汾������������
-        Minified       // ���¾����ް汾/Ԫ���ݣ������ڷ��ɳ�У�
+        Debug,         // 完整信息：源码、符号表、行号、版本（开发/调试）
+        Testing,       // 移除源码但保留符号表 & 行号（CI/CD自动化测试）
+        Release,       // 仅指令流 + 必要元数据 + 版本（生产环境）
+        Minified       // 极致精简（无版本/元数据，仅用于封闭沙盒）
     };
 
     enum class TimeFormat {
@@ -44,7 +46,7 @@ namespace utils {
         Timestamp   // Unix timestamp
     };
 
-    // === �ַ������� ===
+    // === 字符串处理 ===
     struct StringManager {
         static StringManager &getInstance();
         static std::vector<std::string> split(const std::string &content, char delimiter = ',');
@@ -88,7 +90,7 @@ namespace utils {
     std::string listJoin(const std::list<std::string>& strList, const std::string& delimiter="");
     std::string vectorJoin(const std::vector<std::string>& strVector, const std::string& delimiter="");
 
-    // === ·������ ===
+    // === 路径处理 ===
     std::string getFileNameFromPath(const std::string &path);
     std::string getFileExtFromPath(const std::string &path);
     std::pair<std::string, std::string> getFileInfoFromPath(const std::string &path);
@@ -101,7 +103,7 @@ namespace utils {
     void setProgramEnvDir(const std::string &dir_path);
     void appendProgramWorkingDir(const std::string &path);
 
-    // === ��������ת�� ===
+    // === 数据类型转换 ===
     int stringToInt(const std::string& str);
     double stringToDouble(const std::string& str);
     char stringToChar(const std::string& str);
@@ -113,24 +115,34 @@ namespace utils {
     bool isValidKeyWord(const std::string &content);
     bool isValidParameter(const std::string &content);
     bool isNumber(const std::string &str);
+
+    /*
+     * 判断一个标识符是否是跳转标签名（而非数据实体名）。
+     *
+     * 标签由 SET: 登记进 InsSet::set_labels，运行期按标签查，不占变量槽位。
+     * RA 里标签有两种形态：
+     *   - SET 登记的标签： sl<n>_s<n> 或 sl<n>（如 sl2_s94、sl105）
+     *   - EXIT 的域关键字： LOOP / REPEAT / UNTIL
+     */
+    bool looksLikeLabelName(const std::string &content);
     inline bool isDigit(char c);
     inline bool isSign(char c);
     inline bool isDoubleQuoted(const std::string &content);
 
-    // === ���л�/�����л� ===
+    // === 序列化/反序列化 ===
     void serializeArgType(std::ostream &os, const ArgType &argType, const SerializationProfile &profile);
     ArgType deserializeArgType(std::istream &is, const SerializationProfile &profile);
     std::tuple<char, char, char, char, char> getSeparators(TimeFormat format);
     bool parseDateFromString(const std::string &dateString, TimeFormat format,
                              int &year, int &month, int &day, int &hour, int &minute, int &second);
 
-    // === �ļ����� ===
+    // === 文件操作 ===
     std::string readFile(const std::string& filepath);
     std::vector<std::string> readFileToLines(const std::string &filepath);
     bool writeFile(const std::string &filepath, const std::string &content);
     bool appendFile(const std::string &filepath, const std::string &content);
 
-    // === λ����Ϣ ===
+    // === 位置信息 ===
     struct Pos {
     public:
         Pos() = default;
@@ -149,7 +161,7 @@ namespace utils {
         std::string filepath{};
     };
 
-    // === �������� ===
+    // === 参数处理 ===
     struct Arg {
     public:
         Arg() = default;
@@ -160,15 +172,43 @@ namespace utils {
         [[nodiscard]] const std::string &getValue() const;
         [[nodiscard]] std::string toString() const;
         [[nodiscard]] std::string getPosStr() const;
+
+        /*
+         * 参数在所属指令里的序号。
+         * 现在仅用于解析期诊断；运行期定位槽位不再需要它（地址已直接挂在参数上）。
+         * 不参与序列化。
+         */
+        void setOrdinal(size_t ordinal);
+        [[nodiscard]] size_t getOrdinal() const;
+
+        /*
+         * 解析期解析出的变量地址：这个参数住在哪一帧的哪个槽位。
+         *
+         * 这是静态槽位架构的核心——解析期就把名字换成地址，运行期只做
+         * `frames[frameIndex].slots[slotIndex]` 两次数组索引，没有任何名字或字符串查找。
+         *
+         * 两者都不参与序列化（Arg::serialize 只写 pos/type/value），所以 RSI 格式不变；
+         * 同理，'.rsi' 反序列化得到的参数不会带槽位信息，只能走旧系统。
+         */
+        static constexpr uint32_t INVALID_SLOT = std::numeric_limits<uint32_t>::max();
+
+        void setSlotRef(uint32_t frameIndex_, uint32_t slotIndex_);
+        [[nodiscard]] bool hasSlotRef() const;
+        [[nodiscard]] uint32_t getFrameIndex() const;
+        [[nodiscard]] uint32_t getSlotIndex() const;
+
         void serialize(std::ostream& out, const SerializationProfile &profile) const;
         void deserialize(std::istream& in, const SerializationProfile &profile);
     private:
         Pos pos{};
         utils::ArgType type{};
         std::string value;
+        size_t ordinal{0};
+        uint32_t frameIndex{INVALID_SLOT};
+        uint32_t slotIndex{INVALID_SLOT};
     };
 
-    // === �����в��������� ===
+    // === 命令行参数解析器 ===
     class ProgArgParser {
     public:
         enum class CheckDir {
@@ -213,16 +253,16 @@ namespace utils {
             std::string name;
             bool* var;
             bool whenPresent;
-            std::vector<std::string> aliases; // �洢����
-            std::string description;         // �洢����
+            std::vector<std::string> aliases; // 存储别名
+            std::string description;         // 存储描述
             std::string toString() const;
         };
 
         struct OptionInfo {
             std::string name;
             std::function<void(const std::string&)> setter;
-            std::vector<std::string> aliases; // �洢����
-            std::string description;         // �洢����
+            std::vector<std::string> aliases; // 存储别名
+            std::string description;         // 存储描述
             std::string toString() const {
                 std::ostringstream oss;
                 oss << "[Option: '" << name;
@@ -296,7 +336,7 @@ namespace utils {
         void handleOption(const std::string& arg, int argc, char* argv[], int& i);
     };
 
-    // === ��ֵ���� ===
+    // === 数值处理 ===
     struct Number{
     public:
         NumType type;

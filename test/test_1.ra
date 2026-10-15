@@ -1,0 +1,1722 @@
+FUNC: super_v6
+    PASS:
+    END: super_v6
+FUNC: export_v7
+    PASS:
+    END: export_v7
+FUNI: import_v8
+    PASS:
+    END: import_v8
+ALLOT: tv1_v11
+TP_SET: tp-list, tv1_v11
+ALLOT: tv2_v12
+PAIR_SET: "ds", "ds", tv2_v12
+ALLOT: tv3_v13
+PAIR_SET: "io", "io", tv3_v13
+ALLOT: tv4_v14
+TP_SET: tp-dict, tv4_v14
+ITER_APND: tv2_v12, tv3_v13, tv4_v14
+ALLOT: tv5_v20
+TP_SET: tp-list, tv5_v20
+ALLOT: tv6_v21
+PAIR_SET: "ds", "ds", tv6_v21
+ALLOT: tv7_v22
+TP_SET: tp-dict, tv7_v22
+ITER_APND: tv6_v21, tv7_v22
+ALLOT: tv8_v29
+TP_SET: tp-list, tv8_v29
+ALLOT: tv9_v30
+PAIR_SET: "ops", "ops", tv9_v30
+ALLOT: tv10_v31
+PAIR_SET: "dt", "dt", tv10_v31
+ALLOT: tv11_v32
+TP_SET: tp-dict, tv11_v32
+ITER_APND: tv9_v30, tv10_v31, tv11_v32
+FUNI: type_v38, arg_v39
+    END: type_v38
+FUNI: setType_v41, arg1_v42, arg2_v43
+    END: setType_v41
+TP_DEF: DT_v44
+ALLOT: tv12_v57
+TP_GET: 0, tv12_v57
+TP_ADD_TP_FIELD: DT_v44, "TP_INT_v45", tv12_v57
+ALLOT: tv13_v58
+TP_GET: 0.01, tv13_v58
+TP_ADD_TP_FIELD: DT_v44, "TP_FLOAT_v46", tv13_v58
+ALLOT: tv14_v59
+TP_GET: "", tv14_v59
+TP_ADD_TP_FIELD: DT_v44, "TP_STR_v47", tv14_v59
+ALLOT: tv15_v60
+PUT: "0", tv15_v60
+TP_SET: tp-char, tv15_v60
+ALLOT: tv16_v61
+TP_GET: tv15_v60, tv16_v61
+TP_ADD_TP_FIELD: DT_v44, "TP_CHAR_v48", tv16_v61
+ALLOT: tv17_v62
+TP_GET: true, tv17_v62
+TP_ADD_TP_FIELD: DT_v44, "TP_BOOL_v49", tv17_v62
+ALLOT: tv18_v63
+TP_SET: tp-list, tv18_v63
+ALLOT: tv19_v64
+TP_GET: tv18_v63, tv19_v64
+TP_ADD_TP_FIELD: DT_v44, "TP_LIST_v50", tv19_v64
+ALLOT: tv20_v65
+TP_SET: tp-dict, tv20_v65
+ALLOT: tv21_v66
+TP_GET: tv20_v65, tv21_v66
+TP_ADD_TP_FIELD: DT_v44, "TP_DICT_v51", tv21_v66
+ALLOT: tv22_v67
+TP_GET: null, tv22_v67
+TP_ADD_TP_FIELD: DT_v44, "TP_NULL_v52", tv22_v67
+ALLOT: tv23_v68
+TP_GET: setType_v41, tv23_v68
+TP_ADD_TP_FIELD: DT_v44, "TP_FUNC_v53", tv23_v68
+ALLOT: tv24_v69
+TP_GET: type_v38, tv24_v69
+TP_ADD_TP_FIELD: DT_v44, "TP_FUNI_v54", tv24_v69
+FUNI: anon_func_tv25_v70
+    ALLOT: temp_v71
+    ALLOT: tv26_v72
+    TP_SET: tp-list, tv26_v72
+    PUT: tv26_v72, temp_v71
+    TP_SET: tp-series, temp_v71
+    ALLOT: tv27_v73
+    TP_GET: temp_v71, tv27_v73
+    RET: tv27_v73
+    END: anon_func_tv25_v70
+ALLOT: tv28_v74
+PUT: anon_func_tv25_v70, tv28_v74
+ALLOT: tv29_v75
+IVOK: anon_func_tv25_v70, tv29_v75
+TP_ADD_TP_FIELD: DT_v44, "TP_SERIES_v55", tv29_v75
+ALLOT: tv30_v77
+TP_GET_FIELD: DT_v44, "TP_LIST_v50", tv30_v77
+ALLOT: tv31_v79
+TP_GET_FIELD: DT_v44, "TP_DICT_v51", tv31_v79
+ALLOT: tv32_v81
+TP_GET_FIELD: DT_v44, "TP_STR_v47", tv32_v81
+ALLOT: tv33_v83
+TP_GET_FIELD: DT_v44, "TP_SERIES_v55", tv33_v83
+ALLOT: tv34_v84
+TP_SET: tp-list, tv34_v84
+ITER_APND: tv30_v77, tv31_v79, tv32_v81, tv33_v83, tv34_v84
+TP_ADD_TP_FIELD: DT_v44, "ITERABLE_TPS_v56", tv34_v84
+FUNI: checkType_v86, arg1_v87, arg2_v88
+    ALLOT: tv35_v90
+    TP_GET: arg2_v88, tv35_v90
+    ALLOT: tv36_v92
+    TP_GET_FIELD: DT_v44, "TP_LIST_v50", tv36_v92
+    ALLOT: tv37_v93
+    CMP: tv35_v90, tv36_v92, tv37_v93
+    CREL: tv37_v93, RE, tv37_v93
+    JF: tv37_v93, sl2_s94
+    FUNI: size_v96, arg_v97
+        END: size_v96
+    ALLOT: length_v98, typeOfArg1_v99
+    TP_SET: tp-int, length_v98
+    ALLOT: tv38_v100
+    ITER_SIZE: arg2_v88, tv38_v100
+    PUT: tv38_v100, length_v98
+    TP_SET: tp-str, typeOfArg1_v99
+    ALLOT: tv39_v101
+    TP_GET: arg1_v87, tv39_v101
+    PUT: tv39_v101, typeOfArg1_v99
+    ALLOT: i_v102
+    TP_SET: tp-int, i_v102
+    PUT: 0, i_v102
+    ALLOT: tv40_v103
+    CMP: true, false, tv40_v103
+    UNTIL: tv40_v103, RE
+        ALLOT: tv41_v104
+        CMP: i_v102, length_v98, tv41_v104
+        CREL: tv41_v104, RL, tv41_v104
+        JT: tv41_v104, sl3_s105
+        EXIT: UNTIL
+        SET: sl3_s105
+        ALLOT: tv42_v107
+        ITER_GET: arg2_v88, i_v102, tv42_v107
+        ALLOT: tv43_v108
+        CMP: typeOfArg1_v99, tv42_v107, tv43_v108
+        CREL: tv43_v108, RE, tv43_v108
+        JF: tv43_v108, sl5_s109
+        RET: true
+        JMP: sl4_s106
+        SET: sl5_s109
+        SET: sl4_s106
+        ADD: i_v102, 1, i_v102
+        END: UNTIL
+    RET: false
+    JMP: sl1_s89
+    SET: sl2_s94
+    ALLOT: tv44_v110
+    TP_GET: arg2_v88, tv44_v110
+    ALLOT: tv45_v112
+    TP_GET_FIELD: DT_v44, "TP_STR_v47", tv45_v112
+    ALLOT: tv46_v113
+    CMP: tv44_v110, tv45_v112, tv46_v113
+    CREL: tv46_v113, RE, tv46_v113
+    JF: tv46_v113, sl6_s114
+    ALLOT: tv47_v115
+    TP_GET: arg1_v87, tv47_v115
+    ALLOT: tv48_v116
+    CMP: tv47_v115, arg2_v88, tv48_v116
+    CREL: tv48_v116, RE, tv48_v116
+    RET: tv48_v116
+    JMP: sl1_s89
+    SET: sl6_s114
+    JF: true, sl7_s117
+    RET: false
+    JMP: sl1_s89
+    SET: sl7_s117
+    SET: sl1_s89
+    END: checkType_v86
+FUNI: isIter_v119, arg_v120
+    FUNI: size_v122, arg_v120
+        END: size_v122
+    ALLOT: length_v123
+    TP_SET: tp-int, length_v123
+    ALLOT: tv49_v125
+    TP_GET_FIELD: DT_v44, "ITERABLE_TPS_v56", tv49_v125
+    ALLOT: tv50_v126
+    ITER_SIZE: tv49_v125, tv50_v126
+    PUT: tv50_v126, length_v123
+    ALLOT: argType_v127
+    TP_SET: tp-str, argType_v127
+    ALLOT: tv51_v128
+    TP_GET: arg_v120, tv51_v128
+    PUT: tv51_v128, argType_v127
+    ALLOT: result_v129
+    TP_SET: tp-bool, result_v129
+    PUT: false, result_v129
+    ALLOT: i_v130
+    PUT: 0, i_v130
+    ALLOT: tv52_v131
+    CMP: true, false, tv52_v131
+    UNTIL: tv52_v131, RE
+        ALLOT: tv53_v132
+        CMP: i_v130, length_v123, tv53_v132
+        CREL: tv53_v132, RL, tv53_v132
+        JT: tv53_v132, sl8_s133
+        EXIT: UNTIL
+        SET: sl8_s133
+        ALLOT: tv54_v136
+        TP_GET_FIELD: DT_v44, "ITERABLE_TPS_v56", tv54_v136
+        ALLOT: tv55_v137
+        ITER_GET: tv54_v136, i_v130, tv55_v137
+        ALLOT: tv56_v138
+        CMP: argType_v127, tv55_v137, tv56_v138
+        CREL: tv56_v138, RE, tv56_v138
+        JF: tv56_v138, sl10_s139
+        PUT: true, result_v129
+        EXIT: LOOP
+        JMP: sl9_s134
+        SET: sl10_s139
+        SET: sl9_s134
+        ADD: i_v130, 1, i_v130
+        END: UNTIL
+    RET: result_v129
+    END: isIter_v119
+ALLOT: tv57_v140
+TP_SET: tp-list, tv57_v140
+ITER_APND: type_v38, setType_v41, checkType_v86, isIter_v119, DT_v44, tv57_v140
+ALLOT: tv58_v141
+TP_SET: tp-dict, tv58_v141
+TP_DEF: dt_v33
+TP_ADD_TP_FIELD: dt_v33, "DT_v44", DT_v44
+TP_ADD_TP_FIELD: dt_v33, "isIter_v119", isIter_v119
+TP_ADD_TP_FIELD: dt_v33, "checkType_v86", checkType_v86
+TP_ADD_TP_FIELD: dt_v33, "setType_v41", setType_v41
+TP_ADD_TP_FIELD: dt_v33, "type_v38", type_v38
+FUNI: ternary_v147, condition_v148, trueValue_v149, falseValue_v150
+    JF: condition_v148, sl12_s152
+    RET: trueValue_v149
+    JMP: sl11_s151
+    SET: sl12_s152
+    JF: true, sl13_s153
+    RET: falseValue_v150
+    JMP: sl11_s151
+    SET: sl13_s153
+    SET: sl11_s151
+    END: ternary_v147
+FUNI: ternaryLazy_v155, condition_v156, trueFuni_v157, falseFuni_v158
+    JF: condition_v156, sl15_s160
+    ALLOT: tv59_v161
+    IVOK: trueFuni_v157, tv59_v161
+    RET: tv59_v161
+    JMP: sl14_s159
+    SET: sl15_s160
+    JF: true, sl16_s162
+    ALLOT: tv60_v163
+    IVOK: falseFuni_v158, tv60_v163
+    RET: tv60_v163
+    JMP: sl14_s159
+    SET: sl16_s162
+    SET: sl14_s159
+    END: ternaryLazy_v155
+FUNI: orVal_v165, default_v166, spare_v167
+    ALLOT: tv61_v168
+    CMP: default_v166, null, tv61_v168
+    CREL: tv61_v168, RE, tv61_v168
+    ALLOT: tv62_v169
+    CMP: default_v166, false, tv62_v169
+    CREL: tv62_v169, RE, tv62_v169
+    ALLOT: tv63_v170
+    CMP: tv61_v168, tv62_v169, tv63_v170
+    CREL: tv63_v170, OR, tv63_v170
+    ALLOT: tv64_v171
+    IVOK: ternary_v147, tv63_v170, spare_v167, default_v166, tv64_v171
+    RET: tv64_v171
+    END: orVal_v165
+FUNI: orLazy_v173, front_v174, back_v175
+    ALLOT: tv65_v177
+    CMP: front_v174, true, tv65_v177
+    CREL: tv65_v177, RE, tv65_v177
+    JF: tv65_v177, sl18_s178
+    RET: front_v174
+    JMP: sl17_s176
+    SET: sl18_s178
+    ALLOT: tv66_v179
+    CMP: back_v175, true, tv66_v179
+    CREL: tv66_v179, RE, tv66_v179
+    JF: tv66_v179, sl19_s180
+    ALLOT: tv67_v181
+    IVOK: back_v175, tv67_v181
+    RET: tv67_v181
+    JMP: sl17_s176
+    SET: sl19_s180
+    JF: true, sl20_s182
+    RET: false
+    JMP: sl17_s176
+    SET: sl20_s182
+    SET: sl17_s176
+    END: orLazy_v173
+ALLOT: tv68_v183
+TP_SET: tp-list, tv68_v183
+ITER_APND: ternary_v147, ternaryLazy_v155, orVal_v165, orLazy_v173, tv68_v183
+ALLOT: tv69_v184
+TP_SET: tp-dict, tv69_v184
+TP_DEF: ops_v142
+TP_ADD_TP_FIELD: ops_v142, "orVal_v165", orVal_v165
+TP_ADD_TP_FIELD: ops_v142, "ternaryLazy_v155", ternaryLazy_v155
+TP_ADD_TP_FIELD: ops_v142, "orLazy_v173", orLazy_v173
+TP_ADD_TP_FIELD: ops_v142, "ternary_v147", ternary_v147
+FUNI: size_v186, arg_v187
+    END: size_v186
+FUNI: copy_v189, arg_v190
+    END: copy_v189
+FUNI: unpack_v192, arg_v193
+    ALLOT: tv70_v195
+    TP_GET_FIELD: dt_v33, "setType_v41", tv70_v195
+    TP_SET: tp-series, arg_v193
+    RET: arg_v193
+    END: unpack_v192
+FUNI: isEmpty_v197, arg_v198
+    ALLOT: tv71_v199
+    ITER_SIZE: arg_v198, tv71_v199
+    ALLOT: tv72_v200
+    CMP: tv71_v199, 0, tv72_v200
+    CREL: tv72_v200, RE, tv72_v200
+    RET: tv72_v200
+    END: isEmpty_v197
+FUNI: top_v202, arg_v203
+    ALLOT: tv73_v205
+    IVOK: isEmpty_v197, arg_v203, tv73_v205
+    JF: tv73_v205, sl22_s206
+    RET: null
+    JMP: sl21_s204
+    SET: sl22_s206
+    SET: sl21_s204
+    ALLOT: tv74_v207
+    ITER_SIZE: arg_v203, tv74_v207
+    ALLOT: tv75_v208
+    OPP: 1, tv75_v208
+    ADD: tv74_v207, tv75_v208, tv75_v208
+    ALLOT: tv76_v209
+    ITER_GET: arg_v203, tv75_v208, tv76_v209
+    RET: tv76_v209
+    END: top_v202
+FUNI: repStr_v211, arg_v212, times_v213
+    ALLOT: result_v214
+    TP_SET: tp-str, result_v214
+    PUT: "", result_v214
+    ALLOT: i_v215
+    TP_SET: tp-int, i_v215
+    PUT: 0, i_v215
+    ALLOT: tv77_v216
+    CMP: true, false, tv77_v216
+    UNTIL: tv77_v216, RE
+        ALLOT: tv78_v217
+        CMP: i_v215, times_v213, tv78_v217
+        CREL: tv78_v217, RL, tv78_v217
+        JT: tv78_v217, sl23_s218
+        EXIT: UNTIL
+        SET: sl23_s218
+        ADD: result_v214, arg_v212, result_v214
+        ADD: i_v215, 1, i_v215
+        END: UNTIL
+    RET: result_v214
+    END: repStr_v211
+FUNI: repList_v220, arg_v221, times_v222
+    ALLOT: result_v223
+    TP_SET: tp-list, result_v223
+    ALLOT: tv79_v224
+    TP_SET: tp-list, tv79_v224
+    PUT: tv79_v224, result_v223
+    ALLOT: i_v225
+    TP_SET: tp-int, i_v225
+    PUT: 0, i_v225
+    ALLOT: tv80_v226
+    CMP: true, false, tv80_v226
+    UNTIL: tv80_v226, RE
+        ALLOT: tv81_v227
+        CMP: i_v225, times_v222, tv81_v227
+        CREL: tv81_v227, RL, tv81_v227
+        JT: tv81_v227, sl24_s228
+        EXIT: UNTIL
+        SET: sl24_s228
+        ALLOT: tv82_v229
+        TP_SET: tp-list, tv82_v229
+        ITER_APND: arg_v221, tv82_v229
+        ADD: result_v223, tv82_v229, result_v223
+        ADD: i_v225, 1, i_v225
+        END: UNTIL
+    RET: result_v223
+    END: repList_v220
+FUNC: repeat_v231, times_v232, handler_v233
+    END: repeat_v231
+FUNC: forInRange_v235, start_v236, end_v237, handler_v238, sep_v239
+    ALLOT: tv83_v241
+    CMP: sep_v239, 0, tv83_v241
+    CREL: tv83_v241, RE, tv83_v241
+    JF: tv83_v241, sl26_s242
+    FUNC: sout_v244, args_v245, end_v237
+        END: sout_v244
+    ALLOT: tv84_v246
+    TP_SET: tp-list, tv84_v246
+    ITER_APND: "The sep cannot be 0", tv84_v246
+    SOUT: s-l, s-unpack, tv84_v246, "\n"
+    RET:
+    JMP: sl25_s240
+    SET: sl26_s242
+    SET: sl25_s240
+    ALLOT: isIncreasing_v247
+    TP_SET: tp-bool, isIncreasing_v247
+    ALLOT: tv85_v248
+    CMP: sep_v239, 0, tv85_v248
+    CREL: tv85_v248, RG, tv85_v248
+    PUT: tv85_v248, isIncreasing_v247
+    ALLOT: next_v249
+    TP_SET: tp-int, next_v249
+    PUT: 0, next_v249
+    ALLOT: i_v250
+    TP_SET: tp-int, i_v250
+    PUT: start_v236, i_v250
+    ALLOT: tv86_v251
+    CMP: true, false, tv86_v251
+    UNTIL: tv86_v251, RE
+        ALLOT: tv87_v252
+        CMP: i_v250, end_v237, tv87_v252
+        CREL: tv87_v252, RL, tv87_v252
+        JT: tv87_v252, sl27_s253
+        EXIT: UNTIL
+        SET: sl27_s253
+        ALLOT: tv88_v254
+        ADD: i_v250, sep_v239, tv88_v254
+        PUT: tv88_v254, next_v249
+        ALLOT: isEnd_v255
+        PUT: false, isEnd_v255
+        ALLOT: tv89_v257
+        CMP: next_v249, end_v237, tv89_v257
+        CREL: tv89_v257, RG, tv89_v257
+        ALLOT: tv90_v258
+        CMP: isIncreasing_v247, tv89_v257, tv90_v258
+        CREL: tv90_v258, AND, tv90_v258
+        ALLOT: tv91_v259
+        CMP: isIncreasing_v247, false, tv91_v259
+        CREL: tv91_v259, RE, tv91_v259
+        ALLOT: tv92_v260
+        CMP: next_v249, end_v237, tv92_v260
+        CREL: tv92_v260, RL, tv92_v260
+        ALLOT: tv93_v261
+        CMP: tv91_v259, tv92_v260, tv93_v261
+        CREL: tv93_v261, AND, tv93_v261
+        ALLOT: tv94_v262
+        CMP: tv90_v258, tv93_v261, tv94_v262
+        CREL: tv94_v262, OR, tv94_v262
+        JF: tv94_v262, sl29_s263
+        PUT: true, isEnd_v255
+        JMP: sl28_s256
+        SET: sl29_s263
+        SET: sl28_s256
+        ALLOT: tv95_v265
+        CMP: i_v250, start_v236, tv95_v265
+        CREL: tv95_v265, RE, tv95_v265
+        ALLOT: tv96_v269
+        IVOK: handler_v238, i_v250, tv95_v265, isEnd_v255, tv96_v269
+        ALLOT: tv97_v270
+        CMP: tv96_v269, false, tv97_v270
+        CREL: tv97_v270, RE, tv97_v270
+        JF: tv97_v270, sl31_s271
+        EXIT: LOOP
+        JMP: sl30_s264
+        SET: sl31_s271
+        SET: sl30_s264
+        ADD: i_v250, sep_v239, i_v250
+        END: UNTIL
+    END: forInRange_v235
+FUNI: iter_v273, iterData_v274, handler_v275, reverse_v276
+    ALLOT: res_v277, iterLength_v278
+    PUT: true, res_v277
+    TP_SET: tp-int, iterLength_v278
+    ALLOT: tv98_v281
+    TP_GET_FIELD: dt_v33, "isIter_v119", tv98_v281
+    ALLOT: tv99_v282
+    IVOK: isIter_v119, iterData_v274, tv99_v282
+    JF: tv99_v282, sl33_s283
+    ALLOT: tv100_v284
+    ITER_SIZE: iterData_v274, tv100_v284
+    PUT: tv100_v284, iterLength_v278
+    JF: reverse_v276, sl35_s286
+    ALLOT: i_v287
+    ALLOT: tv101_v288
+    OPP: 1, tv101_v288
+    ADD: iterLength_v278, tv101_v288, tv101_v288
+    PUT: tv101_v288, i_v287
+    ALLOT: tv102_v289
+    CMP: true, false, tv102_v289
+    UNTIL: tv102_v289, RE
+        ALLOT: tv103_v290
+        CMP: i_v287, 0, tv103_v290
+        CREL: tv103_v290, RGE, tv103_v290
+        JT: tv103_v290, sl36_s291
+        EXIT: UNTIL
+        SET: sl36_s291
+        ALLOT: tv104_v293
+        ITER_GET: iterData_v274, i_v287, tv104_v293
+        ALLOT: tv105_v295
+        OPP: 1, tv105_v295
+        ADD: iterLength_v278, tv105_v295, tv105_v295
+        ALLOT: tv106_v296
+        CMP: i_v287, tv105_v295, tv106_v296
+        CREL: tv106_v296, RE, tv106_v296
+        ALLOT: tv107_v298
+        CMP: i_v287, 0, tv107_v298
+        CREL: tv107_v298, RE, tv107_v298
+        ALLOT: tv108_v303
+        PAIR_SET: "isEnd", tv107_v298, tv108_v303
+        ALLOT: tv109_v304
+        PAIR_SET: "isStart", tv106_v296, tv109_v304
+        ALLOT: tv110_v305
+        TP_SET: tp-dict, tv110_v305
+        ITER_APND: tv108_v303, tv109_v304, tv110_v305
+        ALLOT: tv111_v306
+        IVOK: handler_v275, tv104_v293, i_v287, iterLength_v278, tv110_v305, tv111_v306
+        ALLOT: tv112_v307
+        CMP: tv111_v306, false, tv112_v307
+        CREL: tv112_v307, RE, tv112_v307
+        JF: tv112_v307, sl38_s308
+        PUT: false, res_v277
+        EXIT: LOOP
+        JMP: sl37_s292
+        SET: sl38_s308
+        SET: sl37_s292
+        ADD: i_v287, -1, i_v287
+        END: UNTIL
+    JMP: sl34_s285
+    SET: sl35_s286
+    JF: true, sl39_s309
+    ALLOT: i_v310
+    PUT: 0, i_v310
+    ALLOT: tv113_v311
+    CMP: true, false, tv113_v311
+    UNTIL: tv113_v311, RE
+        ALLOT: tv114_v312
+        CMP: i_v310, iterLength_v278, tv114_v312
+        CREL: tv114_v312, RL, tv114_v312
+        JT: tv114_v312, sl40_s313
+        EXIT: UNTIL
+        SET: sl40_s313
+        ALLOT: tv115_v315
+        ITER_GET: iterData_v274, i_v310, tv115_v315
+        ALLOT: tv116_v317
+        CMP: i_v310, 0, tv116_v317
+        CREL: tv116_v317, RE, tv116_v317
+        ALLOT: tv117_v319
+        OPP: 1, tv117_v319
+        ADD: iterLength_v278, tv117_v319, tv117_v319
+        ALLOT: tv118_v320
+        CMP: i_v310, tv117_v319, tv118_v320
+        CREL: tv118_v320, RE, tv118_v320
+        ALLOT: tv119_v325
+        PAIR_SET: "isEnd", tv118_v320, tv119_v325
+        ALLOT: tv120_v326
+        PAIR_SET: "isStart", tv116_v317, tv120_v326
+        ALLOT: tv121_v327
+        TP_SET: tp-dict, tv121_v327
+        ITER_APND: tv119_v325, tv120_v326, tv121_v327
+        ALLOT: tv122_v328
+        IVOK: handler_v275, tv115_v315, i_v310, iterLength_v278, tv121_v327, tv122_v328
+        ALLOT: tv123_v329
+        CMP: tv122_v328, false, tv123_v329
+        CREL: tv123_v329, RE, tv123_v329
+        JF: tv123_v329, sl42_s330
+        PUT: false, res_v277
+        EXIT: LOOP
+        JMP: sl41_s314
+        SET: sl42_s330
+        SET: sl41_s314
+        ADD: i_v310, 1, i_v310
+        END: UNTIL
+    JMP: sl34_s285
+    SET: sl39_s309
+    SET: sl34_s285
+    JMP: sl32_s279
+    SET: sl33_s283
+    SET: sl32_s279
+    RET: res_v277
+    END: iter_v273
+FUNI: join_v332, iterData_v333, sep_v334
+    ALLOT: result_v335
+    TP_SET: tp-str, result_v335
+    PUT: "", result_v335
+    FUNI: anon_func_tv124_v340, item_v336, index_v337, length_v338, __v339
+        ADD: result_v335, item_v336, result_v335
+        ALLOT: tv125_v342
+        OPP: 1, tv125_v342
+        ADD: length_v338, tv125_v342, tv125_v342
+        ALLOT: tv126_v343
+        CMP: index_v337, tv125_v342, tv126_v343
+        CREL: tv126_v343, RL, tv126_v343
+        JF: tv126_v343, sl44_s344
+        ADD: result_v335, sep_v334, result_v335
+        JMP: sl43_s341
+        SET: sl44_s344
+        SET: sl43_s341
+        RET: null
+        END: anon_func_tv124_v340
+    ALLOT: tv127_v345
+    PUT: anon_func_tv124_v340, tv127_v345
+    ALLOT: tv128_v346
+    IVOK: iter_v273, iterData_v333, tv127_v345, false, tv128_v346
+    RET: result_v335
+    END: join_v332
+FUNI: joins_v348, args_v349, sep_v350
+    ALLOT: tv129_v351
+    IVOK: join_v332, args_v349, sep_v350, tv129_v351
+    RET: tv129_v351
+    END: joins_v348
+FUNC: listAppend_v353, listData_v354, item_v355
+    END: listAppend_v353
+FUNC: listRemove_v357, listData_v358, index_v359
+    END: listRemove_v357
+FUNC: dictRemove_v361, dictData_v362, key_v363
+    END: dictRemove_v361
+FUNC: iterRemove_v365, iterData_v366, index_v367
+    ALLOT: iterType_v368
+    ALLOT: tv130_v370
+    TP_GET_FIELD: dt_v33, "type_v38", tv130_v370
+    ALLOT: tv131_v371
+    TP_GET: iterData_v366, tv131_v371
+    PUT: tv131_v371, iterType_v368
+    ALLOT: tv132_v374
+    TP_GET_FIELD: dt_v33, "isIter_v119", tv132_v374
+    ALLOT: tv133_v375
+    IVOK: isIter_v119, iterData_v366, tv133_v375
+    JF: tv133_v375, sl46_s376
+    ALLOT: tv134_v379
+    TP_GET_FIELD: dt_v33, "DT_v44", tv134_v379
+    ALLOT: tv135_v381
+    TP_GET_FIELD: tv134_v379, "TP_LIST_v50", tv135_v381
+    ALLOT: tv136_v382
+    CMP: iterType_v368, tv135_v381, tv136_v382
+    CREL: tv136_v382, RE, tv136_v382
+    ALLOT: tv137_v384
+    TP_GET_FIELD: dt_v33, "DT_v44", tv137_v384
+    ALLOT: tv138_v386
+    TP_GET_FIELD: tv137_v384, "TP_STR_v47", tv138_v386
+    ALLOT: tv139_v387
+    CMP: iterType_v368, tv138_v386, tv139_v387
+    CREL: tv139_v387, RE, tv139_v387
+    ALLOT: tv140_v388
+    CMP: tv136_v382, tv139_v387, tv140_v388
+    CREL: tv140_v388, OR, tv140_v388
+    JF: tv140_v388, sl48_s389
+    ITER_DEL: iterData_v366, index_v367
+    RET:
+    JMP: sl47_s377
+    SET: sl48_s389
+    ALLOT: tv141_v391
+    TP_GET_FIELD: dt_v33, "DT_v44", tv141_v391
+    ALLOT: tv142_v393
+    TP_GET_FIELD: tv141_v391, "TP_DICT_v51", tv142_v393
+    ALLOT: tv143_v394
+    CMP: iterType_v368, tv142_v393, tv143_v394
+    CREL: tv143_v394, RE, tv143_v394
+    JF: tv143_v394, sl49_s395
+    DICT_DEL: iterData_v366, index_v367
+    RET:
+    JMP: sl47_s377
+    SET: sl49_s395
+    SET: sl47_s377
+    JMP: sl45_s372
+    SET: sl46_s376
+    SET: sl45_s372
+    FUNC: sout_v397, args_v398, end_v399
+        END: sout_v397
+    ALLOT: tv144_v400
+    TP_SET: tp-list, tv144_v400
+    ITER_APND: "Invalid iterable data type: ", iterType_v368, tv144_v400
+    SOUT: s-l, s-unpack, tv144_v400, "\n"
+    END: iterRemove_v365
+FUNI: dictKeys_v402, dictData_v403
+    END: dictKeys_v402
+FUNI: dictValues_v405, dictData_v406
+    END: dictValues_v405
+FUNC: dictInsert_v408, dictData_v409, key_v410, value_v411
+    END: dictInsert_v408
+FUNI: iterContains_v413, iterData_v414, checkItem_v415
+    ALLOT: result_v416
+    TP_SET: tp-bool, result_v416
+    PUT: false, result_v416
+    FUNI: anon_func_tv145_v419, item_v417, __v418, __v418, __v418
+        ALLOT: tv146_v421
+        CMP: item_v417, checkItem_v415, tv146_v421
+        CREL: tv146_v421, RE, tv146_v421
+        JF: tv146_v421, sl51_s422
+        PUT: true, result_v416
+        JMP: sl50_s420
+        SET: sl51_s422
+        SET: sl50_s420
+        RET: null
+        END: anon_func_tv145_v419
+    ALLOT: tv147_v423
+    PUT: anon_func_tv145_v419, tv147_v423
+    ALLOT: tv148_v424
+    IVOK: iter_v273, iterData_v414, tv147_v423, false, tv148_v424
+    RET: result_v416
+    END: iterContains_v413
+FUNI: sort_v426, numList_v427, reverse_v428
+    ALLOT: quickSort_v429
+    FUNI: anon_func_tv149_v431, arr_v430, reverse_v428
+        ALLOT: tv150_v433
+        ITER_SIZE: arr_v430, tv150_v433
+        ALLOT: tv151_v434
+        CMP: tv150_v433, 1, tv151_v434
+        CREL: tv151_v434, RLE, tv151_v434
+        JF: tv151_v434, sl53_s435
+        RET: arr_v430
+        JMP: sl52_s432
+        SET: sl53_s435
+        SET: sl52_s432
+        ALLOT: pivot_v436, less_v437, greater_v438, i_v439
+        ALLOT: tv152_v440
+        ITER_GET: arr_v430, 0, tv152_v440
+        PUT: tv152_v440, pivot_v436
+        TP_SET: tp-list, less_v437
+        ALLOT: tv153_v441
+        TP_SET: tp-list, tv153_v441
+        PUT: tv153_v441, less_v437
+        TP_SET: tp-list, greater_v438
+        ALLOT: tv154_v442
+        TP_SET: tp-list, tv154_v442
+        PUT: tv154_v442, greater_v438
+        PUT: 1, i_v439
+        ALLOT: tv155_v443
+        CMP: true, false, tv155_v443
+        UNTIL: tv155_v443, RE
+            ALLOT: tv156_v444
+            ITER_SIZE: arr_v430, tv156_v444
+            ALLOT: tv157_v445
+            CMP: i_v439, tv156_v444, tv157_v445
+            CREL: tv157_v445, RL, tv157_v445
+            JT: tv157_v445, sl54_s446
+            EXIT: UNTIL
+            SET: sl54_s446
+            ALLOT: tv158_v448
+            ITER_GET: arr_v430, i_v439, tv158_v448
+            ALLOT: tv159_v449
+            CMP: tv158_v448, pivot_v436, tv159_v449
+            CREL: tv159_v449, RLE, tv159_v449
+            ALLOT: tv160_v450
+            OPP: reverse_v428, tv160_v450
+            ALLOT: tv161_v451
+            CMP: tv159_v449, tv160_v450, tv161_v451
+            CREL: tv161_v451, AND, tv161_v451
+            ALLOT: tv162_v452
+            ITER_GET: arr_v430, i_v439, tv162_v452
+            ALLOT: tv163_v453
+            CMP: tv162_v452, pivot_v436, tv163_v453
+            CREL: tv163_v453, RG, tv163_v453
+            ALLOT: tv164_v454
+            CMP: tv163_v453, reverse_v428, tv164_v454
+            CREL: tv164_v454, AND, tv164_v454
+            ALLOT: tv165_v455
+            CMP: tv161_v451, tv164_v454, tv165_v455
+            CREL: tv165_v455, OR, tv165_v455
+            JF: tv165_v455, sl56_s456
+            ALLOT: tv166_v457
+            ITER_GET: arr_v430, i_v439, tv166_v457
+            ADD: less_v437, tv166_v457, less_v437
+            JMP: sl55_s447
+            SET: sl56_s456
+            JF: true, sl57_s458
+            ALLOT: tv167_v459
+            ITER_GET: arr_v430, i_v439, tv167_v459
+            ADD: greater_v438, tv167_v459, greater_v438
+            JMP: sl55_s447
+            SET: sl57_s458
+            SET: sl55_s447
+            ADD: i_v439, 1, i_v439
+            END: UNTIL
+        ALLOT: tv168_v462
+        IVOK: quickSort_v429, less_v437, reverse_v428, tv168_v462
+        ALLOT: tv169_v463
+        TP_SET: tp-list, tv169_v463
+        ITER_APND: pivot_v436, tv169_v463
+        ALLOT: tv170_v464
+        ADD: tv168_v462, tv169_v463, tv170_v464
+        ALLOT: tv171_v467
+        IVOK: quickSort_v429, greater_v438, reverse_v428, tv171_v467
+        ALLOT: tv172_v468
+        ADD: tv170_v464, tv171_v467, tv172_v468
+        RET: tv172_v468
+        END: anon_func_tv149_v431
+    ALLOT: tv173_v469
+    PUT: anon_func_tv149_v431, tv173_v469
+    PUT: tv173_v469, quickSort_v429
+    ALLOT: tv174_v470
+    IVOK: anon_func_tv149_v431, numList_v427, reverse_v428, tv174_v470
+    RET: tv174_v470
+    END: sort_v426
+TP_DEF: Iterable_v471
+FUNI: size_v473, this_v481
+    RET: null
+    END: size_v473
+TP_ADD_INST_FIELD: Iterable_v471, "size_v473", size_v473
+FUNI: get_v475, this_v484
+    RET: null
+    END: get_v475
+TP_ADD_INST_FIELD: Iterable_v471, "get_v475", get_v475
+FUNI: toStr_v477, this_v487
+    RET: null
+    END: toStr_v477
+TP_ADD_INST_FIELD: Iterable_v471, "toStr_v477", toStr_v477
+FUNI: empty_v479, this_v490
+    ALLOT: tv175_v491
+    TP_GET_FIELD: this_v490, "size_v473", tv175_v491
+    ALLOT: tv176_v492
+    IVOK: size_v473, this_v490, tv176_v492
+    ALLOT: tv177_v493
+    CMP: tv176_v492, 0, tv177_v493
+    CREL: tv177_v493, RE, tv177_v493
+    RET: tv177_v493
+    END: empty_v479
+TP_ADD_INST_FIELD: Iterable_v471, "empty_v479", empty_v479
+FUNI: Iterable_empty_v472
+    ALLOT: this_v494
+    TP_NEW: Iterable_v471, this_v494
+    RET: this_v494
+    END: Iterable_empty_v472
+TP_DEF: List_v495, Iterable_v471
+TP_ADD_INST_FIELD: List_v495, "data_v496", null
+TP_ADD_INST_FIELD: List_v495, "length_v497", null
+TP_ADD_INST_FIELD: List_v495, "compareHandler_v498", null
+TP_ADD_INST_FIELD: List_v495, "plusHandler_v499", null
+FUNI: get_v504, this_v579
+    ALLOT: tv178_v581
+    TP_GET_FIELD: this_v579, "data_v496", tv178_v581
+    RET: tv178_v581
+    END: get_v504
+TP_ADD_INST_FIELD: List_v495, "get_v504", get_v504
+FUNI: sort_v505, this_v585, sortHandler_v583, reverse_v584
+    ALLOT: tv179_v587
+    TP_GET_FIELD: this_v585, "compareHandler_v498", tv179_v587
+    ALLOT: tv180_v589
+    TP_GET_FIELD: ops_v142, "orVal_v165", tv180_v589
+    ALLOT: tv181_v590
+    IVOK: orVal_v165, sortHandler_v583, tv179_v587, tv181_v590
+    PUT: tv181_v590, sortHandler_v583
+    ALLOT: tv182_v592
+    CMP: sortHandler_v583, null, tv182_v592
+    CREL: tv182_v592, RE, tv182_v592
+    JF: tv182_v592, sl59_s593
+    ALLOT: tv183_v595
+    TP_GET_FIELD: this_v585, "data_v496", tv183_v595
+    ALLOT: tv184_v597
+    TP_GET_FIELD: this_v585, "data_v496", tv184_v597
+    ALLOT: tv185_v598
+    IVOK: sort_v426, tv184_v597, reverse_v584, tv185_v598
+    TP_SET_FIELD: this_v585, "data_v496", tv185_v598
+    JMP: sl58_s591
+    SET: sl59_s593
+    JF: true, sl60_s599
+    ALLOT: quickSort_v600
+    FUNI: anon_func_tv186_v602, arr_v601, reverse_v584
+        ALLOT: tv187_v604
+        ITER_SIZE: arr_v601, tv187_v604
+        ALLOT: tv188_v605
+        CMP: tv187_v604, 1, tv188_v605
+        CREL: tv188_v605, RLE, tv188_v605
+        JF: tv188_v605, sl62_s606
+        RET: arr_v601
+        JMP: sl61_s603
+        SET: sl62_s606
+        SET: sl61_s603
+        ALLOT: pivot_v607
+        ALLOT: tv189_v608
+        ITER_GET: arr_v601, 0, tv189_v608
+        PUT: tv189_v608, pivot_v607
+        ALLOT: less_v609
+        TP_SET: tp-list, less_v609
+        ALLOT: greater_v610
+        TP_SET: tp-list, greater_v610
+        ALLOT: i_v611
+        PUT: 1, i_v611
+        ALLOT: tv190_v612
+        CMP: true, false, tv190_v612
+        UNTIL: tv190_v612, RE
+            ALLOT: tv191_v613
+            ITER_SIZE: arr_v601, tv191_v613
+            ALLOT: tv192_v614
+            CMP: i_v611, tv191_v613, tv192_v614
+            CREL: tv192_v614, RL, tv192_v614
+            JT: tv192_v614, sl63_s615
+            EXIT: UNTIL
+            SET: sl63_s615
+            ALLOT: compareResult_v616
+            ALLOT: tv193_v617
+            ITER_GET: arr_v601, i_v611, tv193_v617
+            ALLOT: tv194_v620
+            IVOK: sortHandler_v583, tv193_v617, pivot_v607, tv194_v620
+            PUT: tv194_v620, compareResult_v616
+            ALLOT: tv195_v622
+            CMP: compareResult_v616, 0, tv195_v622
+            CREL: tv195_v622, RLE, tv195_v622
+            ALLOT: tv196_v623
+            OPP: reverse_v584, tv196_v623
+            ALLOT: tv197_v624
+            CMP: tv195_v622, tv196_v623, tv197_v624
+            CREL: tv197_v624, AND, tv197_v624
+            ALLOT: tv198_v625
+            CMP: compareResult_v616, 0, tv198_v625
+            CREL: tv198_v625, RG, tv198_v625
+            ALLOT: tv199_v626
+            CMP: tv198_v625, reverse_v584, tv199_v626
+            CREL: tv199_v626, AND, tv199_v626
+            ALLOT: tv200_v627
+            CMP: tv197_v624, tv199_v626, tv200_v627
+            CREL: tv200_v627, OR, tv200_v627
+            JF: tv200_v627, sl65_s628
+            ALLOT: tv201_v629
+            ITER_GET: arr_v601, i_v611, tv201_v629
+            ADD: less_v609, tv201_v629, less_v609
+            JMP: sl64_s621
+            SET: sl65_s628
+            JF: true, sl66_s630
+            ALLOT: tv202_v631
+            ITER_GET: arr_v601, i_v611, tv202_v631
+            ADD: greater_v610, tv202_v631, greater_v610
+            JMP: sl64_s621
+            SET: sl66_s630
+            SET: sl64_s621
+            ADD: i_v611, 1, i_v611
+            END: UNTIL
+        ALLOT: tv203_v634
+        IVOK: quickSort_v600, less_v609, reverse_v584, tv203_v634
+        ALLOT: tv204_v635
+        TP_SET: tp-list, tv204_v635
+        ITER_APND: pivot_v607, tv204_v635
+        ALLOT: tv205_v636
+        ADD: tv203_v634, tv204_v635, tv205_v636
+        ALLOT: tv206_v639
+        IVOK: quickSort_v600, greater_v610, reverse_v584, tv206_v639
+        ALLOT: tv207_v640
+        ADD: tv205_v636, tv206_v639, tv207_v640
+        RET: tv207_v640
+        END: anon_func_tv186_v602
+    ALLOT: tv208_v641
+    PUT: anon_func_tv186_v602, tv208_v641
+    PUT: tv208_v641, quickSort_v600
+    ALLOT: tv209_v643
+    TP_GET_FIELD: this_v585, "data_v496", tv209_v643
+    ALLOT: tv210_v645
+    TP_GET_FIELD: this_v585, "data_v496", tv210_v645
+    ALLOT: tv211_v646
+    IVOK: anon_func_tv186_v602, tv210_v645, reverse_v584, tv211_v646
+    TP_SET_FIELD: this_v585, "data_v496", tv211_v646
+    JMP: sl58_s591
+    SET: sl60_s599
+    SET: sl58_s591
+    RET: this_v585
+    END: sort_v505
+TP_ADD_INST_FIELD: List_v495, "sort_v505", sort_v505
+FUNI: append_v509, this_v650, item_v649
+    ALLOT: tv212_v652
+    TP_GET_FIELD: this_v650, "data_v496", tv212_v652
+    ITER_APND: item_v649, tv212_v652
+    ALLOT: tv213_v654
+    TP_GET_FIELD: this_v650, "length_v497", tv213_v654
+    ADD: tv213_v654, 1, tv213_v654
+    RET: this_v650
+    END: append_v509
+TP_ADD_INST_FIELD: List_v495, "append_v509", append_v509
+FUNI: remove_v512, this_v658, index_v657
+    ALLOT: tv214_v660
+    TP_GET_FIELD: this_v658, "data_v496", tv214_v660
+    CALL: iterRemove_v365, tv214_v660, index_v657
+    ALLOT: tv215_v662
+    TP_GET_FIELD: this_v658, "length_v497", tv215_v662
+    ALLOT: tv216_v663
+    OPP: 1, tv216_v663
+    ADD: tv215_v662, tv216_v663, tv215_v662
+    RET: this_v658
+    END: remove_v512
+TP_ADD_INST_FIELD: List_v495, "remove_v512", remove_v512
+FUNI: size_v514, this_v665
+    ALLOT: tv217_v667
+    TP_GET_FIELD: this_v665, "length_v497", tv217_v667
+    RET: tv217_v667
+    END: size_v514
+TP_ADD_INST_FIELD: List_v495, "size_v514", size_v514
+FUNI: toStr_v516, this_v670
+    ALLOT: tv218_v672
+    TP_GET_FIELD: this_v670, "data_v496", tv218_v672
+    ALLOT: tv219_v673
+    ADD: "", tv218_v672, tv219_v673
+    RET: tv219_v673
+    END: toStr_v516
+TP_ADD_INST_FIELD: List_v495, "toStr_v516", toStr_v516
+FUNI: mapper_v518, this_v677, handler_v676
+    ALLOT: newList_v678
+    ALLOT: tv220_v679
+    IVOK: List_empty_v500, tv220_v679
+    PUT: tv220_v679, newList_v678
+    ALLOT: tv221_v681
+    TP_GET_FIELD: this_v677, "data_v496", tv221_v681
+    FUNI: anon_func_tv222_v684, item_v682, __v683, __v683, __v683
+        ALLOT: tv223_v685
+        COPY: item_v682, tv223_v685
+        ALLOT: tv224_v687
+        IVOK: handler_v676, tv223_v685, tv224_v687
+        ALLOT: tv225_v689
+        TP_GET_FIELD: newList_v678, "append_v509", tv225_v689
+        ALLOT: tv226_v690
+        IVOK: append_v509, newList_v678, tv224_v687, tv226_v690
+        RET: null
+        END: anon_func_tv222_v684
+    ALLOT: tv227_v691
+    PUT: anon_func_tv222_v684, tv227_v691
+    ALLOT: tv228_v692
+    IVOK: iter_v273, tv221_v681, tv227_v691, false, tv228_v692
+    RET: newList_v678
+    END: mapper_v518
+TP_ADD_INST_FIELD: List_v495, "mapper_v518", mapper_v518
+FUNI: filter_v521, this_v696, handler_v695
+    ALLOT: newList_v697
+    ALLOT: tv229_v698
+    IVOK: List_empty_v500, tv229_v698
+    PUT: tv229_v698, newList_v697
+    ALLOT: tv230_v700
+    TP_GET_FIELD: this_v696, "data_v496", tv230_v700
+    FUNI: anon_func_tv231_v703, item_v701, __v702, __v702, __v702
+        ALLOT: copiedItem_v704
+        ALLOT: tv232_v705
+        COPY: item_v701, tv232_v705
+        PUT: tv232_v705, copiedItem_v704
+        ALLOT: tv233_v708
+        IVOK: handler_v695, copiedItem_v704, tv233_v708
+        JF: tv233_v708, sl68_s709
+        ALLOT: tv234_v711
+        TP_GET_FIELD: newList_v697, "append_v509", tv234_v711
+        ALLOT: tv235_v712
+        IVOK: append_v509, newList_v697, copiedItem_v704, tv235_v712
+        JMP: sl67_s706
+        SET: sl68_s709
+        SET: sl67_s706
+        RET: null
+        END: anon_func_tv231_v703
+    ALLOT: tv236_v713
+    PUT: anon_func_tv231_v703, tv236_v713
+    ALLOT: tv237_v714
+    IVOK: iter_v273, tv230_v700, tv236_v713, false, tv237_v714
+    RET: newList_v697
+    END: filter_v521
+TP_ADD_INST_FIELD: List_v495, "filter_v521", filter_v521
+FUNI: toFmtStr_v524, this_v718, transHandler_v717
+    ALLOT: tv238_v720
+    TP_GET_FIELD: this_v718, "mapper_v518", tv238_v720
+    ALLOT: tv239_v721
+    IVOK: mapper_v518, this_v718, transHandler_v717, tv239_v721
+    ALLOT: tv240_v723
+    TP_GET_FIELD: tv239_v721, "toStr_v516", tv240_v723
+    ALLOT: tv241_v724
+    IVOK: toStr_v516, tv239_v721, tv241_v724
+    RET: tv241_v724
+    END: toFmtStr_v524
+TP_ADD_INST_FIELD: List_v495, "toFmtStr_v524", toFmtStr_v524
+FUNI: contains_v527, this_v728, item_v727
+    ALLOT: tv242_v730
+    TP_GET_FIELD: this_v728, "data_v496", tv242_v730
+    ALLOT: tv243_v731
+    IVOK: iterContains_v413, tv242_v730, item_v727, tv243_v731
+    RET: tv243_v731
+    END: contains_v527
+TP_ADD_INST_FIELD: List_v495, "contains_v527", contains_v527
+FUNI: setCompareHandler_v530, this_v735, handler_v734
+    ALLOT: tv244_v737
+    TP_GET_FIELD: this_v735, "compareHandler_v498", tv244_v737
+    TP_SET_FIELD: this_v735, "compareHandler_v498", handler_v734
+    RET: this_v735
+    END: setCompareHandler_v530
+TP_ADD_INST_FIELD: List_v495, "setCompareHandler_v530", setCompareHandler_v530
+FUNI: setPlusHandler_v533, this_v741, handler_v740
+    ALLOT: tv245_v743
+    TP_GET_FIELD: this_v741, "plusHandler_v499", tv245_v743
+    TP_SET_FIELD: this_v741, "plusHandler_v499", handler_v740
+    RET: this_v741
+    END: setPlusHandler_v533
+TP_ADD_INST_FIELD: List_v495, "setPlusHandler_v533", setPlusHandler_v533
+FUNI: max_v536, this_v747, compareHandler_v746
+    ALLOT: tv246_v750
+    TP_GET_FIELD: this_v747, "empty_v479", tv246_v750
+    ALLOT: tv247_v751
+    IVOK: empty_v479, this_v747, tv247_v751
+    JF: tv247_v751, sl70_s752
+    RET: null
+    JMP: sl69_s748
+    SET: sl70_s752
+    SET: sl69_s748
+    ALLOT: max_v753
+    ALLOT: tv248_v755
+    TP_GET_FIELD: this_v747, "data_v496", tv248_v755
+    ALLOT: tv249_v756
+    ITER_GET: tv248_v755, 0, tv249_v756
+    ALLOT: tv250_v757
+    COPY: tv249_v756, tv250_v757
+    PUT: tv250_v757, max_v753
+    ALLOT: tv251_v758
+    TP_GET_FIELD: this_v747, "compareHandler_v498", tv251_v758
+    ALLOT: tv252_v760
+    TP_GET_FIELD: ops_v142, "orVal_v165", tv252_v760
+    ALLOT: tv253_v761
+    IVOK: orVal_v165, compareHandler_v746, tv251_v758, tv253_v761
+    PUT: tv253_v761, compareHandler_v746
+    JF: compareHandler_v746, sl72_s763
+    ALLOT: tv254_v765
+    TP_GET_FIELD: this_v747, "data_v496", tv254_v765
+    FUNI: anon_func_tv255_v768, item_v766, __v767, __v767, __v767
+        ALLOT: tv256_v772
+        IVOK: compareHandler_v746, item_v766, max_v753, tv256_v772
+        ALLOT: tv257_v773
+        CMP: tv256_v772, 0, tv257_v773
+        CREL: tv257_v773, RG, tv257_v773
+        JF: tv257_v773, sl74_s774
+        PUT: item_v766, max_v753
+        JMP: sl73_s769
+        SET: sl74_s774
+        SET: sl73_s769
+        RET: null
+        END: anon_func_tv255_v768
+    ALLOT: tv258_v775
+    PUT: anon_func_tv255_v768, tv258_v775
+    ALLOT: tv259_v776
+    IVOK: iter_v273, tv254_v765, tv258_v775, false, tv259_v776
+    JMP: sl71_s762
+    SET: sl72_s763
+    JF: true, sl75_s777
+    ALLOT: tv260_v779
+    TP_GET_FIELD: this_v747, "data_v496", tv260_v779
+    FUNI: anon_func_tv261_v782, item_v780, __v781, __v781, __v781
+        ALLOT: tv262_v784
+        CMP: item_v780, max_v753, tv262_v784
+        CREL: tv262_v784, RG, tv262_v784
+        JF: tv262_v784, sl77_s785
+        PUT: item_v780, max_v753
+        JMP: sl76_s783
+        SET: sl77_s785
+        SET: sl76_s783
+        RET: null
+        END: anon_func_tv261_v782
+    ALLOT: tv263_v786
+    PUT: anon_func_tv261_v782, tv263_v786
+    ALLOT: tv264_v787
+    IVOK: iter_v273, tv260_v779, tv263_v786, false, tv264_v787
+    JMP: sl71_s762
+    SET: sl75_s777
+    SET: sl71_s762
+    RET: max_v753
+    END: max_v536
+TP_ADD_INST_FIELD: List_v495, "max_v536", max_v536
+FUNI: min_v539, this_v791, compareHandler_v790
+    ALLOT: tv265_v794
+    TP_GET_FIELD: this_v791, "empty_v479", tv265_v794
+    ALLOT: tv266_v795
+    IVOK: empty_v479, this_v791, tv266_v795
+    JF: tv266_v795, sl79_s796
+    RET: null
+    JMP: sl78_s792
+    SET: sl79_s796
+    SET: sl78_s792
+    ALLOT: min_v797
+    ALLOT: tv267_v799
+    TP_GET_FIELD: this_v791, "data_v496", tv267_v799
+    ALLOT: tv268_v800
+    ITER_GET: tv267_v799, 0, tv268_v800
+    ALLOT: tv269_v801
+    COPY: tv268_v800, tv269_v801
+    PUT: tv269_v801, min_v797
+    ALLOT: tv270_v802
+    TP_GET_FIELD: this_v791, "compareHandler_v498", tv270_v802
+    ALLOT: tv271_v804
+    TP_GET_FIELD: ops_v142, "orVal_v165", tv271_v804
+    ALLOT: tv272_v805
+    IVOK: orVal_v165, compareHandler_v790, tv270_v802, tv272_v805
+    PUT: tv272_v805, compareHandler_v790
+    JF: compareHandler_v790, sl81_s807
+    ALLOT: tv273_v809
+    TP_GET_FIELD: this_v791, "data_v496", tv273_v809
+    FUNI: anon_func_tv274_v812, item_v810, __v811, __v811, __v811
+        ALLOT: tv275_v816
+        IVOK: compareHandler_v790, item_v810, min_v797, tv275_v816
+        ALLOT: tv276_v817
+        CMP: tv275_v816, 0, tv276_v817
+        CREL: tv276_v817, RL, tv276_v817
+        JF: tv276_v817, sl83_s818
+        PUT: item_v810, min_v797
+        JMP: sl82_s813
+        SET: sl83_s818
+        SET: sl82_s813
+        RET: null
+        END: anon_func_tv274_v812
+    ALLOT: tv277_v819
+    PUT: anon_func_tv274_v812, tv277_v819
+    ALLOT: tv278_v820
+    IVOK: iter_v273, tv273_v809, tv277_v819, false, tv278_v820
+    JMP: sl80_s806
+    SET: sl81_s807
+    JF: true, sl84_s821
+    ALLOT: tv279_v823
+    TP_GET_FIELD: this_v791, "data_v496", tv279_v823
+    FUNI: anon_func_tv280_v826, item_v824, __v825, __v825, __v825
+        ALLOT: tv281_v828
+        CMP: item_v824, min_v797, tv281_v828
+        CREL: tv281_v828, RL, tv281_v828
+        JF: tv281_v828, sl86_s829
+        PUT: item_v824, min_v797
+        JMP: sl85_s827
+        SET: sl86_s829
+        SET: sl85_s827
+        RET: null
+        END: anon_func_tv280_v826
+    ALLOT: tv282_v830
+    PUT: anon_func_tv280_v826, tv282_v830
+    ALLOT: tv283_v831
+    IVOK: iter_v273, tv279_v823, tv282_v830, false, tv283_v831
+    JMP: sl80_s806
+    SET: sl84_s821
+    SET: sl80_s806
+    RET: min_v797
+    END: min_v539
+TP_ADD_INST_FIELD: List_v495, "min_v539", min_v539
+FUNI: sum_v542, this_v835, plusHandler_v834
+    ALLOT: tv284_v838
+    TP_GET_FIELD: this_v835, "empty_v479", tv284_v838
+    ALLOT: tv285_v839
+    IVOK: empty_v479, this_v835, tv285_v839
+    JF: tv285_v839, sl88_s840
+    RET: null
+    JMP: sl87_s836
+    SET: sl88_s840
+    SET: sl87_s836
+    ALLOT: tv286_v841
+    TP_GET_FIELD: this_v835, "plusHandler_v499", tv286_v841
+    ALLOT: tv287_v843
+    TP_GET_FIELD: ops_v142, "orVal_v165", tv287_v843
+    ALLOT: tv288_v844
+    IVOK: orVal_v165, plusHandler_v834, tv286_v841, tv288_v844
+    PUT: tv288_v844, plusHandler_v834
+    FUNI: anon_func_tv289_v847, front_v845, back_v846
+        ALLOT: tv290_v848
+        ADD: front_v845, back_v846, tv290_v848
+        RET: tv290_v848
+        END: anon_func_tv289_v847
+    ALLOT: tv291_v849
+    PUT: anon_func_tv289_v847, tv291_v849
+    ALLOT: tv292_v851
+    TP_GET_FIELD: ops_v142, "orVal_v165", tv292_v851
+    ALLOT: tv293_v852
+    IVOK: orVal_v165, plusHandler_v834, tv291_v849, tv293_v852
+    PUT: tv293_v852, plusHandler_v834
+    ALLOT: tv294_v854
+    TP_GET_FIELD: this_v835, "reduce_v545", tv294_v854
+    ALLOT: tv295_v855
+    IVOK: reduce_v545, this_v835, plusHandler_v834, null, tv295_v855
+    RET: tv295_v855
+    END: sum_v542
+TP_ADD_INST_FIELD: List_v495, "sum_v542", sum_v542
+FUNI: reduce_v545, this_v860, reducer_v858, initialValue_v859
+    ALLOT: result_v861
+    PUT: initialValue_v859, result_v861
+    ALLOT: hasInitialValue_v862
+    ALLOT: tv296_v863
+    CMP: initialValue_v859, null, tv296_v863
+    CREL: tv296_v863, RNE, tv296_v863
+    PUT: tv296_v863, hasInitialValue_v862
+    ALLOT: tv297_v865
+    TP_GET_FIELD: this_v860, "data_v496", tv297_v865
+    FUNI: anon_func_tv298_v868, item_v866, __v867, __v867, __v867
+        ALLOT: tv299_v870
+        OPP: hasInitialValue_v862, tv299_v870
+        JF: tv299_v870, sl90_s871
+        PUT: item_v866, result_v861
+        PUT: true, hasInitialValue_v862
+        JMP: sl89_s869
+        SET: sl90_s871
+        JF: true, sl91_s872
+        ALLOT: tv300_v875
+        IVOK: reducer_v858, result_v861, item_v866, tv300_v875
+        PUT: tv300_v875, result_v861
+        JMP: sl89_s869
+        SET: sl91_s872
+        SET: sl89_s869
+        RET: null
+        END: anon_func_tv298_v868
+    ALLOT: tv301_v876
+    PUT: anon_func_tv298_v868, tv301_v876
+    ALLOT: tv302_v877
+    IVOK: iter_v273, tv297_v865, tv301_v876, false, tv302_v877
+    RET: result_v861
+    END: reduce_v545
+TP_ADD_INST_FIELD: List_v495, "reduce_v545", reduce_v545
+FUNI: splice_v549, this_v881, other_v880
+    ALLOT: tv303_v884
+    TP_GET_FIELD: dt_v33, "type_v38", tv303_v884
+    ALLOT: tv304_v885
+    TP_GET: other_v880, tv304_v885
+    ALLOT: tv305_v887
+    TP_GET_FIELD: dt_v33, "DT_v44", tv305_v887
+    ALLOT: tv306_v889
+    TP_GET_FIELD: tv305_v887, "TP_LIST_v50", tv306_v889
+    ALLOT: tv307_v890
+    CMP: tv304_v885, tv306_v889, tv307_v890
+    CREL: tv307_v890, RE, tv307_v890
+    JF: tv307_v890, sl93_s891
+    ALLOT: tv308_v893
+    TP_GET_FIELD: this_v881, "spliceBuiltinList_v558", tv308_v893
+    ALLOT: tv309_v894
+    IVOK: spliceBuiltinList_v558, this_v881, other_v880, tv309_v894
+    RET: tv309_v894
+    JMP: sl92_s882
+    SET: sl93_s891
+    JF: true, sl94_s895
+    ALLOT: tv310_v897
+    TP_GET_FIELD: this_v881, "spliceBuiltinList_v558", tv310_v897
+    ALLOT: tv311_v898
+    IVOK: spliceBuiltinList_v558, this_v881, other_v880, tv311_v898
+    RET: tv311_v898
+    JMP: sl92_s882
+    SET: sl94_s895
+    SET: sl92_s882
+    END: splice_v549
+TP_ADD_INST_FIELD: List_v495, "splice_v549", splice_v549
+FUNC: spliceNR_v552, this_v902, other_v901
+    ALLOT: result_v903
+    ALLOT: tv312_v905
+    TP_GET_FIELD: this_v902, "splice_v549", tv312_v905
+    ALLOT: tv313_v906
+    IVOK: splice_v549, this_v902, other_v901, tv313_v906
+    PUT: tv313_v906, result_v903
+    ALLOT: tv314_v908
+    TP_GET_FIELD: this_v902, "data_v496", tv314_v908
+    ALLOT: tv315_v910
+    TP_GET_FIELD: result_v903, "get_v504", tv315_v910
+    ALLOT: tv316_v911
+    IVOK: get_v504, result_v903, tv316_v911
+    TP_SET_FIELD: this_v902, "data_v496", tv316_v911
+    ALLOT: tv317_v913
+    TP_GET_FIELD: this_v902, "length_v497", tv317_v913
+    ALLOT: tv318_v914
+    TP_GET_FIELD: result_v903, "size_v514", tv318_v914
+    ALLOT: tv319_v915
+    IVOK: size_v514, result_v903, tv319_v915
+    TP_SET_FIELD: this_v902, "length_v497", tv319_v915
+    END: spliceNR_v552
+TP_ADD_INST_FIELD: List_v495, "spliceNR_v552", spliceNR_v552
+FUNI: spliceList_v555, this_v919, other_v918
+    ALLOT: tv320_v921
+    TP_GET_FIELD: this_v919, "data_v496", tv320_v921
+    ALLOT: tv321_v923
+    TP_GET_FIELD: other_v918, "get_v504", tv321_v923
+    ALLOT: tv322_v924
+    IVOK: get_v504, other_v918, tv322_v924
+    ALLOT: tv323_v925
+    ADD: tv320_v921, tv322_v924, tv323_v925
+    ALLOT: tv324_v926
+    IVOK: List_list_v502, tv323_v925, tv324_v926
+    RET: tv324_v926
+    END: spliceList_v555
+TP_ADD_INST_FIELD: List_v495, "spliceList_v555", spliceList_v555
+FUNI: spliceBuiltinList_v558, this_v930, other_v929
+    ALLOT: tv325_v932
+    TP_GET_FIELD: this_v930, "data_v496", tv325_v932
+    ALLOT: tv326_v933
+    ADD: tv325_v932, other_v929, tv326_v933
+    ALLOT: tv327_v934
+    IVOK: List_list_v502, tv326_v933, tv327_v934
+    RET: tv327_v934
+    END: spliceBuiltinList_v558
+TP_ADD_INST_FIELD: List_v495, "spliceBuiltinList_v558", spliceBuiltinList_v558
+FUNI: find_v561, this_v938, predicate_v937
+    ALLOT: result_v939
+    ALLOT: tv328_v941
+    TP_GET_FIELD: this_v938, "data_v496", tv328_v941
+    FUNI: anon_func_tv329_v946, item_v942, index_v943, __v944, kwargs_v945
+        ALLOT: copiedItem_v947
+        ALLOT: tv330_v948
+        COPY: item_v942, tv330_v948
+        PUT: tv330_v948, copiedItem_v947
+        ALLOT: tv331_v950
+        IVOK: unpack_v192, kwargs_v945, tv331_v950
+        ALLOT: tv332_v954
+        TP_SET: tp-dict, tv332_v954
+        ALLOT: tv333_v955
+        IVOK: predicate_v937, copiedItem_v947, index_v943, tv332_v954, tv333_v955
+        JF: tv333_v955, sl96_s956
+        PUT: copiedItem_v947, result_v939
+        RET: false
+        JMP: sl95_s949
+        SET: sl96_s956
+        SET: sl95_s949
+        END: anon_func_tv329_v946
+    ALLOT: tv334_v957
+    PUT: anon_func_tv329_v946, tv334_v957
+    ALLOT: tv335_v958
+    IVOK: iter_v273, tv328_v941, tv334_v957, false, tv335_v958
+    RET: result_v939
+    END: find_v561
+TP_ADD_INST_FIELD: List_v495, "find_v561", find_v561
+FUNI: at_v564, this_v962, index_v961
+    ALLOT: tv336_v965
+    TP_GET_FIELD: this_v962, "length_v497", tv336_v965
+    ALLOT: tv337_v966
+    OPP: tv336_v965, tv337_v966
+    ADD: 1, tv337_v966, tv337_v966
+    ALLOT: tv338_v967
+    CMP: index_v961, tv337_v966, tv338_v967
+    CREL: tv338_v967, RL, tv338_v967
+    ALLOT: tv339_v969
+    TP_GET_FIELD: this_v962, "length_v497", tv339_v969
+    ALLOT: tv340_v970
+    CMP: index_v961, tv339_v969, tv340_v970
+    CREL: tv340_v970, RGE, tv340_v970
+    ALLOT: tv341_v971
+    CMP: tv338_v967, tv340_v970, tv341_v971
+    CREL: tv341_v971, OR, tv341_v971
+    JF: tv341_v971, sl98_s972
+    RET: null
+    JMP: sl97_s963
+    SET: sl98_s972
+    SET: sl97_s963
+    ALLOT: tv342_v974
+    CMP: index_v961, 0, tv342_v974
+    CREL: tv342_v974, RL, tv342_v974
+    JF: tv342_v974, sl100_s975
+    ALLOT: tv343_v977
+    TP_GET_FIELD: this_v962, "length_v497", tv343_v977
+    ADD: index_v961, tv343_v977, index_v961
+    JMP: sl99_s973
+    SET: sl100_s975
+    SET: sl99_s973
+    ALLOT: tv344_v979
+    TP_GET_FIELD: this_v962, "data_v496", tv344_v979
+    ALLOT: tv345_v980
+    ITER_GET: tv344_v979, index_v961, tv345_v980
+    RET: tv345_v980
+    END: at_v564
+TP_ADD_INST_FIELD: List_v495, "at_v564", at_v564
+FUNI: unique_v567, this_v983
+    ALLOT: uniqueList_v984
+    ALLOT: tv346_v985
+    IVOK: List_empty_v500, tv346_v985
+    PUT: tv346_v985, uniqueList_v984
+    ALLOT: tv347_v987
+    TP_GET_FIELD: this_v983, "data_v496", tv347_v987
+    FUNI: anon_func_tv348_v990, item_v988, __v989, __v989, __v989
+        ALLOT: tv349_v993
+        TP_GET_FIELD: uniqueList_v984, "contains_v527", tv349_v993
+        ALLOT: tv350_v994
+        IVOK: contains_v527, uniqueList_v984, item_v988, tv350_v994
+        ALLOT: tv351_v995
+        OPP: tv350_v994, tv351_v995
+        JF: tv351_v995, sl102_s996
+        ALLOT: tv352_v998
+        TP_GET_FIELD: uniqueList_v984, "append_v509", tv352_v998
+        ALLOT: tv353_v999
+        IVOK: append_v509, uniqueList_v984, item_v988, tv353_v999
+        JMP: sl101_s991
+        SET: sl102_s996
+        SET: sl101_s991
+        RET: null
+        END: anon_func_tv348_v990
+    ALLOT: tv354_v1000
+    PUT: anon_func_tv348_v990, tv354_v1000
+    ALLOT: tv355_v1001
+    IVOK: iter_v273, tv347_v987, tv354_v1000, false, tv355_v1001
+    RET: uniqueList_v984
+    END: unique_v567
+TP_ADD_INST_FIELD: List_v495, "unique_v567", unique_v567
+FUNI: slice_v569, this_v1007, start_v1004, end_v1005, sep_v1006
+    ALLOT: res_v1008
+    ALLOT: tv356_v1009
+    IVOK: List_empty_v500, tv356_v1009
+    PUT: tv356_v1009, res_v1008
+    ALLOT: tv357_v1011
+    CMP: end_v1005, start_v1004, tv357_v1011
+    CREL: tv357_v1011, RL, tv357_v1011
+    JF: tv357_v1011, sl104_s1012
+    RET: res_v1008
+    JMP: sl103_s1010
+    SET: sl104_s1012
+    SET: sl103_s1010
+    FUNI: anon_func_tv358_v1015, index_v1013, __v1014, __v1014
+        ALLOT: tv359_v1017
+        TP_GET_FIELD: this_v1007, "at_v564", tv359_v1017
+        ALLOT: tv360_v1018
+        IVOK: at_v564, this_v1007, index_v1013, tv360_v1018
+        ALLOT: tv361_v1019
+        COPY: tv360_v1018, tv361_v1019
+        ALLOT: tv362_v1021
+        TP_GET_FIELD: res_v1008, "append_v509", tv362_v1021
+        ALLOT: tv363_v1022
+        IVOK: append_v509, res_v1008, tv361_v1019, tv363_v1022
+        RET: null
+        END: anon_func_tv358_v1015
+    ALLOT: tv364_v1023
+    PUT: anon_func_tv358_v1015, tv364_v1023
+    CALL: forInRange_v235, start_v1004, end_v1005, tv364_v1023, sep_v1006
+    RET: res_v1008
+    END: slice_v569
+TP_ADD_INST_FIELD: List_v495, "slice_v569", slice_v569
+FUNI: reversed_v574, this_v1026
+    ALLOT: res_v1027
+    ALLOT: tv365_v1028
+    IVOK: List_empty_v500, tv365_v1028
+    PUT: tv365_v1028, res_v1027
+    ALLOT: tv366_v1030
+    TP_GET_FIELD: this_v1026, "data_v496", tv366_v1030
+    FUNI: anon_func_tv367_v1033, item_v1031, __v1032, __v1032, __v1032
+        ALLOT: tv368_v1034
+        COPY: item_v1031, tv368_v1034
+        ALLOT: tv369_v1036
+        TP_GET_FIELD: res_v1027, "append_v509", tv369_v1036
+        ALLOT: tv370_v1037
+        IVOK: append_v509, res_v1027, tv368_v1034, tv370_v1037
+        RET: null
+        END: anon_func_tv367_v1033
+    ALLOT: tv371_v1038
+    PUT: anon_func_tv367_v1033, tv371_v1038
+    ALLOT: tv372_v1039
+    IVOK: iter_v273, tv366_v1030, tv371_v1038, true, tv372_v1039
+    RET: res_v1027
+    END: reversed_v574
+TP_ADD_INST_FIELD: List_v495, "reversed_v574", reversed_v574
+FUNI: reverse_v576, this_v1042
+    ALLOT: res_v1043
+    ALLOT: tv373_v1044
+    IVOK: List_empty_v500, tv373_v1044
+    PUT: tv373_v1044, res_v1043
+    ALLOT: tv374_v1046
+    TP_GET_FIELD: this_v1042, "data_v496", tv374_v1046
+    FUNI: anon_func_tv375_v1049, item_v1047, __v1048, __v1048, __v1048
+        ALLOT: tv376_v1051
+        TP_GET_FIELD: res_v1043, "append_v509", tv376_v1051
+        ALLOT: tv377_v1052
+        IVOK: append_v509, res_v1043, item_v1047, tv377_v1052
+        RET: null
+        END: anon_func_tv375_v1049
+    ALLOT: tv378_v1053
+    PUT: anon_func_tv375_v1049, tv378_v1053
+    ALLOT: tv379_v1054
+    IVOK: iter_v273, tv374_v1046, tv378_v1053, true, tv379_v1054
+    ALLOT: tv380_v1056
+    TP_GET_FIELD: this_v1042, "data_v496", tv380_v1056
+    ALLOT: tv381_v1058
+    TP_GET_FIELD: res_v1043, "data_v496", tv381_v1058
+    TP_SET_FIELD: this_v1042, "data_v496", tv381_v1058
+    RET: this_v1042
+    END: reverse_v576
+TP_ADD_INST_FIELD: List_v495, "reverse_v576", reverse_v576
+FUNI: List_list_v502, data_v501
+    ALLOT: this_v1059
+    TP_NEW: List_v495, this_v1059
+    ALLOT: tv382_v1060
+    TP_SET: tp-list, tv382_v1060
+    ALLOT: tv383_v1061
+    TP_SET: tp-dict, tv383_v1061
+    ALLOT: tv384_v1062
+    IVOK: Iterable_empty_v472, tv384_v1062
+    PUT: tv384_v1062, this_v1059
+    TP_DERIVE: this_v1059, List_v495
+    ALLOT: tv385_v1063
+    TP_GET_FIELD: this_v1059, "data_v496", tv385_v1063
+    TP_SET_FIELD: this_v1059, "data_v496", data_v501
+    ALLOT: tv386_v1065
+    TP_GET_FIELD: this_v1059, "length_v497", tv386_v1065
+    ALLOT: tv387_v1066
+    ITER_SIZE: data_v501, tv387_v1066
+    TP_SET_FIELD: this_v1059, "length_v497", tv387_v1066
+    RET: this_v1059
+    END: List_list_v502
+FUNI: List_empty_v500
+    ALLOT: this_v1067
+    TP_NEW: List_v495, this_v1067
+    ALLOT: tv388_v1068
+    TP_SET: tp-list, tv388_v1068
+    ALLOT: tv389_v1069
+    TP_SET: tp-dict, tv389_v1069
+    ALLOT: tv390_v1070
+    IVOK: Iterable_empty_v472, tv390_v1070
+    PUT: tv390_v1070, this_v1067
+    TP_DERIVE: this_v1067, List_v495
+    ALLOT: tv391_v1072
+    TP_GET_FIELD: this_v1067, "data_v496", tv391_v1072
+    ALLOT: tv392_v1073
+    TP_SET: tp-list, tv392_v1073
+    TP_SET_FIELD: this_v1067, "data_v496", tv392_v1073
+    ALLOT: tv393_v1075
+    TP_GET_FIELD: this_v1067, "length_v497", tv393_v1075
+    TP_SET_FIELD: this_v1067, "length_v497", 0
+    RET: this_v1067
+    END: List_empty_v500
+ALLOT: tv394_v1076
+TP_SET: tp-list, tv394_v1076
+ITER_APND: size_v186, copy_v189, unpack_v192, isEmpty_v197, top_v202, repStr_v211, repList_v220, repeat_v231, forInRange_v235, join_v332, joins_v348, iter_v273, listAppend_v353, listRemove_v357, dictRemove_v361, iterRemove_v365, dictKeys_v402, sort_v426, dictValues_v405, dictInsert_v408, iterContains_v413, Iterable_v471, List_v495, tv394_v1076
+ALLOT: tv395_v1077
+TP_SET: tp-dict, tv395_v1077
+TP_DEF: ds_v23
+TP_ADD_TP_FIELD: ds_v23, "Iterable_v471", Iterable_v471
+TP_ADD_TP_FIELD: ds_v23, "dictKeys_v402", dictKeys_v402
+TP_ADD_TP_FIELD: ds_v23, "iterRemove_v365", iterRemove_v365
+TP_ADD_TP_FIELD: ds_v23, "dictRemove_v361", dictRemove_v361
+TP_ADD_TP_FIELD: ds_v23, "listRemove_v357", listRemove_v357
+TP_ADD_TP_FIELD: ds_v23, "listAppend_v353", listAppend_v353
+TP_ADD_TP_FIELD: ds_v23, "iter_v273", iter_v273
+TP_ADD_TP_FIELD: ds_v23, "joins_v348", joins_v348
+TP_ADD_TP_FIELD: ds_v23, "iterContains_v413", iterContains_v413
+TP_ADD_TP_FIELD: ds_v23, "sort_v426", sort_v426
+TP_ADD_TP_FIELD: ds_v23, "dictInsert_v408", dictInsert_v408
+TP_ADD_TP_FIELD: ds_v23, "size_v186", size_v186
+TP_ADD_TP_FIELD: ds_v23, "unpack_v192", unpack_v192
+TP_ADD_TP_FIELD: ds_v23, "copy_v189", copy_v189
+TP_ADD_TP_FIELD: ds_v23, "isEmpty_v197", isEmpty_v197
+TP_ADD_TP_FIELD: ds_v23, "List_v495", List_v495
+TP_ADD_TP_FIELD: ds_v23, "dictValues_v405", dictValues_v405
+TP_ADD_TP_FIELD: ds_v23, "forInRange_v235", forInRange_v235
+TP_ADD_TP_FIELD: ds_v23, "repStr_v211", repStr_v211
+TP_ADD_TP_FIELD: ds_v23, "repList_v220", repList_v220
+TP_ADD_TP_FIELD: ds_v23, "repeat_v231", repeat_v231
+TP_ADD_TP_FIELD: ds_v23, "top_v202", top_v202
+TP_ADD_TP_FIELD: ds_v23, "join_v332", join_v332
+FUNC: sout_v1079, args_v1080, end_v1081
+    END: sout_v1079
+FUNC: print_v1083, args_v1084, end_v1085, sep_v1086
+    ALLOT: tv396_v1088
+    TP_GET_FIELD: ds_v23, "join_v332", tv396_v1088
+    ALLOT: tv397_v1089
+    IVOK: join_v332, args_v1084, sep_v1086, tv397_v1089
+    ALLOT: tv398_v1090
+    TP_SET: tp-list, tv398_v1090
+    ITER_APND: tv397_v1089, tv398_v1090
+    SOUT: s-l, s-unpack, tv398_v1090, end_v1085
+    END: print_v1083
+FUNI: sin_v1092, arg_v1093
+    END: sin_v1092
+FUNI: input_v1095, prompt_v1096
+    ALLOT: tv399_v1097
+    SOUT: s-l, prompt_v1096
+    SIN: s-m, tv399_v1097
+    RET: tv399_v1097
+    END: input_v1095
+ALLOT: tv400_v1098
+TP_SET: tp-list, tv400_v1098
+ITER_APND: sout_v1079, print_v1083, sin_v1092, input_v1095, tv400_v1098
+ALLOT: tv401_v1099
+TP_SET: tp-dict, tv401_v1099
+TP_DEF: io_v15
+TP_ADD_TP_FIELD: io_v15, "input_v1095", input_v1095
+TP_ADD_TP_FIELD: io_v15, "sin_v1092", sin_v1092
+TP_ADD_TP_FIELD: io_v15, "sout_v1079", sout_v1079
+TP_ADD_TP_FIELD: io_v15, "print_v1083", print_v1083
+ALLOT: ds_v1100
+PUT: ds_v23, ds_v1100
+FUNI: test_v1102, a_v1103, b_v1104
+    ALLOT: tv402_v1105
+    ADD: a_v1103, b_v1104, tv402_v1105
+    RET: tv402_v1105
+    END: test_v1102
+FUNC: main_v1107
+    FUNI: anon_func_tv403_v1108
+        ALLOT: last_v1109, res_v1110
+        TP_SET: tp-int, last_v1109
+        PUT: 0, last_v1109
+        ALLOT: tv404_v1112
+        TP_GET_FIELD: ds_v1100, "List_v495", tv404_v1112
+        ALLOT: tv405_v1113
+        IVOK: List_empty_v500, tv405_v1113
+        PUT: tv405_v1113, res_v1110
+        FUNI: anon_func_tv406_v1115, index_v1114
+            ALLOT: tv407_v1116
+            ADD: index_v1114, last_v1109, tv407_v1116
+            ALLOT: tv408_v1118
+            TP_GET_FIELD: res_v1110, "append_v509", tv408_v1118
+            ALLOT: tv409_v1119
+            IVOK: append_v509, res_v1110, tv407_v1116, tv409_v1119
+            PUT: index_v1114, last_v1109
+            RET: null
+            END: anon_func_tv406_v1115
+        ALLOT: tv410_v1120
+        PUT: anon_func_tv406_v1115, tv410_v1120
+        ALLOT: tv411_v1122
+        TP_GET_FIELD: ds_v1100, "repeat_v231", tv411_v1122
+        ALLOT: tv412_v1123
+        ALLOT: tv413_v1124
+        ALLOT: tv414_v1125
+        REPEAT: 10, tv412_v1123
+            IVOK: tv410_v1120, tv412_v1123, tv413_v1124
+            CMP: tv413_v1124, false, tv414_v1125
+            CREL: tv414_v1125, RE, tv414_v1125
+            JF: tv414_v1125, sl105
+            EXIT: REPEAT
+            SET: sl105
+            END: REPEAT
+        ALLOT: tv415_v1127
+        TP_GET_FIELD: res_v1110, "get_v504", tv415_v1127
+        ALLOT: tv416_v1128
+        IVOK: get_v504, res_v1110, tv416_v1128
+        RET: tv416_v1128
+        END: anon_func_tv403_v1108
+    ALLOT: tv417_v1129
+    PUT: anon_func_tv403_v1108, tv417_v1129
+    ALLOT: tv418_v1130
+    IVOK: anon_func_tv403_v1108, tv418_v1130
+    FUNI: anon_func_tv419_v1135, item_v1131, index_v1132, length_v1133, __v1134
+        ALLOT: c_v1136
+        ALLOT: tv420_v1137
+        IVOK: test_v1102, item_v1131, index_v1132, tv420_v1137
+        PUT: tv420_v1137, c_v1136
+        ALLOT: tv421_v1139
+        TP_GET_FIELD: io_v15, "sout_v1079", tv421_v1139
+        ALLOT: tv422_v1140
+        TP_SET: tp-list, tv422_v1140
+        ITER_APND: c_v1136, tv422_v1140
+        SOUT: s-l, s-unpack, tv422_v1140, "\n"
+        RET: null
+        END: anon_func_tv419_v1135
+    ALLOT: tv423_v1141
+    PUT: anon_func_tv419_v1135, tv423_v1141
+    ALLOT: tv424_v1143
+    TP_GET_FIELD: ds_v1100, "iter_v273", tv424_v1143
+    ALLOT: tv425_v1144
+    IVOK: iter_v273, tv418_v1130, tv423_v1141, false, tv425_v1144
+    END: main_v1107
+CALL: main_v1107

@@ -10,6 +10,8 @@
 #include "../include/ra_core.h"
 
 core::memory::RVM_Memory &core::memory::data_space_pool = RVM_Memory::getInstance();
+core::memory::RVM_RuntimeMemory &core::memory::RVM_RUNTIME_MEMORY = RVM_RuntimeMemory::getInstance();
+
 
 namespace core::id {
     TypeID::TypeID(std::string type_name, const base::IDType &idType, const std::string &dtype_ident)
@@ -1570,11 +1572,16 @@ namespace core::data {
     CompareGroup::CompareGroup(std::shared_ptr<id::DataID> dataLeft, std::shared_ptr<id::DataID> dataRight)
             : compLeft(std::move(dataLeft)), compRight(std::move(dataRight)){}
 
+    CompareGroup::CompareGroup(std::shared_ptr<RVM_Data> dataLeft, std::shared_ptr<RVM_Data> dataRight)
+            : directLeft(std::move(dataLeft)), directRight(std::move(dataRight)){}
+
     bool CompareGroup::updateData(const std::shared_ptr<RVM_Data> &newData) {
         if (typeId == newData->getTypeID()){
             if (const auto newComp = static_pointer_cast<const CompareGroup>(newData)){
                 this->compLeft = newComp->compLeft;
                 this->compRight = newComp->compRight;
+                this->directLeft = newComp->directLeft;
+                this->directRight = newComp->directRight;
                 return true;
             }
             throw std::runtime_error("Type mismatch");
@@ -1634,14 +1641,35 @@ namespace core::data {
 
     bool CompareGroup::compare(const base::Relational &relational) const
     {
-        const auto leftData = memory::data_space_pool.findDataByIDNoLock(*compLeft);
-        const auto rightData = memory::data_space_pool.findDataByIDNoLock(*compRight);
+        // 槽位模式：直接持有数据，无需回查 data_space_pool
+        const auto leftData = directLeft != nullptr
+                ? directLeft
+                : memory::data_space_pool.findDataByIDNoLock(*compLeft);
+        const auto rightData = directRight != nullptr
+                ? directRight
+                : memory::data_space_pool.findDataByIDNoLock(*compRight);
+        if (leftData == nullptr || rightData == nullptr) {
+            throw base::RVM_Error(base::ErrorType::RuntimeError, {}, {},
+                                  {"A comparison operand could not be resolved.",
+                                   "Left operand: " + std::string(leftData ? "resolved" : "MISSING"),
+                                   "Right operand: " + std::string(rightData ? "resolved" : "MISSING")},
+                                  {"This indicates an RVM comparison/scope-model error."});
+        }
         return leftData->compare(rightData, relational);
     }
 
     bool CompareGroup::convertToBool() const {
-        const auto leftData = memory::data_space_pool.findDataByIDNoLock(*compLeft);
-        const auto rightData = memory::data_space_pool.findDataByIDNoLock(*compRight);
+        const auto leftData = directLeft != nullptr
+                ? directLeft
+                : memory::data_space_pool.findDataByIDNoLock(*compLeft);
+        const auto rightData = directRight != nullptr
+                ? directRight
+                : memory::data_space_pool.findDataByIDNoLock(*compRight);
+        if (leftData == nullptr || rightData == nullptr) {
+            throw base::RVM_Error(base::ErrorType::RuntimeError, {}, {},
+                                  {"A comparison operand could not be resolved."},
+                                  {"This indicates an RVM comparison/scope-model error."});
+        }
         return leftData->convertToBool() && rightData->convertToBool();
     }
 
@@ -3071,6 +3099,35 @@ namespace core::memory{
         throw base::errors::MemoryError(unknown_, unknown_, {}, {});
     }
 
+    void RVM_Memory::updateGlobalByName(const std::string &name, DataPtr newData) const {
+        if (isSlotBindingModeEnabled()) {
+            // SE / _SE 一定是根帧的槽位，按名字查出槽位号后直接写
+            if (!RVM_RUNTIME_MEMORY.writeRootSlotByName(name, std::move(newData))) {
+                throw base::RVM_Error(base::ErrorType::RuntimeError, name, {},
+                                      {"RVM global slot not found: \"" + name + "\""},
+                                      {"This indicates a parse-time slot model error."});
+            }
+            return;
+        }
+        updateDataByNameNoLock(name, std::move(newData));
+    }
+
+    void RVM_Memory::updateDataByArg(const utils::Arg &arg, DataPtr newData) const {
+        if (!newData) {
+            throw base::errors::MemoryError(unknown_, unknown_, {}, {});
+        }
+        writeArgSlot(arg, std::move(newData));
+    }
+
+    void RVM_Memory::updateDataByArgOrName(const utils::Arg &arg, const std::string &name,
+                                           DataPtr newData) const {
+        if (isSlotBindingModeEnabled()) {
+            updateDataByArg(arg, std::move(newData));
+            return;
+        }
+        updateDataByNameNoLock(name, std::move(newData));
+    }
+
     void RVM_Memory::updateDataByNameNoLock(const std::string &name, DataPtr newData) const
     {
         if (!newData) {
@@ -3078,6 +3135,21 @@ namespace core::memory{
         }
         if (name == "_") {
             return;
+        }
+        /*
+         * 槽位寻址的写入必须由调用方给出目标参数——地址 (帧下标, 槽位号) 就挂在它上面。
+         *
+         * 这里【没有】按名字反查的退路：名字在解析期就该消失，运行期再靠名字找目标
+         * 就等于把静态槽位架构退化回旧系统，而且查不到时无法区分是模型错误还是程序错误。
+         * 所以调用方必须改用 updateDataByArg 重载。
+         */
+        if (isSlotBindingModeEnabled()) {
+            throw base::RVM_Error(
+                    base::ErrorType::RuntimeError, name, {},
+                    {"Slot mode requires writing through utils::Arg, but a name was given.",
+                     "Target name: \"" + name + "\""},
+                    {"This indicates an internal RVM error: a write path was not migrated "
+                     "to the slot architecture."});
         }
         const auto &cache_name = name + "@" + getCurrentScopeNoLock()->getName();
         if (auto cachedData = recentAccessCache_.find(cache_name);
@@ -3324,5 +3396,537 @@ namespace core::memory{
     {
         if (!space) return false;
         return namedScopes_.contains(space->getName());
+    }
+
+    RVM_ParseScope::RVM_ParseScope(size_t startIndex_, RVM_ParseScope* parentScope_)
+    : startIndex(startIndex_), parentScope(std::move(parentScope_)) {}
+
+    RVM_RuntimeScope::RVM_RuntimeScope(size_t slotCount, RVM_RuntimeScope* parentScope_)
+    : slots(slotCount), parentScope(parentScope_) {}
+
+    RVM_RuntimeScope::RVM_RuntimeScope(size_t slotCount, RVM_RuntimeScope* parentScope_,
+                                       std::string framePath_)
+    : slots(slotCount), parentScope(parentScope_), framePath(std::move(framePath_)) {}
+
+    const std::shared_ptr<base::RVM_Data> &RVM_RuntimeScope::getSlot(size_t frameSlot) const {
+        static const std::shared_ptr<base::RVM_Data> empty{};
+        if (frameSlot >= slots.size()) {
+            return empty;
+        }
+        return slots[frameSlot];
+    }
+
+    bool RVM_RuntimeScope::setSlot(size_t frameSlot, std::shared_ptr<base::RVM_Data> data) {
+        if (frameSlot >= slots.size()) {
+            // 槽位越界说明解析期算出的帧规模与运行期不一致，是模型错误，不做静默扩容
+            return false;
+        }
+        slots[frameSlot] = std::move(data);
+        return true;
+    }
+
+    bool RVM_RuntimeScope::hasSlot(size_t frameSlot) const {
+        return frameSlot < slots.size() && static_cast<bool>(slots[frameSlot]);
+    }
+
+    size_t RVM_RuntimeScope::getSlotCount() const {
+        return slots.size();
+    }
+
+    void RVM_RuntimeScope::ensureSlotCount(size_t slotCount) {
+        if (slotCount > slots.size()) {
+            slots.resize(slotCount);
+        }
+    }
+
+    void RVM_RuntimeScope::resetSlots() {
+        std::fill(slots.begin(), slots.end(), nullptr);
+    }
+
+    RVM_RuntimeScope* RVM_RuntimeScope::getParentScope() const {
+        return parentScope;
+    }
+
+    void RVM_RuntimeScope::setParentScope(RVM_RuntimeScope* parentScope_) {
+        parentScope = parentScope_;
+    }
+
+    const std::string &RVM_RuntimeScope::getFramePath() const {
+        return framePath;
+    }
+
+    void RVM_RuntimeScope::setFramePath(std::string framePath_) {
+        framePath = std::move(framePath_);
+    }
+
+    bool RVM_RuntimeScope::isFrameRoot() const {
+        return frameRoot;
+    }
+
+    void RVM_RuntimeScope::markAsFrameRoot() {
+        frameRoot = true;
+    }
+
+    void RVM_RuntimeScope::printInfo(std::ostream &os) const {
+        os << "[RuntimeScope] framePath: " << (framePath.empty() ? "<unnamed>" : framePath)
+           << ", slotCount: " << slots.size()
+           << ", frameRoot: " << (frameRoot ? "Y" : "N")
+           << ", parent: " << (parentScope != nullptr ? parentScope->getFramePath() : std::string("<none>"))
+           << "\n";
+        for (size_t i = 0; i < slots.size(); ++i) {
+            os << "    slot[" << i << "] = ";
+            if (slots[i]) {
+                os << slots[i]->toString();
+            } else {
+                os << "<unset>";
+            }
+            os << "\n";
+        }
+    }
+
+    uint32_t RVM_RuntimeMemory::addFrame(const std::shared_ptr<RVM_RuntimeScope> &frame,
+                                         const std::string &framePath) {
+        if (!frame) {
+            return INVALID_INDEX;
+        }
+        /*
+         * 下标就是这个帧的身份。
+         *
+         * 解析期会为每个帧根作用域调用一次，并把返回的下标写进该作用域里所有参数的
+         * (frameIndex, slotIndex)，运行期直接 frames[idx]->slots[n] 取值。
+         */
+        const auto index = static_cast<uint32_t>(frames.size());
+        frames.push_back(frame);
+        if (!framePath.empty()) {
+            framePathIndex[framePath] = index;
+        }
+        return index;
+    }
+
+    const std::shared_ptr<RVM_RuntimeScope> &
+    RVM_RuntimeMemory::frameAt(const uint32_t frameIndex) const {
+        static const std::shared_ptr<RVM_RuntimeScope> empty{};
+        if (frameIndex >= frames.size()) {
+            return empty;
+        }
+        return frames[frameIndex];
+    }
+
+    size_t RVM_RuntimeMemory::frameCount() const {
+        return frames.size();
+    }
+
+    uint32_t RVM_RuntimeMemory::findFrameIndexByPath(const std::string &framePath) const {
+        if (const auto it = framePathIndex.find(framePath); it != framePathIndex.end()) {
+            return it->second;
+        }
+        return INVALID_INDEX;
+    }
+
+    void RVM_RuntimeMemory::setRootFrameIndex(const uint32_t frameIndex) {
+        rootFrameIndex = frameIndex;
+    }
+
+    uint32_t RVM_RuntimeMemory::getRootFrameIndex() const {
+        return rootFrameIndex;
+    }
+
+    void RVM_RuntimeMemory::setRootSlotByName(const std::string &name, const uint32_t slotIndex) {
+        rootSlotByName[name] = slotIndex;
+    }
+
+    bool RVM_RuntimeMemory::writeRootSlotByName(const std::string &name,
+                                                std::shared_ptr<base::RVM_Data> data) const {
+        if (const auto it = rootSlotByName.find(name); it != rootSlotByName.end()) {
+            return writeSlot(rootFrameIndex, it->second, std::move(data));
+        }
+        return false;
+    }
+
+    void RVM_RuntimeMemory::setCurrentFrameIndex(const uint32_t frameIndex) {
+        currentFrameIndex = frameIndex;
+    }
+
+    uint32_t RVM_RuntimeMemory::getCurrentFrameIndex() const {
+        return currentFrameIndex;
+    }
+
+    void RVM_RuntimeMemory::pushCurrentFrameIndex(const uint32_t frameIndex) {
+        currentFrameStack.push_back(currentFrameIndex);
+        currentFrameIndex = frameIndex;
+    }
+
+    void RVM_RuntimeMemory::popCurrentFrameIndex() {
+        if (currentFrameStack.empty()) {
+            currentFrameIndex = INVALID_INDEX;
+            return;
+        }
+        currentFrameIndex = currentFrameStack.back();
+        currentFrameStack.pop_back();
+    }
+
+    bool RVM_RuntimeMemory::isFrameTableReady() const {
+        return frameTableReady;
+    }
+
+    void RVM_RuntimeMemory::markFrameTableReady() {
+        frameTableReady = true;
+    }
+
+    void RVM_RuntimeMemory::clearAllFrames() {
+        frames.clear();
+        framePathIndex.clear();
+        currentFrameStack.clear();
+        currentFrameIndex = INVALID_INDEX;
+    }
+
+    bool RVM_RuntimeMemory::writeSlot(const uint32_t frameIndex, const uint32_t frameSlot,
+                                      std::shared_ptr<base::RVM_Data> data) const {
+        if (frameIndex >= frames.size()) {
+            return false;
+        }
+        const auto &frame = frames[frameIndex];
+        if (!frame) {
+            return false;
+        }
+        frame->ensureSlotCount(frameSlot + 1);
+        return frame->setSlot(frameSlot, std::move(data));
+    }
+
+    std::shared_ptr<base::RVM_Data>
+    RVM_RuntimeMemory::readSlot(const uint32_t frameIndex, const uint32_t frameSlot) const {
+        if (frameIndex >= frames.size()) {
+            return nullptr;
+        }
+        const auto &frame = frames[frameIndex];
+        if (!frame) {
+            return nullptr;
+        }
+        return frame->getSlot(frameSlot);
+    }
+
+    void RVM_RuntimeMemory::printInfo(std::ostream &os) const {
+        os << "\n=== RVM_RuntimeMemory ===\n";
+        os << "Registered frames: " << frames.size() << "\n";
+        os << "Current frame index: "
+           << (currentFrameIndex == INVALID_INDEX ? std::string("<none>")
+                                                  : std::to_string(currentFrameIndex)) << "\n";
+        for (size_t i = 0; i < frames.size(); ++i) {
+            os << "--- frame[" << i << "] ---\n";
+            if (frames[i]) {
+                frames[i]->printInfo(os);
+            }
+        }
+        os << "=== End of RVM_RuntimeMemory ===\n";
+    }
+
+    namespace {
+        /* 槽位寻址的唯一运行期状态：总开关 */
+        struct SlotModeState {
+            bool modeEnabled = false;
+        };
+
+        SlotModeState &slotModeState() {
+            static SlotModeState state;
+            return state;
+        }
+    }
+
+    void setSlotBindingModeEnabled(bool enabled) {
+        slotModeState().modeEnabled = enabled;
+    }
+
+    bool isSlotBindingModeEnabled() {
+        return slotModeState().modeEnabled;
+    }
+
+    void writeArgSlot(const utils::Arg &arg, std::shared_ptr<base::RVM_Data> data) {
+        if (!arg.hasSlotRef()
+            || !RVM_RUNTIME_MEMORY.writeSlot(arg.getFrameIndex(), arg.getSlotIndex(),
+                                             std::move(data))) {
+            throw makeSlotModelError("write", arg.getValue());
+        }
+    }
+
+    std::shared_ptr<base::RVM_Data> readArgSlot(const utils::Arg &arg) {
+        if (!arg.hasSlotRef()) {
+            throw makeSlotModelError("read", arg.getValue());
+        }
+        const auto data = RVM_RUNTIME_MEMORY.readSlot(arg.getFrameIndex(), arg.getSlotIndex());
+        if (!data) {
+            throw makeSlotModelError("read-empty", arg.getValue());
+        }
+        return data;
+    }
+
+    base::RVM_Error makeSlotModelError(const std::string &phase, const std::string &argName) {
+        return base::RVM_Error(
+                base::ErrorType::RuntimeError, argName, {},
+                {"The parse-time slot model has no usable address for this argument.",
+                 "Phase: " + phase,
+                 "Argument: \"" + argName + "\""},
+                {"This is an RVM slot-model error, not a program error. Report it as a bug."});
+    }
+
+    void RVM_ParseScope::setFrameIndex(const uint32_t index) {
+        frameIndex = index;
+    }
+
+    uint32_t RVM_ParseScope::getFrameIndex() const {
+        return frameIndex;
+    }
+
+    size_t RVM_ParseScope::registerSlot(const std::string &name) {
+        if (const auto it = nameToSlot.find(name); it != nameToSlot.end()) {
+            return it->second;
+        }
+        const size_t localSlotIndex = slotNames.size();
+        slotNames.push_back(name);
+        nameToSlot.emplace(name, localSlotIndex);
+        return localSlotIndex;
+    }
+
+    bool RVM_ParseScope::hasSlotItself(const std::string &name) const {
+        return nameToSlot.contains(name);
+    }
+
+    std::optional<size_t> RVM_ParseScope::findSlotItself(const std::string &name) const {
+        if (const auto it = nameToSlot.find(name); it != nameToSlot.end()) {
+            return it->second;
+        }
+        return std::nullopt;
+    }
+
+    std::optional<size_t> RVM_ParseScope::resolveSlot(const std::string &name) const {
+        for (const RVM_ParseScope *scope = this; scope != nullptr; scope = scope->parentScope) {
+            if (const auto localSlotIndex = scope->findSlotItself(name); localSlotIndex.has_value()) {
+                return scope->getFrameSlotIndex(localSlotIndex.value());
+            }
+        }
+        return std::nullopt;
+    }
+
+    size_t RVM_ParseScope::getFrameSlotIndex(const size_t localSlotIndex) const {
+        return startIndex + localSlotIndex;
+    }
+
+    void RVM_ParseScope::collectVisibleSlots(std::unordered_map<std::string, size_t> &out) const {
+        for (const RVM_ParseScope *scope = this; scope != nullptr; scope = scope->parentScope) {
+            for (const auto &[name, localSlotIndex]: scope->nameToSlot) {
+                // 内层先写入，因此已存在的名字不会被外层覆盖（遮蔽语义）
+                out.try_emplace(name, scope->getFrameSlotIndex(localSlotIndex));
+            }
+        }
+    }
+
+    bool RVM_ParseScope::isFrameRoot() const {
+        return frameRoot;
+    }
+
+    void RVM_ParseScope::markAsFrameRoot() {
+        frameRoot = true;
+    }
+
+    const RVM_ParseScope *RVM_ParseScope::getFrameRootScope() const {
+        const RVM_ParseScope *scope = this;
+        while (scope != nullptr && !scope->frameRoot) {
+            scope = scope->parentScope;
+        }
+        // 整条链上都没有帧根时（例如整个文件就是一个帧），最外层作用域即帧根
+        return scope != nullptr ? scope : this;
+    }
+
+    void RVM_ParseScope::collectFrameVisibleSlots(std::unordered_map<std::string, size_t> &out) const {
+        for (const RVM_ParseScope *scope = this; scope != nullptr; scope = scope->parentScope) {
+            for (const auto &[name, localSlotIndex]: scope->nameToSlot) {
+                out.try_emplace(name, scope->getFrameSlotIndex(localSlotIndex));
+            }
+            // 帧根是帧内查找的终点，不再向上跨帧
+            if (scope->frameRoot) {
+                break;
+            }
+        }
+    }
+
+    size_t RVM_ParseScope::getSlotCount() const {
+        return slotNames.size();
+    }
+
+    size_t RVM_ParseScope::getStartIndex() const {
+        return startIndex;
+    }
+
+    const RVM_ParseScope *RVM_ParseScope::getParentScope() const {
+        return parentScope;
+    }
+
+    const std::vector<std::string> &RVM_ParseScope::getSlotNames() const {
+        return slotNames;
+    }
+
+    const std::unordered_map<std::string, size_t> &RVM_ParseScope::getNameToSlot() const {
+        return nameToSlot;
+    }
+
+    const RVM_ParseScope *RVM_ParseScope::resolveLexically(const std::string &name) const {
+        for (const RVM_ParseScope *scope = this; scope != nullptr; scope = scope->parentScope) {
+            if (scope->nameToSlot.contains(name)) {
+                return scope;
+            }
+        }
+        return nullptr;
+    }
+
+    std::vector<std::pair<std::string, const RVM_ParseScope *>>
+    RVM_ParseScope::collectLexicalBindings() const {
+        std::vector<std::pair<std::string, const RVM_ParseScope *>> bindings{};
+        std::unordered_set<std::string> seen{};
+        for (const RVM_ParseScope *scope = this; scope != nullptr; scope = scope->parentScope) {
+            for (const auto &[name, localSlotIndex]: scope->nameToSlot) {
+                (void) localSlotIndex;
+                // 内层先访问：已见过的名字保持内层绑定（遮蔽语义）
+                if (seen.insert(name).second) {
+                    bindings.emplace_back(name, scope);
+                }
+            }
+        }
+        return bindings;
+    }
+
+    namespace {
+        /*
+         * 给一个作用域生成可读的「链路径」标识，例如：
+         *   root
+         *   root/REPEAT
+         *   root/FUNC/REPEAT
+         * 用于区分不同帧——不同帧的槽位号会重复（每个帧都从 0 开始），
+         * 只给槽位号无法判断名字到底落在哪个帧里。
+         */
+        std::string describeScopePath(const core::memory::RVM_ParseScope *scope) {
+            if (scope == nullptr) {
+                return "<none>";
+            }
+            std::vector<std::string> labels{};
+            for (const auto *cursor = scope; cursor != nullptr; cursor = cursor->getParentScope()) {
+                labels.push_back(cursor->getOpeningInsName());
+            }
+            std::string path{};
+            for (auto it = labels.rbegin(); it != labels.rend(); ++it) {
+                if (!path.empty()) {
+                    path += "/";
+                }
+                path += *it;
+            }
+            return path;
+        }
+    }
+
+    void RVM_ParseScope::setOpeningInsName(const std::string &name) {
+        openingInsName = name;
+    }
+
+    const std::string &RVM_ParseScope::getOpeningInsName() const {
+        return openingInsName;
+    }
+
+    std::string RVM_ParseScope::getScopePath() const {
+        return describeScopePath(this);
+    }
+
+    void RVM_ParseScope::setInsSetId(std::string insSetId_) {
+        insSetId = std::move(insSetId_);
+    }
+
+    const std::string &RVM_ParseScope::getInsSetId() const {
+        return insSetId;
+    }
+
+    const RVM_ParseScope *RVM_ParseScope::findScopeByPath(const std::string &scopePath) const {
+        for (const RVM_ParseScope *scope = this; scope != nullptr; scope = scope->parentScope) {
+            if (scope->getScopePath() == scopePath) {
+                return scope;
+            }
+        }
+        return nullptr;
+    }
+
+    size_t RVM_ParseScope::getFrameSlotSpan() const {
+        // 帧内容的槽位区间是 [startIndex, startIndex + slotCount)，
+        // 但同一帧内后续子作用域会继续往上排，所以实际跨度要到帧根所在的位置去问。
+        const RVM_ParseScope *frameRoot = getFrameRootScope();
+        if (frameRoot == this) {
+            return startIndex + slotNames.size();
+        }
+        // 子作用域：取自己区间的末端，父作用域负责合并
+        return startIndex + slotNames.size();
+    }
+
+    void RVM_ParseScope::printLexicalResolution(std::ostream &os) const {
+        auto bindings = collectLexicalBindings();
+
+        // 按「声明处作用域离本作用域的词法距离」排序：本作用域声明的在前，外层提供的在后
+        auto depthOf = [this](const RVM_ParseScope *scope) {
+            size_t depth = 0;
+            for (const auto *cursor = this; cursor != nullptr; cursor = cursor->parentScope) {
+                if (cursor == scope) {
+                    return depth;
+                }
+                ++depth;
+            }
+            return depth;
+        };
+        std::sort(bindings.begin(), bindings.end(), [&depthOf](const auto &lhs, const auto &rhs) {
+            return depthOf(lhs.second) < depthOf(rhs.second);
+        });
+
+        os << "Lexical resolution from this scope: " << bindings.size() << " name(s)\n";
+        for (const auto &[name, declaringScope]: bindings) {
+            const size_t depth = depthOf(declaringScope);
+            const auto localSlot = declaringScope->findSlotItself(name);
+            const std::string origin = depth == 0
+                                           ? "  (declared here)"
+                                           : "  (from enclosing scope, lexical depth "
+                                             + std::to_string(depth) + ")";
+            os << "    \"" << name << "\" -> " << declaringScope->getScopePath()
+               << " frame-slot[" << declaringScope->getFrameSlotIndex(localSlot.value_or(0)) << "]"
+               << origin << "\n";
+        }
+    }
+
+    void RVM_ParseScope::printInfo(std::ostream &os) const {
+        os << "[ParseScope] startIndex: " << startIndex
+           << ", slotCount: " << slotNames.size();
+        if (parentScope != nullptr) {
+            os << ", parent: {startIndex: " << parentScope->getStartIndex()
+               << ", slotCount: " << parentScope->getSlotCount() << "}";
+        } else {
+            os << ", parent: <none>";
+        }
+        os << "\n";
+        for (size_t i = 0; i < slotNames.size(); ++i) {
+            os << "    local[" << i << "] / frame[" << (startIndex + i) << "] <- \"" << slotNames[i] << "\"\n";
+        }
+        if (slotNames.empty()) {
+            os << "    <no slots>\n";
+        }
+    }
+
+    void RVM_ParseScope::printScopeChainInfo(std::ostream &os) const {
+        std::vector<const RVM_ParseScope *> chain{};
+        for (const RVM_ParseScope *scope = this; scope != nullptr; scope = scope->getParentScope()) {
+            chain.push_back(scope);
+        }
+        os << "=== ParseScope Chain (inner -> outer, " << chain.size() << " scope(s)) ===\n";
+        size_t depth = 0;
+        for (const auto *scope: chain) {
+            os << "  depth " << depth++ << ": ";
+            scope->printInfo(os);
+        }
+        os << "=== End of ParseScope Chain ===\n";
+    }
+
+    RVM_RuntimeMemory &core::memory::RVM_RuntimeMemory::getInstance() {
+        static RVM_RuntimeMemory instance;
+        return instance;
     }
 }

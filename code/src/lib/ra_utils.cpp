@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <random>
+#include <regex>
 #include <utility>
 #include <set>
 #ifdef _WIN32
@@ -32,19 +33,19 @@ namespace utils {
 
     const auto &program_start_time = std::chrono::high_resolution_clock::now();
 
-    // ĞòÁĞ»¯ ArgType µ½¶ş½øÖÆÎÄ¼ş
+    // åºåˆ—åŒ– ArgType åˆ°äºŒè¿›åˆ¶æ–‡ä»¶
     void serializeArgType(std::ostream &os, const ArgType &argType, const SerializationProfile &profile) {
-        // ½« ArgType ×ª»»Îªµ×²ãÕûÊıÀàĞÍ
+        // å°† ArgType è½¬æ¢ä¸ºåº•å±‚æ•´æ•°ç±»å‹
         int value = static_cast<int>(argType);
         os.write(reinterpret_cast<const char*>(&value), sizeof(value));
     }
 
-    // ·´ĞòÁĞ»¯ ArgType ´Ó¶ş½øÖÆÎÄ¼ş
+    // ååºåˆ—åŒ– ArgType ä»äºŒè¿›åˆ¶æ–‡ä»¶
     ArgType deserializeArgType(std::istream &is, const SerializationProfile &profile) {
         int value;
         is.read(reinterpret_cast<char*>(&value), sizeof(value));
 
-        // ½«ÕûÊı×ª»»»Ø ArgType Ã¶¾ÙÀàĞÍ
+        // å°†æ•´æ•°è½¬æ¢å› ArgType æšä¸¾ç±»å‹
         return static_cast<ArgType>(value);
     }
 
@@ -74,22 +75,22 @@ namespace utils {
 
     Number::Number(): type(NumType::NotNumber), int_value(0), double_value(0) {}
 
-    // »ñÈ¡ÎÄ¼şÃû
+    // è·å–æ–‡ä»¶å
     std::string getFileNameFromPath(const std::string &path) {
         auto file_full_name = std::filesystem::path(path).filename().string();
         return file_full_name.substr(0, file_full_name.rfind('.'));
     }
 
-    // »ñÈ¡ÎÄ¼şÀ©Õ¹Ãû
+    // è·å–æ–‡ä»¶æ‰©å±•å
     std::string getFileExtFromPath(const std::string &path) {
         std::filesystem::path file_path(path);
         if (file_path.has_extension()) {
-            return file_path.extension().string().substr(1); // È¥µôµãºÅ
+            return file_path.extension().string().substr(1); // å»æ‰ç‚¹å·
         }
-        return ""; // Èç¹ûÃ»ÓĞÀ©Õ¹Ãû£¬·µ»Ø¿Õ×Ö·û´®
+        return ""; // å¦‚æœæ²¡æœ‰æ‰©å±•åï¼Œè¿”å›ç©ºå­—ç¬¦ä¸²
     }
 
-    // »ñÈ¡ÎÄ¼şÃûºÍÀ©Õ¹Ãû
+    // è·å–æ–‡ä»¶åå’Œæ‰©å±•å
     std::pair<std::string, std::string> getFileInfoFromPath(const std::string &path) {
         auto file_full_name = std::filesystem::path(path).filename().string();
         auto file_name = file_full_name.substr(0, file_full_name.rfind('.'));
@@ -135,7 +136,7 @@ namespace utils {
         return current_path.string();
     }
 
-    // ×Ö·û´®×ªÕûÊı
+    // å­—ç¬¦ä¸²è½¬æ•´æ•°
     int stringToInt(const std::string &str) {
         if (str.empty()) {
             throw base::errors::DataTypeMismatchError(unknown_, str,{},{});
@@ -165,7 +166,7 @@ namespace utils {
         return isNegative ? -result : result;
     }
 
-    // ×Ö·û´®×ª¸¡µãÊı
+    // å­—ç¬¦ä¸²è½¬æµ®ç‚¹æ•°
     double stringToDouble(const std::string &str) {
         if (str.empty()) {
             throw std::invalid_argument("Invalid argument: empty string");
@@ -234,7 +235,7 @@ namespace utils {
         return isNegative ? -result : result;
     }
 
-    // ½«×Ö·û´®×ª»»Îªchar
+    // å°†å­—ç¬¦ä¸²è½¬æ¢ä¸ºchar
     char stringToChar(const std::string &str) {
         if (str.length() != 1) {
             throw std::invalid_argument("String must be of length 1: " + str);
@@ -242,7 +243,7 @@ namespace utils {
         return str[0];
     }
 
-    // ½«×Ö·û´®×ª»»Îªbool
+    // å°†å­—ç¬¦ä¸²è½¬æ¢ä¸ºbool
     bool stringToBool(const std::string &str) {
         if (str == "true" || str == "1") {
             return true;
@@ -253,7 +254,7 @@ namespace utils {
         }
     }
 
-    // ĞÂÔöº¯Êı£º³¢ÊÔ½«×Ö·û´®×ª»»Îªint£¬Èç¹ûÊ§°ÜÔò×ª»»Îªdouble
+    // æ–°å¢å‡½æ•°ï¼šå°è¯•å°†å­—ç¬¦ä¸²è½¬æ¢ä¸ºintï¼Œå¦‚æœå¤±è´¥åˆ™è½¬æ¢ä¸ºdouble
     Number stringToNumber(const std::string &str) {
         try {
             return Number{stringToInt(str)};
@@ -270,7 +271,7 @@ namespace utils {
         }
     }
 
-    // ½«double×ª»»Îª×Ö·û´®
+    // å°†doubleè½¬æ¢ä¸ºå­—ç¬¦ä¸²
     std::string doubleToString(const double value)
     {
         std::ostringstream oss;
@@ -278,17 +279,17 @@ namespace utils {
         return oss.str();
     }
 
-    // ÅĞ¶Ï×Ö·û´®ÊÇ·ñÎª×Ö·û´®¸ñÊ½
+    // åˆ¤æ–­å­—ç¬¦ä¸²æ˜¯å¦ä¸ºå­—ç¬¦ä¸²æ ¼å¼
     bool isStringFormat(const std::string &str) {
         return StringManager::isStringFormat(str).first;
     }
 
-    // ½âÎö×Ö·û´®¸ñÊ½
+    // è§£æå­—ç¬¦ä¸²æ ¼å¼
     std::string parseStringFormat(const std::string &str) {
         return StringManager::parseStringFormat(str);
     }
 
-    // ½âÎö×Ö·û´®¸ñÊ½£¬²»·µ»Ø½á¹û
+    // è§£æå­—ç¬¦ä¸²æ ¼å¼ï¼Œä¸è¿”å›ç»“æœ
     void parseStringFormat_nret(std::string &str) {
         StringManager::parseStringFormat_nret(str);
     }
@@ -372,7 +373,7 @@ namespace utils {
             for (size_t i = 0; i < content.length(); ++i) {
                 char c = content[i];
                 if (inQuotes && c == '\n') {
-                    inQuotes = false; // Ç¿ÖÆ½áÊøÒıºÅ
+                    inQuotes = false; // å¼ºåˆ¶ç»“æŸå¼•å·
                 }
                 if (c == '"') {
                     int backslashCount = 0;
@@ -419,28 +420,28 @@ namespace utils {
                 result += c;
                 continue;
             }
-            // ´¦Àí×ªÒå×Ö·û
+            // å¤„ç†è½¬ä¹‰å­—ç¬¦
             if (!iss.get(c)) {
-                // ×Ö·û´®ÒÔ·´Ğ±¸Ü½áÎ²£¬Ö±½ÓÌí¼Ó
+                // å­—ç¬¦ä¸²ä»¥åæ–œæ ç»“å°¾ï¼Œç›´æ¥æ·»åŠ 
                 result += '\\';
                 break;
             }
             switch (c) {
-            case 'a':  result += '\a'; break; // ÏìÁå
-            case 'b':  result += '\b'; break; // ÍË¸ñ
-            case 'f':  result += '\f'; break; // »»Ò³
-            case 'n':  result += '\n'; break; // »»ĞĞ
-            case 'r':  result += '\r'; break; // »Ø³µ
-            case 't':  result += '\t'; break; // Ë®Æ½ÖÆ±í
-            case 'v':  result += '\v'; break; // ´¹Ö±ÖÆ±í
-            case '\\': result += '\\'; break; // ·´Ğ±¸Ü
-            case '"':  result += '"';  break; // Ë«ÒıºÅ
-            case '\'': result += '\''; break; // µ¥ÒıºÅ
-                // ´¦Àí°Ë½øÖÆ×ªÒå \0ooo (1-3Î»Êı×Ö)
+            case 'a':  result += '\a'; break; // å“é“ƒ
+            case 'b':  result += '\b'; break; // é€€æ ¼
+            case 'f':  result += '\f'; break; // æ¢é¡µ
+            case 'n':  result += '\n'; break; // æ¢è¡Œ
+            case 'r':  result += '\r'; break; // å›è½¦
+            case 't':  result += '\t'; break; // æ°´å¹³åˆ¶è¡¨
+            case 'v':  result += '\v'; break; // å‚ç›´åˆ¶è¡¨
+            case '\\': result += '\\'; break; // åæ–œæ 
+            case '"':  result += '"';  break; // åŒå¼•å·
+            case '\'': result += '\''; break; // å•å¼•å·
+                // å¤„ç†å…«è¿›åˆ¶è½¬ä¹‰ \0ooo (1-3ä½æ•°å­—)
             case '0': {
                     std::string octStr;
-                    octStr += '0'; // ÒÑ¾­¶ÁÈ¡µÄ'0'
-                    // ×î¶àÔÙ¶Á2Î»°Ë½øÖÆÊı×Ö
+                    octStr += '0'; // å·²ç»è¯»å–çš„'0'
+                    // æœ€å¤šå†è¯»2ä½å…«è¿›åˆ¶æ•°å­—
                     for (int i = 0; i < 2; ++i) {
                         if (char next = static_cast<char>(iss.peek());
                             next >= '0' && next <= '7') {
@@ -450,14 +451,14 @@ namespace utils {
                                 break;
                             }
                     }
-                    // ×ª»»Îª×Ö·û
+                    // è½¬æ¢ä¸ºå­—ç¬¦
                     char octChar = static_cast<char>(std::stoi(octStr, nullptr, 8));
                     result += octChar;
                     break;
-            } // ´¦ÀíÊ®Áù½øÖÆ×ªÒå \xhh (1-2Î»Êı×Ö)
+            } // å¤„ç†åå…­è¿›åˆ¶è½¬ä¹‰ \xhh (1-2ä½æ•°å­—)
             case 'x': {
                     std::string hexStr;
-                    // ¶ÁÈ¡1-2Î»Ê®Áù½øÖÆÊı×Ö
+                    // è¯»å–1-2ä½åå…­è¿›åˆ¶æ•°å­—
                     for (int i = 0; i < 2; ++i) {
                         if (char next = static_cast<char>(iss.peek());
                             isxdigit(static_cast<unsigned char>(next))) {
@@ -469,15 +470,15 @@ namespace utils {
                     }
 
                     if (hexStr.empty()) {
-                        // Ã»ÓĞÓĞĞ§µÄÊ®Áù½øÖÆÊı×Ö£¬½«\xÔ­ÑùÌí¼Ó
+                        // æ²¡æœ‰æœ‰æ•ˆçš„åå…­è¿›åˆ¶æ•°å­—ï¼Œå°†\xåŸæ ·æ·»åŠ 
                         result += "\\x";
                     } else {
-                        // ×ª»»Îª×Ö·û
+                        // è½¬æ¢ä¸ºå­—ç¬¦
                         char hexChar = static_cast<char>(std::stoi(hexStr, nullptr, 16));
                         result += hexChar;
                     }
                     break;
-            } // Î´Öª×ªÒåĞòÁĞ£¬Ô­Ñù±£Áô
+            } // æœªçŸ¥è½¬ä¹‰åºåˆ—ï¼ŒåŸæ ·ä¿ç•™
             default:
                 result += '\\';
                 result += c;
@@ -522,22 +523,22 @@ namespace utils {
         std::map<std::string, std::string> result;
         const std::string_view input_view(input);
         size_t start = 0;
-        // ´¦ÀíµÚÒ»¸ö²¿·Ö£¨prefix£©
+        // å¤„ç†ç¬¬ä¸€ä¸ªéƒ¨åˆ†ï¼ˆprefixï¼‰
         size_t end = input_view.find_first_of(delimiters, start);
         result.emplace("prefix", std::string(input_view.substr(start, end - start)));
         start = (end == std::string_view::npos) ? input_view.size() : end;
-        // ´¦ÀíÊ£Óà²¿·Ö
+        // å¤„ç†å‰©ä½™éƒ¨åˆ†
         while (start < input_view.size()) {
-            // ÕÒµ½·Ö¸ô·û
+            // æ‰¾åˆ°åˆ†éš”ç¬¦
             char delimiter = input_view[start];
-            std::string delimiter_key(1, delimiter); // ½«·Ö¸ô·û×ª»»Îª×Ö·û´®
-            start++; // Ìø¹ı·Ö¸ô·û
-            // ÕÒµ½ÏÂÒ»¸ö·Ö¸ô·û»ò×Ö·û´®Ä©Î²
+            std::string delimiter_key(1, delimiter); // å°†åˆ†éš”ç¬¦è½¬æ¢ä¸ºå­—ç¬¦ä¸²
+            start++; // è·³è¿‡åˆ†éš”ç¬¦
+            // æ‰¾åˆ°ä¸‹ä¸€ä¸ªåˆ†éš”ç¬¦æˆ–å­—ç¬¦ä¸²æœ«å°¾
             end = input_view.find_first_of(delimiters, start);
             if (end == std::string_view::npos) {
                 end = input_view.size();
             }
-            // ÌáÈ¡Öµ²¢±£´æµ½ map
+            // æå–å€¼å¹¶ä¿å­˜åˆ° map
             result.emplace(std::move(delimiter_key), std::string(input_view.substr(start, end - start)));
             start = end;
         }
@@ -559,7 +560,7 @@ namespace utils {
             case '"':  result += "\\\""; break;
             case '\'': result += "\\'"; break;
             default:
-                // ·Ç´òÓ¡×Ö·ûÓÃÊ®Áù½øÖÆ±íÊ¾
+                // éæ‰“å°å­—ç¬¦ç”¨åå…­è¿›åˆ¶è¡¨ç¤º
                 if (isprint(static_cast<unsigned char>(c))) {
                     result += c;
                 } else {
@@ -637,16 +638,16 @@ namespace utils {
         }
 
         std::vector<std::string> parts;
-        parts.reserve(input.size() / 4); // Ô¤·ÖÅäÄÚ´æ
+        parts.reserve(input.size() / 4); // é¢„åˆ†é…å†…å­˜
 
         std::string currentPart;
-        currentPart.reserve(input.size() / 4); // Ô¤·ÖÅäÄÚ´æ
+        currentPart.reserve(input.size() / 4); // é¢„åˆ†é…å†…å­˜
 
         bool inQuotes = false;
         bool isEscaped = false;
         bool prevWasQuote = false;
         size_t lastDelimiterPos = std::string::npos;
-        bool hasNonWhitespaceSinceDelimiter = true; // ¸ú×Ù·Ö¸ô·ûºóÊÇ·ñÓĞ·Ç¿Õ¸ñ
+        bool hasNonWhitespaceSinceDelimiter = true; // è·Ÿè¸ªåˆ†éš”ç¬¦åæ˜¯å¦æœ‰éç©ºæ ¼
 
         for (size_t i = 0; i < input.length(); ++i) {
             char c = input[i];
@@ -660,7 +661,7 @@ namespace utils {
                 inQuotes = !inQuotes;
                 if (!inQuotes) {
                     currentPart += c;
-                    parts.push_back(std::move(currentPart)); // ÒÆ¶¯ÓïÒå
+                    parts.push_back(std::move(currentPart)); // ç§»åŠ¨è¯­ä¹‰
                     currentPart.clear();
                     prevWasQuote = true;
                     hasNonWhitespaceSinceDelimiter = true;
@@ -681,7 +682,7 @@ namespace utils {
                         throw std::runtime_error("Error: Adjacent delimiters contain only whitespace. Line: " + std::to_string(line_row));
                     }
                 }
-                hasNonWhitespaceSinceDelimiter = false; // ÖØÖÃ±êÖ¾
+                hasNonWhitespaceSinceDelimiter = false; // é‡ç½®æ ‡å¿—
                 if (!currentPart.empty()) {
                     if (prevWasQuote) {
                         throw std::runtime_error("Error: Non-quoted string between two quoted strings. Line: " + std::to_string(line_row));
@@ -689,7 +690,7 @@ namespace utils {
                     parts.push_back(std::move(currentPart));
                     currentPart.clear();
                 }
-                parts.emplace_back(1, c); // Ö±½Ó¹¹Ôì¶ººÅ²¿·Ö
+                parts.emplace_back(1, c); // ç›´æ¥æ„é€ é€—å·éƒ¨åˆ†
                 prevWasQuote = false;
                 lastDelimiterPos = i;
             } else if (inQuotes) {
@@ -710,13 +711,13 @@ namespace utils {
                 currentPart.clear();
             } else {
                 if (lastDelimiterPos != std::string::npos) {
-                    hasNonWhitespaceSinceDelimiter = true; // ±ê¼Ç´æÔÚ·Ç¿Õ¸ñ
+                    hasNonWhitespaceSinceDelimiter = true; // æ ‡è®°å­˜åœ¨éç©ºæ ¼
                 }
                 currentPart += c;
             }
         }
 
-        // Òì³£¼ì²é
+        // å¼‚å¸¸æ£€æŸ¥
         if (isEscaped) {
             throw std::runtime_error("Error: Unescaped backslash at the end of input. Line: " + std::to_string(line_row));
         }
@@ -737,7 +738,7 @@ namespace utils {
         return spaceChars.contains(c);
     }
 
-    // Pos¾ßÌåÊµÏÖ
+    // Poså…·ä½“å®ç°
     Pos::Pos(int line, int column, std::string filepath):
     line(line), column(column), filepath(std::move(filepath)) {}
 
@@ -768,15 +769,15 @@ namespace utils {
 
     void Pos::serialize(std::ostream &out, const utils::SerializationProfile &profile) const {
         if (profile < utils::SerializationProfile::Release) {
-            // Ğ´ÈëÕûÊıÀàĞÍµÄ³ÉÔ±±äÁ¿
+            // å†™å…¥æ•´æ•°ç±»å‹çš„æˆå‘˜å˜é‡
             out.write(reinterpret_cast<const char *>(&line), sizeof(line));
             out.write(reinterpret_cast<const char *>(&column), sizeof(column));
 
-            // Ğ´Èë×Ö·û´®µÄ³¤¶È
+            // å†™å…¥å­—ç¬¦ä¸²çš„é•¿åº¦
             size_t filepathLength = filepath.size();
             out.write(reinterpret_cast<const char *>(&filepathLength), sizeof(filepathLength));
 
-            // Ğ´Èë×Ö·û´®µÄÄÚÈİ
+            // å†™å…¥å­—ç¬¦ä¸²çš„å†…å®¹
             if (filepathLength > 0) {
                 out.write(filepath.c_str(), static_cast<long long>(filepathLength));
             }
@@ -785,20 +786,20 @@ namespace utils {
 
     void Pos::deserialize(std::istream &in, const utils::SerializationProfile &profile) {
         if (profile < utils::SerializationProfile::Release){
-            // ¶ÁÈ¡ÕûÊıÀàĞÍµÄ³ÉÔ±±äÁ¿
+            // è¯»å–æ•´æ•°ç±»å‹çš„æˆå‘˜å˜é‡
             in.read(reinterpret_cast<char *>(&line), sizeof(line));
             in.read(reinterpret_cast<char *>(&column), sizeof(column));
 
-            // ¶ÁÈ¡×Ö·û´®µÄ³¤¶È
+            // è¯»å–å­—ç¬¦ä¸²çš„é•¿åº¦
             size_t filepathLength;
             in.read(reinterpret_cast<char *>(&filepathLength), sizeof(filepathLength));
 
-            // ¶ÁÈ¡×Ö·û´®µÄÄÚÈİ
+            // è¯»å–å­—ç¬¦ä¸²çš„å†…å®¹
             if (filepathLength > 0) {
-                filepath.resize(filepathLength);  // µ÷Õû×Ö·û´®´óĞ¡
+                filepath.resize(filepathLength);  // è°ƒæ•´å­—ç¬¦ä¸²å¤§å°
                 in.read(&filepath[0], static_cast<long long>(filepathLength));
             } else {
-                filepath.clear();  // Èç¹û³¤¶ÈÎª0£¬Çå¿Õ×Ö·û´®
+                filepath.clear();  // å¦‚æœé•¿åº¦ä¸º0ï¼Œæ¸…ç©ºå­—ç¬¦ä¸²
             }
         }
     }
@@ -839,7 +840,7 @@ namespace utils {
         return "[ArgType: " + getArgTypeName(argType) + "]";
     }
 
-    // Arg¾ßÌåÊµÏÖ
+    // Argå…·ä½“å®ç°
     Arg::Arg(Pos pos, const std::string &value)
         :pos(std::move(pos)), value(value)
     {
@@ -867,6 +868,31 @@ namespace utils {
         return value;
     }
 
+    void Arg::setOrdinal(size_t ordinal_) {
+        ordinal = ordinal_;
+    }
+
+    size_t Arg::getOrdinal() const {
+        return ordinal;
+    }
+
+    void Arg::setSlotRef(uint32_t frameIndex_, uint32_t slotIndex_) {
+        frameIndex = frameIndex_;
+        slotIndex = slotIndex_;
+    }
+
+    bool Arg::hasSlotRef() const {
+        return frameIndex != INVALID_SLOT && slotIndex != INVALID_SLOT;
+    }
+
+    uint32_t Arg::getFrameIndex() const {
+        return frameIndex;
+    }
+
+    uint32_t Arg::getSlotIndex() const {
+        return slotIndex;
+    }
+
     std::string Arg::toString() const {
         switch (type) {
             case ArgType::unknown:
@@ -883,37 +909,37 @@ namespace utils {
 
     Arg::Arg(const std::string& value): Arg(Pos(-1, -1, ""), value) {}
 
-    // ĞòÁĞ»¯º¯Êı
+    // åºåˆ—åŒ–å‡½æ•°
     void Arg::serialize(std::ostream &out, const utils::SerializationProfile &profile) const {
-        // ĞòÁĞ»¯ Pos
+        // åºåˆ—åŒ– Pos
         pos.serialize(out, profile);
 
-        // ĞòÁĞ»¯ ArgType
+        // åºåˆ—åŒ– ArgType
         utils::serializeArgType(out, type, profile);
 
-        // ĞòÁĞ»¯×Ö·û´®µÄ³¤¶È
+        // åºåˆ—åŒ–å­—ç¬¦ä¸²çš„é•¿åº¦
         size_t valueLength = value.size();
         out.write(reinterpret_cast<const char*>(&valueLength), sizeof(valueLength));
 
-        // ĞòÁĞ»¯×Ö·û´®µÄÄÚÈİ
+        // åºåˆ—åŒ–å­—ç¬¦ä¸²çš„å†…å®¹
         if (valueLength > 0) {
             out.write(value.c_str(), static_cast<long long>(valueLength));
         }
     }
 
-    // ·´ĞòÁĞ»¯º¯Êı
+    // ååºåˆ—åŒ–å‡½æ•°
     void Arg::deserialize(std::istream &in, const SerializationProfile &profile) {
-        // ·´ĞòÁĞ»¯ Pos
+        // ååºåˆ—åŒ– Pos
         pos.deserialize(in, profile);
 
-        // ·´ĞòÁĞ»¯ ArgType
+        // ååºåˆ—åŒ– ArgType
         type = utils::deserializeArgType(in, profile);
 
-        // ·´ĞòÁĞ»¯×Ö·û´®µÄ³¤¶È
+        // ååºåˆ—åŒ–å­—ç¬¦ä¸²çš„é•¿åº¦
         size_t valueLength;
         in.read(reinterpret_cast<char*>(&valueLength), sizeof(valueLength));
 
-        // ·´ĞòÁĞ»¯×Ö·û´®µÄÄÚÈİ
+        // ååºåˆ—åŒ–å­—ç¬¦ä¸²çš„å†…å®¹
         if (valueLength > 0) {
             value.resize(valueLength);
             in.read(&value[0], static_cast<long long>(valueLength));
@@ -957,30 +983,30 @@ namespace utils {
         return lines;
     }
 
-    // Ğ´ÈëÎÄ¼ş£¨¸²¸ÇÄ£Ê½£©
+    // å†™å…¥æ–‡ä»¶ï¼ˆè¦†ç›–æ¨¡å¼ï¼‰
     bool writeFile(const std::string &filepath, const std::string &content) {
-        // ÒÔ¶ş½øÖÆÄ£Ê½´ò¿ªÎÄ¼ş£¬¸²¸ÇÔ­ÓĞÄÚÈİ
+        // ä»¥äºŒè¿›åˆ¶æ¨¡å¼æ‰“å¼€æ–‡ä»¶ï¼Œè¦†ç›–åŸæœ‰å†…å®¹
         std::ofstream file(filepath, std::ios::binary);
         if (!file.is_open()) {
-            return false; // ÎÄ¼ş´ò¿ªÊ§°Ü
+            return false; // æ–‡ä»¶æ‰“å¼€å¤±è´¥
         }
 
-        // Ğ´ÈëÄÚÈİ
+        // å†™å…¥å†…å®¹
         file.write(content.data(), static_cast<long long>(content.size()));
-        return file.good(); // ¼ì²éĞ´ÈëÊÇ·ñ³É¹¦
+        return file.good(); // æ£€æŸ¥å†™å…¥æ˜¯å¦æˆåŠŸ
     }
 
-    // ×·¼ÓÎÄ¼ş£¨×·¼ÓÄ£Ê½£©
+    // è¿½åŠ æ–‡ä»¶ï¼ˆè¿½åŠ æ¨¡å¼ï¼‰
     bool appendFile(const std::string &filepath, const std::string &content) {
-        // ÒÔ¶ş½øÖÆÄ£Ê½ºÍ×·¼ÓÄ£Ê½´ò¿ªÎÄ¼ş
+        // ä»¥äºŒè¿›åˆ¶æ¨¡å¼å’Œè¿½åŠ æ¨¡å¼æ‰“å¼€æ–‡ä»¶
         std::ofstream file(filepath, std::ios::binary | std::ios::app);
         if (!file.is_open()) {
-            return false; // ÎÄ¼ş´ò¿ªÊ§°Ü
+            return false; // æ–‡ä»¶æ‰“å¼€å¤±è´¥
         }
 
-        // Ğ´ÈëÄÚÈİ
+        // å†™å…¥å†…å®¹
         file.write(content.data(), static_cast<long long>(content.size()));
-        return file.good(); // ¼ì²éĞ´ÈëÊÇ·ñ³É¹¦
+        return file.good(); // æ£€æŸ¥å†™å…¥æ˜¯å¦æˆåŠŸ
     }
 
     bool isValidIdentifier(const std::string &content) {
@@ -1038,6 +1064,19 @@ namespace utils {
         return base::containsKeyword(content);
     }
 
+    bool looksLikeLabelName(const std::string &content) {
+        if (content.empty()) {
+            return false;
+        }
+        // EXIT çš„åŸŸå…³é”®å­—
+        if (content == "LOOP" || content == "REPEAT" || content == "UNTIL") {
+            return true;
+        }
+        // SET ç™»è®°çš„è·³è½¬æ ‡ç­¾ï¼šsl <n> [ _s <n> ]ï¼Œä¹Ÿæ¥å— l <n> è¿™ç§çŸ­å‰ç¼€
+        static const std::regex setLabelPattern(R"(^(sl|l)\d+(_s\d+)?$)");
+        return std::regex_match(content, setLabelPattern);
+    }
+
     bool isValidParameter(const std::string &content) {
         if (content.empty()) {
             return false;
@@ -1084,37 +1123,37 @@ namespace utils {
         size_t pos = 0;
 
         while ((pos = code.find('\n', pos)) != std::string::npos) {
-            // ½«´Óprev¿ªÊ¼µ½»»ĞĞ·û£¨²»°üº¬£©µÄ²¿·ÖÌí¼Óµ½ĞÂ×Ö·û´®
+            // å°†ä»prevå¼€å§‹åˆ°æ¢è¡Œç¬¦ï¼ˆä¸åŒ…å«ï¼‰çš„éƒ¨åˆ†æ·»åŠ åˆ°æ–°å­—ç¬¦ä¸²
             new_code += code.substr(prev, pos - prev);
-            // Ìí¼ÓÄ¿±ê×Ö·û
+            // æ·»åŠ ç›®æ ‡å­—ç¬¦
             new_code += c;
-            // Ìí¼Ó»»ĞĞ·û
+            // æ·»åŠ æ¢è¡Œç¬¦
             new_code += '\n';
-            // ¸üĞÂÏÂÒ»´Î²éÕÒµÄÆğÊ¼Î»ÖÃÎªµ±Ç°»»ĞĞ·ûÖ®ºó
+            // æ›´æ–°ä¸‹ä¸€æ¬¡æŸ¥æ‰¾çš„èµ·å§‹ä½ç½®ä¸ºå½“å‰æ¢è¡Œç¬¦ä¹‹å
             prev = pos + 1;
-            pos = prev;  // ÖØÒª£ºÏÂ´Î²éÕÒ´Óµ±Ç°»»ĞĞ·ûÖ®ºó¿ªÊ¼
+            pos = prev;  // é‡è¦ï¼šä¸‹æ¬¡æŸ¥æ‰¾ä»å½“å‰æ¢è¡Œç¬¦ä¹‹åå¼€å§‹
         }
 
-        // Ìí¼Ó×îºóÒ»¸ö»»ĞĞ·ûÖ®ºóµÄËùÓĞÊ£ÓàÄÚÈİ
+        // æ·»åŠ æœ€åä¸€ä¸ªæ¢è¡Œç¬¦ä¹‹åçš„æ‰€æœ‰å‰©ä½™å†…å®¹
         new_code += code.substr(prev);
         code.swap(new_code);
     }
 
     std::string listJoin(const std::list<std::string>& strList, const std::string& delimiter){
         if (strList.empty()) return "";
-        // ¼ÆËã×Ü³¤¶È£¨°üÀ¨·Ö¸ô·û£©
+        // è®¡ç®—æ€»é•¿åº¦ï¼ˆåŒ…æ‹¬åˆ†éš”ç¬¦ï¼‰
         size_t totalLength = 0;
         for (const auto& s : strList) {
             totalLength += s.length();
         }
-        // Ìí¼Ó·Ö¸ô·ûµÄ×Ü³¤¶È
+        // æ·»åŠ åˆ†éš”ç¬¦çš„æ€»é•¿åº¦
         totalLength += delimiter.length() * (strList.size() - 1);
-        // Ô¤·ÖÅäÄÚ´æ
+        // é¢„åˆ†é…å†…å­˜
         std::string result;
         result.reserve(totalLength);
-        // Æ´½Ó×Ö·û´®
+        // æ‹¼æ¥å­—ç¬¦ä¸²
         auto it = strList.begin();
-        result += *it++;  // Ìí¼ÓµÚÒ»¸öÔªËØ
+        result += *it++;  // æ·»åŠ ç¬¬ä¸€ä¸ªå…ƒç´ 
         while (it != strList.end()) {
             result += delimiter;
             result += *it++;
@@ -1125,19 +1164,19 @@ namespace utils {
     std::string vectorJoin(const std::vector<std::string>& strVector, const std::string& delimiter)
     {
         if (strVector.empty()) return "";
-        // ¼ÆËã×Ü³¤¶È£¨°üÀ¨·Ö¸ô·û£©
+        // è®¡ç®—æ€»é•¿åº¦ï¼ˆåŒ…æ‹¬åˆ†éš”ç¬¦ï¼‰
         size_t totalLength = 0;
         for (const auto& s : strVector) {
             totalLength += s.length();
         }
-        // Ìí¼Ó·Ö¸ô·ûµÄ×Ü³¤¶È
+        // æ·»åŠ åˆ†éš”ç¬¦çš„æ€»é•¿åº¦
         totalLength += delimiter.length() * (strVector.size() - 1);
-        // Ô¤·ÖÅäÄÚ´æ
+        // é¢„åˆ†é…å†…å­˜
         std::string result;
         result.reserve(totalLength);
-        // Æ´½Ó×Ö·û´®
+        // æ‹¼æ¥å­—ç¬¦ä¸²
         auto it = strVector.begin();
-        result += *it++;  // Ìí¼ÓµÚÒ»¸öÔªËØ
+        result += *it++;  // æ·»åŠ ç¬¬ä¸€ä¸ªå…ƒç´ 
         while (it != strVector.end()) {
             result += delimiter;
             result += *it++;
@@ -1163,17 +1202,17 @@ namespace utils {
     void setProgramEnvDir(const std::string &dir_path) {
         namespace fs = std::filesystem;
         std::error_code ec;
-        fs::current_path(fs::path(dir_path), ec); // ÉèÖÃ¹¤×÷Ä¿Â¼
+        fs::current_path(fs::path(dir_path), ec); // è®¾ç½®å·¥ä½œç›®å½•
         if (ec) {
             throw std::runtime_error(ec.message());
         }
     }
 
     std::string printProgramSpentTimeInfo() {
-        // »ñÈ¡½áÊøÊ±¼äµã
+        // è·å–ç»“æŸæ—¶é—´ç‚¹
         auto end = std::chrono::high_resolution_clock::now();
-        // ¼ÆËãÊ±¼ä²î
-        auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end - program_start_time); // Êä³öÖ´ĞĞÊ±¼ä
+        // è®¡ç®—æ—¶é—´å·®
+        auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end - program_start_time); // è¾“å‡ºæ‰§è¡Œæ—¶é—´
         std::ostringstream oss;
         oss << "\nProcess finished in " << duration.count() << " seconds.\n";
         return oss.str();
@@ -1183,15 +1222,15 @@ namespace utils {
         if (path.empty()) return "";
         namespace fs = std::filesystem;
         try {
-            // ½«ÊäÈëÂ·¾¶×ª»»Îª filesystem::path ¶ÔÏó
+            // å°†è¾“å…¥è·¯å¾„è½¬æ¢ä¸º filesystem::path å¯¹è±¡
             fs::path input_path(path);
 
-            // Èç¹ûÂ·¾¶ÒÑ¾­ÊÇ¾ø¶ÔÂ·¾¶£¬Ö±½Ó·µ»Ø
+            // å¦‚æœè·¯å¾„å·²ç»æ˜¯ç»å¯¹è·¯å¾„ï¼Œç›´æ¥è¿”å›
             if (input_path.is_absolute()) {
                 return input_path.string();
             }
 
-            // ·ñÔò£¬½«Ïà¶ÔÂ·¾¶Óëµ±Ç°¹¤×÷Ä¿Â¼½áºÏ£¬Éú³É¾ø¶ÔÂ·¾¶
+            // å¦åˆ™ï¼Œå°†ç›¸å¯¹è·¯å¾„ä¸å½“å‰å·¥ä½œç›®å½•ç»“åˆï¼Œç”Ÿæˆç»å¯¹è·¯å¾„
             fs::path absolute_path;
             if (dir_path.empty() || dir_path == undefined_) {
                 absolute_path = fs::absolute(input_path);
@@ -1225,12 +1264,12 @@ namespace utils {
 
         iss >> year >> c1 >> month >> c2 >> day >> std::noskipws >> c3 >> std::skipws >> hour >> c4 >> minute >> c5 >> second;
 
-        // ¼ì²é·Ö¸ô·ûÊÇ·ñÆ¥Åä
+        // æ£€æŸ¥åˆ†éš”ç¬¦æ˜¯å¦åŒ¹é…
         if (c1 != sep1 || c2 != sep2 || c3 != sep3 || c4 != sep4 || c5 != sep5) {
             return false;
         }
 
-        // ¼ì²éÈÕÆÚÖµÊÇ·ñÓĞĞ§
+        // æ£€æŸ¥æ—¥æœŸå€¼æ˜¯å¦æœ‰æ•ˆ
         if (year < 0 || month < 1 || month > 12 || day < 1 || day > 31 ||
             hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
             return false;
@@ -1239,7 +1278,7 @@ namespace utils {
         return true;
     }
 
-    // Ìí¼Ó±êÖ¾²ÎÊı£¨Ö§³Ö±ğÃû£©
+    // æ·»åŠ æ ‡å¿—å‚æ•°ï¼ˆæ”¯æŒåˆ«åï¼‰
     void ProgArgParser::addFlag(const std::string& name, bool* var, bool defaultValue, bool whenPresent,
                                 const std::string& description, const std::vector<std::string>& aliases) {
         *var = defaultValue;
@@ -1256,7 +1295,7 @@ namespace utils {
                 size_t eq_pos = name_part.find('=');
                 std::string name = name_part.substr(0, eq_pos);
 
-                // ½«Ñ¡ÏîµÄÖ÷Ãû³Æ¼ÓÈë providedOptions
+                // å°†é€‰é¡¹çš„ä¸»åç§°åŠ å…¥ providedOptions
                 providedOptions.insert(getOptionMainName(name));
 
                 handleOption(arg, argc, argv, i);
@@ -1265,7 +1304,7 @@ namespace utils {
             }
         }
 
-        // ¼ì²é»¥³â¹æÔò
+        // æ£€æŸ¥äº’æ–¥è§„åˆ™
         for (const auto& rule : mutuallyExclusive_) {
             std::string opt1 = getOptionMainName(rule.opt1);
             std::string opt2 = getOptionMainName(rule.opt2);
@@ -1274,7 +1313,7 @@ namespace utils {
                 throw std::runtime_error("Options '--" + rule.opt1 + "' and '--" + rule.opt2 + "' are mutually exclusive");
             }
 
-            // Èç¹ûÊÇË«Ïò¼ì²é£¬»¹ĞèÒª¼ì²é·´Ïò¹æÔò
+            // å¦‚æœæ˜¯åŒå‘æ£€æŸ¥ï¼Œè¿˜éœ€è¦æ£€æŸ¥åå‘è§„åˆ™
             if (rule.direction == CheckDir::BiDir) {
                 if (providedOptions.count(opt2) && providedOptions.count(opt1)) {
                     throw std::runtime_error("Options '--" + rule.opt2 + "' and '--" + rule.opt1 + "' are mutually exclusive");
@@ -1282,7 +1321,7 @@ namespace utils {
             }
         }
 
-        // ¼ì²é¹ØÁª¹æÔò
+        // æ£€æŸ¥å…³è”è§„åˆ™
         for (const auto& rule : dependent_) {
             std::string opt1 = getOptionMainName(rule.opt1);
             std::string opt2 = getOptionMainName(rule.opt2);
@@ -1293,7 +1332,7 @@ namespace utils {
                 }
             }
 
-            // Èç¹ûÊÇË«Ïò¼ì²é£¬»¹ĞèÒª¼ì²é·´Ïò¹æÔò
+            // å¦‚æœæ˜¯åŒå‘æ£€æŸ¥ï¼Œè¿˜éœ€è¦æ£€æŸ¥åå‘è§„åˆ™
             if (rule.direction == CheckDir::BiDir) {
                 if (providedOptions.count(opt2)) {
                     if (!providedOptions.count(opt1)) {
@@ -1311,7 +1350,7 @@ namespace utils {
         bool has_value = (eq_pos != std::string::npos);
         std::string value = has_value ? name_part.substr(eq_pos + 1) : "";
 
-        // ´¦Àí¹Ø¼ü×Ö²ÎÊı
+        // å¤„ç†å…³é”®å­—å‚æ•°
         auto* opt = findOption(name);
         if (opt) {
             try {
@@ -1332,7 +1371,7 @@ namespace utils {
             return;
         }
 
-        // ´¦Àí±êÖ¾²ÎÊı
+        // å¤„ç†æ ‡å¿—å‚æ•°
         auto* flag = findFlag(name);
         if (flag) {
             if (has_value) throw std::runtime_error("Flag doesn't accept value");
@@ -1345,14 +1384,14 @@ namespace utils {
     }
 
     std::string ProgArgParser::getOptionDescription(const std::string &name) const {
-        // ¼ì²é¹Ø¼ü×Ö²ÎÊı
+        // æ£€æŸ¥å…³é”®å­—å‚æ•°
         for (const auto& opt : options_) {
             if (opt.name == name) return opt.toString();
             for (const auto& alias : opt.aliases) {
                 if (alias == name) return opt.toString();
             }
         }
-        // ¼ì²é±êÖ¾²ÎÊı
+        // æ£€æŸ¥æ ‡å¿—å‚æ•°
         for (const auto& flag : flags_) {
             if (flag.name == name) return flag.toString();
             for (const auto& alias : flag.aliases) {
@@ -1362,7 +1401,7 @@ namespace utils {
         throw std::runtime_error("Unknown option: '" + name + "'");
     }
 
-    // Éú³É¸ñÊ½»¯µÄ°ïÖú×Ö·û´®
+    // ç”Ÿæˆæ ¼å¼åŒ–çš„å¸®åŠ©å­—ç¬¦ä¸²
     std::string ProgArgParser::getHelpString(const size_t lineWidth, const size_t optionIndent, const size_t descriptionIndent) const {
         std::ostringstream oss;
 
@@ -1370,32 +1409,32 @@ namespace utils {
         oss << "  RVM.exe [<flags>] [<options>]\n\n";
         oss << "Flags:\n";
 
-        // Ìí¼Ó±êÖ¾²ÎÊıµÄ°ïÖúĞÅÏ¢
+        // æ·»åŠ æ ‡å¿—å‚æ•°çš„å¸®åŠ©ä¿¡æ¯
         for (const auto& flag : flags_) {
-            // Ñ¡ÏîÃû³ÆºÍ±ğÃû
+            // é€‰é¡¹åç§°å’Œåˆ«å
             oss << std::string(optionIndent, ' ') << "['--" << flag.name;
             for (const auto& alias : flag.aliases) {
                 oss << "' | '--" << alias;
             }
             oss << "']\n";
 
-            // ÌáÊ¾ĞÅÏ¢£¨»»ĞĞÕÛµş£©
+            // æç¤ºä¿¡æ¯ï¼ˆæ¢è¡ŒæŠ˜å ï¼‰
             std::string wrappedDescription = StringManager::wrapText(flag.description, lineWidth, descriptionIndent);
             oss << std::string(descriptionIndent, ' ') << wrappedDescription << "\n\n";
         }
 
         oss << "Options:\n";
 
-        // Ìí¼Ó¹Ø¼ü×Ö²ÎÊıµÄ°ïÖúĞÅÏ¢
+        // æ·»åŠ å…³é”®å­—å‚æ•°çš„å¸®åŠ©ä¿¡æ¯
         for (const auto& opt : options_) {
-            // Ñ¡ÏîÃû³ÆºÍ±ğÃû
+            // é€‰é¡¹åç§°å’Œåˆ«å
             oss << std::string(optionIndent, ' ') << "['--" << opt.name;
             for (const auto& alias : opt.aliases) {
                 oss << "' | '--" << alias;
             }
             oss << "'] <value>\n";
 
-            // ÌáÊ¾ĞÅÏ¢£¨»»ĞĞÕÛµş£©
+            // æç¤ºä¿¡æ¯ï¼ˆæ¢è¡ŒæŠ˜å ï¼‰
             std::string wrappedDescription = StringManager::wrapText(opt.description, lineWidth, descriptionIndent);
             oss << std::string(descriptionIndent, ' ') << wrappedDescription << "\n\n";
         }
@@ -1404,21 +1443,21 @@ namespace utils {
     }
 
     std::string ProgArgParser::getOptionMainName(const std::string &name) const {
-        // ¼ì²é¹Ø¼ü×Ö²ÎÊı
+        // æ£€æŸ¥å…³é”®å­—å‚æ•°
         for (const auto& opt : options_) {
             if (opt.name == name) return opt.name;
             for (const auto& alias : opt.aliases) {
                 if (alias == name) return opt.name;
             }
         }
-        // ¼ì²é±êÖ¾²ÎÊı
+        // æ£€æŸ¥æ ‡å¿—å‚æ•°
         for (const auto& flag : flags_) {
             if (flag.name == name) return flag.name;
             for (const auto& alias : flag.aliases) {
                 if (alias == name) return flag.name;
             }
         }
-        return name; // Èç¹ûÃ»ÓĞÕÒµ½£¬·µ»ØÔ­Ê¼Ãû³Æ
+        return name; // å¦‚æœæ²¡æœ‰æ‰¾åˆ°ï¼Œè¿”å›åŸå§‹åç§°
     }
 
     ProgArgParser::FlagInfo *ProgArgParser::findFlag(const std::string &name) {
@@ -1531,16 +1570,16 @@ namespace utils {
     }
 
     /**
-     * Éú³ÉÒ»¸ö½éÓÚ min ºÍ max Ö®¼äµÄËæ»ú¸¡µãÊı£¬²¢±£ÁôÖ¸¶¨µÄĞ¡ÊıÎ»Êı¡£
+     * ç”Ÿæˆä¸€ä¸ªä»‹äº min å’Œ max ä¹‹é—´çš„éšæœºæµ®ç‚¹æ•°ï¼Œå¹¶ä¿ç•™æŒ‡å®šçš„å°æ•°ä½æ•°ã€‚
      *
-     * @param min ×îĞ¡Öµ£¨°üº¬£©
-     * @param max ×î´óÖµ£¨°üº¬£©
-     * @param decimalPlaces ±£ÁôµÄĞ¡ÊıÎ»Êı£¨±ØĞëÎª·Ç¸ºÊı£©
-     * @return Éú³ÉµÄËæ»ú¸¡µãÊı
-     * @throws std::invalid_argument Èç¹û min > max »ò decimalPlaces Îª¸ºÊı
+     * @param min æœ€å°å€¼ï¼ˆåŒ…å«ï¼‰
+     * @param max æœ€å¤§å€¼ï¼ˆåŒ…å«ï¼‰
+     * @param decimalPlaces ä¿ç•™çš„å°æ•°ä½æ•°ï¼ˆå¿…é¡»ä¸ºéè´Ÿæ•°ï¼‰
+     * @return ç”Ÿæˆçš„éšæœºæµ®ç‚¹æ•°
+     * @throws std::invalid_argument å¦‚æœ min > max æˆ– decimalPlaces ä¸ºè´Ÿæ•°
      */
     double getRandomFloat(double min, double max, int decimalPlaces) {
-        // ²ÎÊıĞ£Ñé
+        // å‚æ•°æ ¡éªŒ
         if (min > max) {
             throw std::invalid_argument("Invalid range: min > max");
         }
@@ -1548,18 +1587,18 @@ namespace utils {
             throw std::invalid_argument("Invalid decimalPlaces: must be non-negative");
         }
 
-        // ¾²Ì¬Ëæ»úÊıÉú³ÉÆ÷£¬±ÜÃâÖØ¸´´´½¨
-        static std::random_device rd;  // Ëæ»úÉè±¸£¬ÓÃÓÚÉú³ÉÖÖ×Ó
-        static std::mt19937 gen(rd()); // Ê¹ÓÃ Mersenne Twister Ëã·¨Éú³ÉËæ»úÊı
-        std::uniform_real_distribution<> distrib(min, max); // ¶¨Òå¸¡µãÊı·Ö²¼·¶Î§
+        // é™æ€éšæœºæ•°ç”Ÿæˆå™¨ï¼Œé¿å…é‡å¤åˆ›å»º
+        static std::random_device rd;  // éšæœºè®¾å¤‡ï¼Œç”¨äºç”Ÿæˆç§å­
+        static std::mt19937 gen(rd()); // ä½¿ç”¨ Mersenne Twister ç®—æ³•ç”Ÿæˆéšæœºæ•°
+        std::uniform_real_distribution<> distrib(min, max); // å®šä¹‰æµ®ç‚¹æ•°åˆ†å¸ƒèŒƒå›´
 
-        // Éú³ÉËæ»ú¸¡µãÊı
+        // ç”Ÿæˆéšæœºæµ®ç‚¹æ•°
         double randomValue = distrib(gen);
 
-        // ±£ÁôÖ¸¶¨µÄĞ¡ÊıÎ»Êı
+        // ä¿ç•™æŒ‡å®šçš„å°æ•°ä½æ•°
         if (decimalPlaces > 0) {
-            double factor = std::pow(10, decimalPlaces); // ¼ÆËã 10^decimalPlaces
-            randomValue = std::round(randomValue * factor) / factor; // ËÄÉáÎåÈë
+            double factor = std::pow(10, decimalPlaces); // è®¡ç®— 10^decimalPlaces
+            randomValue = std::round(randomValue * factor) / factor; // å››èˆäº”å…¥
         }
 
         return randomValue;

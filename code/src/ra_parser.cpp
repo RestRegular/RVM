@@ -116,6 +116,28 @@ namespace parser {
 
         bool has_initial = false;
 
+        /*
+         * 运行期全局数据名的单一事实来源。
+         *
+         * 这个列表同时被两处使用，两边绝不允许出现差异：
+         *   1. initialize() 用它把全局数据注册进 RVM_Memory 的 globalScope；
+         *   2. 解析期用它把同名变量登记进文件根作用域，使每个标识符都能被解析成槽位。
+         *
+         * 注意：SR 与 _SE 不在此列——它们的 DataID 需要被单独保存（SR_SPACE_ID / SE_SPACE_ID），
+         * 由 initialize() 单独处理。
+         */
+        const std::vector<std::string> &getRuntimeGlobalDataNames() {
+            static const std::vector<std::string> names{
+                    "SN", "SE", "SS",
+                    "true", "false", "null",
+                    "tp",
+                    "tp-int", "tp-float", "tp-char", "tp-bool",
+                    "tp-str", "tp-null", "tp-list", "tp-dict",
+                    "tp-series", "tp-pair", "tp-time", "tp-qot"
+            };
+            return names;
+        }
+
         void initialize(const std::string &executed_file_path, const std::string &working_directory) {
             if (has_initial) {
                 data_space_pool.reset();
@@ -128,7 +150,8 @@ namespace parser {
             SR_SPACE_ID = SR_id;
             auto [SE_id_, _2] = data_space_pool.addGlobalData("_SE", std::make_shared<data::Null>());
             SE_SPACE_ID = SE_id_;
-            data_space_pool.addGlobalDataBatch({
+            // 全局数据的初值表。键必须与 getRuntimeGlobalDataNames() 完全一致。
+            const std::unordered_map<std::string, std::shared_ptr<base::RVM_Data>> globalInitialValues{
                     {"SN", std::make_shared<data::Null>()},
                     {"SE", std::make_shared<data::Null>()},
                     {"SS", std::make_shared<data::Null>()},
@@ -145,13 +168,22 @@ namespace parser {
                     {"tp-list", std::make_shared<data::DType>(data::List::typeId)},
                     {"tp-dict", std::make_shared<data::DType>(data::Dict::typeId)},
                     {"tp-series", std::make_shared<data::DType>(data::Series::typeId)},
-                    {"tp-pair",std::make_shared<data::DType>(data::KeyValuePair::typeId)},
+                    {"tp-pair", std::make_shared<data::DType>(data::KeyValuePair::typeId)},
                     {"tp-time", std::make_shared<data::DType>(data::Time::typeId)},
                     {"tp-qot", std::make_shared<data::DType>(data::Quote::typeId)}
-            });
+            };
+            for (const auto &name: getRuntimeGlobalDataNames()) {
+                if (const auto it = globalInitialValues.find(name); it != globalInitialValues.end()) {
+                    data_space_pool.addGlobalData(name, it->second);
+                }
+            }
             const auto &main_space_name = utils::getFileNameFromPath(executed_file_path);
             data_space_pool.acquireScope(pre_SRC, main_space_name);
             data_space_pool.main_scope_name = pre_SRC + main_space_name;
+        }
+
+        bool isInitialized() {
+            return has_initial;
         }
 
         void addIns(const utils::Pos &pos, const std::string &raw_code, const RI *ri, const StdArgs &args, const std::string &ext) {
@@ -189,6 +221,259 @@ namespace parser {
     }
 
     namespace parse {
+        ParseScopeRecord last_parse_scope_record{};
+
+        void ParseScopeRecord::clear() {
+            closedScopes.clear();
+            visibleSymbols.clear();
+            rootStartIndex = 0;
+            rootFrameNextSlot = 0;
+            rootSlotNames.clear();
+            rootVisibleSymbols.clear();
+            lexicalResolutions.clear();
+            rootLexicalResolution.clear();
+            unresolvedIdentifiers.clear();
+            seededGlobalNames.clear();
+            closedScopePaths.clear();
+            rootScopePath.clear();
+            frames.clear();
+        }
+
+        namespace {
+            /*
+             * 解析期分配的「帧路径 → 运行期帧下标」。
+             * prepareRuntimeFrames 填好，收尾时用来把下标写进 InsSet 与每个参数。
+             */
+            std::unordered_map<std::string, uint32_t> runtimeFrameIndexByPath{};
+
+            /*
+             * InsSet 的 InstID → InsSet 指针（本次解析期间有效）。
+             * 用于收尾时把帧下标写回对应的指令集，运行期据此切换当前帧。
+             */
+            std::unordered_map<std::string, core::components::InsSet *> insSetById{};
+
+            /* 深度优先遍历指令集树，登记每个 InsSet 的 InstID */
+            void indexInsSets(const std::shared_ptr<core::components::InsSet> &insSet) {
+                if (!insSet) {
+                    return;
+                }
+                insSetById[insSet->getInstID().toString()] = insSet.get();
+                for (const auto &ins: insSet->getInsSet()) {
+                    if (ins) {
+                        indexInsSets(ins->scopeInsSet);
+                    }
+                }
+            }
+
+            core::components::InsSet *findInsSetByInstId(const std::string &instId) {
+                if (const auto it = insSetById.find(instId); it != insSetById.end()) {
+                    return it->second;
+                }
+                return nullptr;
+            }
+        }
+
+        bool isSlotModeAvailable() {
+            /*
+             * 静态槽位是否可用：帧表必须已经建好。
+             * 只走 '.rsi' 反序列化时解析期不运行，帧表不会就绪——
+             * 那时参数上没有槽位地址，启用只会让运行期报错，所以必须明确拒绝。
+             */
+            return core::memory::RVM_RUNTIME_MEMORY.isFrameTableReady();
+        }
+
+        const ParseScopeRecord &getLastParseScopeRecord() {
+            return last_parse_scope_record;
+        }
+
+        namespace {
+            /* 把 printLexicalResolution 的输出抓成字符串 */
+            std::string captureLexicalResolution(const core::memory::RVM_ParseScope &scope) {
+                std::ostringstream oss;
+                scope.printLexicalResolution(oss);
+                return oss.str();
+            }
+        }
+
+        namespace {
+            /* 按帧内槽位号排序输出，便于人工核对 */
+            std::vector<std::pair<std::string, size_t>>
+            sortByFrameSlot(const std::unordered_map<std::string, size_t> &symbols) {
+                std::vector<std::pair<std::string, size_t>> ordered(symbols.begin(), symbols.end());
+                std::sort(ordered.begin(), ordered.end(),
+                          [](const auto &lhs, const auto &rhs) { return lhs.second < rhs.second; });
+                return ordered;
+            }
+        }
+
+        void prepareRuntimeFrames(const ParseScopeRecord &record) {
+            auto &runtimeMemory = core::memory::RVM_RUNTIME_MEMORY;
+            runtimeMemory.clearAllFrames();
+
+            /*
+             * 第一趟：建帧。
+             *
+             * 帧的身份是【下标】——addFrame 返回的下标就是它的地址，
+             * 随后写进该帧内所有参数的 (frameIndex, slotIndex)。
+             * 必须先把所有帧建完再接词法父链，否则取不到父帧地址。
+             */
+            std::unordered_map<std::string, uint32_t> frameIndexByPath;
+            for (const auto &[framePathKey, frameInfo]: record.frames) {
+                if (framePathKey.empty()) {
+                    continue;
+                }
+                const size_t slotCount = std::max<size_t>(frameInfo.slotSpan, 1);
+                auto scope = std::make_shared<core::memory::RVM_RuntimeScope>(
+                        slotCount, nullptr, framePathKey);
+                // 只有真正没有词法父帧的帧才是帧根（链遍历的终点）。
+                // 函数帧定义在文件根作用域里，它的词法父就是文件根帧，因此不能标成帧根。
+                if (frameInfo.parentFramePath.empty()) {
+                    scope->markAsFrameRoot();
+                }
+                frameIndexByPath[framePathKey] = runtimeMemory.addFrame(scope, framePathKey);
+            }
+
+            // 第二趟：接词法父链。所有帧实例都已存在，取地址安全。
+            for (const auto &[framePathKey, frameInfo]: record.frames) {
+                if (framePathKey.empty() || frameInfo.parentFramePath.empty()) {
+                    continue;
+                }
+                const auto frame = runtimeMemory.frameAt(frameIndexByPath[framePathKey]);
+                const auto parentIt = frameIndexByPath.find(frameInfo.parentFramePath);
+                if (!frame || parentIt == frameIndexByPath.end()) {
+                    continue;
+                }
+                if (const auto parentFrame = runtimeMemory.frameAt(parentIt->second)) {
+                    frame->setParentScope(parentFrame.get());
+                }
+            }
+
+            /*
+             * 第三趟：把运行期全局数据灌进文件根帧的槽位。
+             *
+             * 解析期已把这些名字登记进根作用域并分好槽位（true / false / null / tp / tp-* /
+             * SN / SE / SS …），但它们的「值」目前只存在于旧的 RVM_Memory::globalScope_ 里。
+             * 新系统按槽位取值，所以必须把它们复制进根帧，否则诸如 TP_SET: tp-int, x
+             * 这类指令会读到空槽位。
+             */
+            const auto rootIt = frameIndexByPath.find(record.rootScopePath);
+            if (const auto rootFrame = rootIt != frameIndexByPath.end()
+                                               ? runtimeMemory.frameAt(rootIt->second)
+                                               : nullptr) {
+                const auto &rootSlotNames = record.rootSlotNames;
+                for (size_t slotIndex = 0; slotIndex < rootSlotNames.size(); ++slotIndex) {
+                    const auto [dataID, globalData] =
+                            data_space_pool.findDataByNameNoLock(rootSlotNames[slotIndex]);
+                    if (globalData) {
+                        rootFrame->ensureSlotCount(slotIndex + 1);
+                        const auto &_ = rootFrame->setSlot(slotIndex, globalData->copy_ptr());
+                    }
+                    /*
+                     * 登记根帧的槽位名。
+                     * SE / _SE 这类 RVM 内部全局槽位在 RA 源码里没有对应参数，
+                     * 拿不到 Arg，只能按「根帧下标 + 槽位名」定位。
+                     */
+                    runtimeMemory.setRootSlotByName(rootSlotNames[slotIndex],
+                                                    static_cast<uint32_t>(slotIndex));
+                }
+                runtimeMemory.setRootFrameIndex(rootIt->second);
+            }
+            runtimeFrameIndexByPath = std::move(frameIndexByPath);
+        }
+
+        void printParseScopeRecord(const ParseScopeRecord &record, std::ostream &os,
+                                   const std::string &source_name) {
+            os << "\n=== Parse-scope slot registration";
+            if (!source_name.empty()) {
+                os << " for " << source_name;
+            }
+            os << " ===\n";
+
+            for (size_t scopeOrdinal = 0; scopeOrdinal < record.closedScopes.size(); ++scopeOrdinal) {
+                const auto &[scopeStartIndex, scopeSlotNames] = record.closedScopes[scopeOrdinal];
+                os << "  scope #" << scopeOrdinal
+                   << " {startIndex: " << scopeStartIndex
+                   << ", slotCount: " << scopeSlotNames.size()
+                   << ", slotRange: [" << scopeStartIndex << ", "
+                   << (scopeStartIndex + scopeSlotNames.size()) << ")}\n";
+                for (size_t i = 0; i < scopeSlotNames.size(); ++i) {
+                    os << "      local[" << i << "] / frame[" << (scopeStartIndex + i)
+                       << "] <- \"" << scopeSlotNames[i] << "\"\n";
+                }
+            }
+
+            os << "  root scope {startIndex: " << record.rootStartIndex
+               << ", slotCount: " << record.rootSlotNames.size()
+               << ", frameNextSlot: " << record.rootFrameNextSlot << "}\n";
+            for (size_t i = 0; i < record.rootSlotNames.size(); ++i) {
+                os << "      local[" << i << "] / frame[" << (record.rootStartIndex + i)
+                   << "] <- \"" << record.rootSlotNames[i] << "\"\n";
+            }
+
+            os << "\n--- Visible symbol table (per frame, innermost scope wins) ---\n";
+            for (size_t scopeOrdinal = 0; scopeOrdinal < record.visibleSymbols.size(); ++scopeOrdinal) {
+                const auto &[scopeStartIndex, visibleSymbols] = record.visibleSymbols[scopeOrdinal];
+                os << "  from scope #" << scopeOrdinal
+                   << " (startIndex " << scopeStartIndex << "): "
+                   << visibleSymbols.size() << " visible name(s)\n";
+                for (const auto &[symbolName, frameSlot]: sortByFrameSlot(visibleSymbols)) {
+                    os << "      \"" << symbolName << "\" -> frame[" << frameSlot << "]\n";
+                }
+            }
+            os << "  from root scope: " << record.rootVisibleSymbols.size() << " visible name(s)\n";
+            for (const auto &[symbolName, frameSlot]: sortByFrameSlot(record.rootVisibleSymbols)) {
+                os << "      \"" << symbolName << "\" -> frame[" << frameSlot << "]\n";
+            }
+
+            os << "\n--- Lexical (static) resolution ---\n";
+            os << "Names resolve along the parse-time parent chain = the DEFINING scope,\n";
+            os << "so a function body sees its definition site, not its call site.\n";
+            for (size_t scopeOrdinal = 0; scopeOrdinal < record.lexicalResolutions.size(); ++scopeOrdinal) {
+                os << "  [scope #" << scopeOrdinal << "]\n";
+                os << record.lexicalResolutions[scopeOrdinal];
+            }
+            os << "  [root scope]\n" << record.rootLexicalResolution;
+
+            os << "\n--- Names that could not be resolved to a slot ---\n";
+            if (record.seededGlobalNames.empty()) {
+                os << "  (globals were NOT seeded into the root scope: environment was not initialized\n";
+                os << "   before parsing, so global identifiers cannot be resolved yet)\n";
+            } else {
+                os << "  globals seeded into root scope: " << record.seededGlobalNames.size() << " name(s)\n";
+            }
+            if (record.unresolvedIdentifiers.empty()) {
+                os << "  (none — every identifier resolved to a slot)\n";
+            } else {
+                os << "  " << record.unresolvedIdentifiers.size() << " unresolved occurrence(s):\n";
+                std::unordered_set<std::string> reported{};
+                for (const auto &[name, rawCode]: record.unresolvedIdentifiers) {
+                    if (!reported.insert(name).second) {
+                        continue; // 同一个名字只报第一次
+                    }
+                    os << "      \"" << name << "\"  (first at: " << rawCode << ")\n";
+                }
+            }
+
+            /*
+             * 槽位地址已直接挂在每个参数上（utils::Arg::frameIndex / slotIndex），
+             * 运行期不再需要任何绑定表，所以这里只报告帧清单。
+             */
+            os << "\n--- Frames (slot addresses are mounted on each argument) ---\n";
+            os << "  root scope path: " << record.rootScopePath << "\n";
+            os << "  total frames: " << record.frames.size() << "\n";
+
+            os << "\n--- Runtime frame table (built from parse-time info) ---\n";
+            for (const auto &[framePath, frameInfo]: record.frames) {
+                os << "  " << framePath
+                   << " {slotSpan: " << frameInfo.slotSpan
+                   << ", lexicalParentFrame: "
+                   << (frameInfo.parentFramePath.empty() ? std::string("<none>")
+                                                         : frameInfo.parentFramePath)
+                   << "}\n";
+            }
+            os << "=== End of parse-scope slot registration ===\n";
+        }
+
         std::tuple<std::vector<std::string>, std::vector<size_t>, std::vector<size_t>>
         preprocessCode(std::string &code) {
             utils::addCharBeforeNewline(code);
@@ -278,12 +563,130 @@ namespace parser {
             const auto &code_name = id::DataID(utils::getFileFromPath(code_path)).toFullString();
             std::stack<std::shared_ptr<InsSet>> insSetStack{};
             insSetStack.push(ins_set_pool.acquire(pre_SRC));
+            // 解析期名称→槽位注册：与 insSetStack 同进同出的一条作用域链（仅解析期使用，不影响运行）
+            // 作用域对象堆分配，保证父作用域指针在解析过程中始终有效
+            std::vector<std::unique_ptr<memory::RVM_ParseScope>> parseScopes{};
+            parseScopes.reserve(16);
+            parseScopes.push_back(std::make_unique<memory::RVM_ParseScope>(0, nullptr));
+            // 文件根作用域本身就是帧根：它是词法链的终点，也是全局数据（tp-* / true / null …）的宿主
+            parseScopes.front()->markAsFrameRoot();
+            parseScopes.front()->setInsSetId(insSetStack.top()->getInstID().toString());
+            // 文件根指令集是帧根：它的指令集对象不是任何 Ins 的内嵌 scopeInsSet
+            insSetStack.top()->frameRootScope = true;
+            // 已关闭作用域的索引顺序（按关闭顺序），用于解析结束后统一生成词法解析结果
+            std::vector<size_t> closedScopeOrder{};
+            // 每个作用域在所属帧内的「下一个空闲槽位」水位线。
+            // 子作用域关闭后要把父作用域的该值推进到子作用域区间之后，
+            // 否则父子/兄弟作用域会拿到同一批槽号（槽位重叠，解析期模型就是错的）。
+            std::vector<size_t> parseScopeNextSlot{0};
+            std::vector<size_t> parseScopeStack{0};
+            // 解析期槽位绑定的原始素材：每条指令的 identifier 参数及其所在作用域。
+            // 解析结束后统一换算成 (帧路径, 帧内槽位号)——必须等所有作用域的声明都登记完，
+            // 否则前向引用的名字会取到过期结果。
+            /*
+             * 解析期待回填的参数。
+             *
+             * 解析时要等到全部作用域的声明都登记完，前向引用的名字才能换算出正确的槽位，
+             * 所以先记录「哪个作用域的哪条指令的第几个参数」，收尾时统一把地址挂上去。
+             */
+            struct ScopedArgRecord {
+                size_t scopeIndex{0};
+                size_t argOrdinal{0};
+                std::string name;
+                /* 直接指向参数本体——收尾时把解析出的 (帧下标, 槽位号) 写回它 */
+                utils::Arg *arg{nullptr};
+            };
+            std::vector<ScopedArgRecord> scopedArgRecords{};
+            // 解析期槽位注册结果的留存（挂到 last_parse_scope_record，解析中途抛异常也不会丢）
+            last_parse_scope_record.clear();
+            // 运行期全局数据必须先并入根作用域：槽位替换要求每个标识符都能翻成槽位，
+            // 而 true / false / null / tp-* / SN / SE / SS 这些是全局可见、不需要 ALLOT 的。
+            // 只在最外层解析调用时并入一次（此时环境已初始化，全局名字集合才是确定的）。
+            if (env::isInitialized()) {
+                parseScopes.front()->setOpeningInsName("root");
+                for (const auto &globalName: env::getRuntimeGlobalDataNames()) {
+                    parseScopes.front()->registerSlot(globalName);
+                }
+                parseScopeNextSlot.front() = parseScopes.front()->getStartIndex()
+                                             + parseScopes.front()->getSlotCount();
+                last_parse_scope_record.seededGlobalNames = env::getRuntimeGlobalDataNames();
+            }
             insSetStack.top()->setScopeLeader(
                     utils::getObjectFormatString(ParseTypeUtils::toString(type), code_name));
             insSetStack.top()->setScopeLeaderPos(
                     fixed_pos ? fixed_pos->toString() :
                     utils::Pos(1, 0, code_path).toString(), code_path);
             auto [lines, rawIndex, indents] = preprocessCode(code);
+
+            /*
+             * 声明预扫描：只提前登记「文件顶层直接声明」的名字。
+             *
+             * 槽位替换在解析期完成，因此函数体里用到的自由名字必须在该函数被解析时已经可见。
+             * 但 RCC 产物里函数体的位置可以早于它所引用的顶层名字（test_1.ra 里
+             * List_empty_v500 / List_list_v502 在 992/1355 行就被调用，定义却在 1549/1570 行），
+             * 所以顶层声明必须先扫一遍登记进根作用域。
+             *
+             * 只处理顶层，不处理函数体内部：
+             *   - 函数体内的声明在主循环里本来就按正确顺序、落在正确的作用域中，提前登记反而会
+             *     把嵌套 FUNI（自定义类型的方法）的名字错误地提到根作用域；
+             *   - 函数体内引用「同一函数里后声明的变量」是真正的未定义引用，应当被报出来。
+             *
+             * 顶层声明的登记顺序与主循环一致（按出现先后），所以槽位号不变，主循环里的同名
+             * 登记是幂等的。
+             */
+            {
+                size_t nestingDepth = 0; // 只统计函数体/块；顶层为 0
+                for (const std::string &line: lines) {
+                    const size_t colonPos = line.find(':');
+                    if (colonPos == std::string::npos) {
+                        continue; // 缺冒号的语法错误留给主循环报
+                    }
+                    const std::string instruction = line.substr(0, colonPos);
+                    if (!utils::isValidIdentifier(instruction)) {
+                        continue;
+                    }
+                    if (instruction == "END") {
+                        if (nestingDepth > 0) {
+                            --nestingDepth;
+                        }
+                        continue;
+                    }
+                    const bool opensLevel = instruction == "FUNC" || instruction == "FUNI"
+                                            || instruction == "REPEAT" || instruction == "UNTIL"
+                                            || instruction == "ITER_TRAV" || instruction == "ITER_REV_TRAV"
+                                            || instruction == "ATMP" || instruction == "DETECT";
+                    const bool isTopLevel = (nestingDepth == 0);
+                    if (opensLevel) {
+                        ++nestingDepth;
+                    }
+                    if (!isTopLevel) {
+                        continue; // 函数体/块内的声明交给主循环
+                    }
+                    const bool declaresNames = instruction == "ALLOT" || instruction == "FUNC"
+                                               || instruction == "FUNI" || instruction == "TP_DEF";
+                    if (!declaresNames) {
+                        continue;
+                    }
+                    const std::vector<std::string> rawParameters =
+                            utils::StringManager::split(line.substr(colonPos + 1), ',');
+                    size_t paramOrdinal = 0;
+                    for (std::string param: rawParameters) {
+                        utils::StringManager::trim(param);
+                        // FUNC / FUNI / TP_DEF 只登记首参（函数名 / 类型名）；ALLOT 登记全部
+                        if (instruction != "ALLOT" && paramOrdinal > 0) {
+                            break;
+                        }
+                        ++paramOrdinal;
+                        if (param.empty() || utils::getArgType(param) != utils::ArgType::identifier) {
+                            continue;
+                        }
+                        parseScopes.front()->registerSlot(param);
+                        parseScopeNextSlot.front() = parseScopes.front()->getStartIndex()
+                                                     + parseScopes.front()->getSlotCount();
+                    }
+                }
+            }
+
             int lineNumber = 1;
             for (const std::string &line: lines) {
                 size_t colonPos = line.find(':');
@@ -354,9 +757,70 @@ namespace parser {
                                           {"Please refer to the official instruction documentation for help."});
                 }
                 const auto &ri = ri_opt;
+                // 记录每个参数在指令里的序号：运行期槽位绑定按 (作用域, 指令序号, 参数序号) 索引
+                for (size_t argOrdinal = 0; argOrdinal < args.size(); ++argOrdinal) {
+                    args[argOrdinal].setOrdinal(argOrdinal);
+                }
                 auto ins_ptr = std::make_shared<Ins>(
                         insPos, line, ri, args, ext);
                 auto &topInsSet = insSetStack.top();
+                /*
+                 * 本指令在「它将落入的那个作用域」里的序号，以及它所属的作用域。
+                 *
+                 * 必须在下面的 if/else 链之前取：hasScope 分支会把 topInsSet / parseScopeStack
+                 * 切成子作用域，而这条指令【自身】是要落进父作用域的——
+                 * 在链之后取会把它的参数错误地归属到它自己开的作用域。
+                 */
+                const size_t insOrdinalHere = topInsSet->getInsSet().size();
+                const size_t ownerScopeIndexHere = parseScopeStack.back();
+                /*
+                 * 指令自身的参数绑定必须【就地】记录（压栈之前）。
+                 *
+                 * 适用两类：
+                 *   1. FUNC / FUNI / TP_DEF —— 它们的首参是声明出来的新名字；
+                 *   2. 所有 hasScope 指令（REPEAT/UNTIL/ITER_TRAV/ATMP/DETECT）——
+                 *      它们自身的参数（如 UNTIL 的条件）是在【父】作用域里求值的。
+                 * 通用记录块位于 if/else 链之后，那时作用域已经切换，会把它们归错作用域。
+                 */
+                if (env::isInitialized() && ri->hasScope) {
+                    for (size_t argOrdinal = 0; argOrdinal < args.size(); ++argOrdinal) {
+                        const utils::Arg &param = args[argOrdinal];
+                        const auto &name = param.getValue();
+                        if (RI::getRIByStr(name) != nullptr || utils::looksLikeLabelName(name)) {
+                            continue;
+                        }
+                        if (parseScopes[ownerScopeIndexHere]->resolveLexically(name) == nullptr) {
+                            continue; // 操作数关键字等，不参与数据解析
+                        }
+                        scopedArgRecords.push_back(
+                                {ownerScopeIndexHere, argOrdinal, name,
+                                 &ins_ptr->args[argOrdinal]});
+                    }
+                }
+                // 帧边界：FUNC / FUNI 会开启一个新的帧，其内部槽位空间从头开始，与外部互不干扰
+                const bool isFrameBoundary = (instruction == "FUNC" || instruction == "FUNI");
+                // FUNC / FUNI / TP_DEF 的首参在运行期会被 addData 登记成数据实体，解析期同样登记下来
+                const bool declaresNameHere =
+                        instruction == "FUNC" || instruction == "FUNI" || instruction == "TP_DEF";
+                if (declaresNameHere && !args.empty() &&
+                    args[0].getType() == utils::ArgType::identifier) {
+                    const size_t declaringScopeIndex = parseScopeStack.back();
+                    parseScopes[declaringScopeIndex]->registerSlot(args[0].getValue());
+                    parseScopeNextSlot[declaringScopeIndex] =
+                            parseScopes[declaringScopeIndex]->getStartIndex()
+                            + parseScopes[declaringScopeIndex]->getSlotCount();
+                    /*
+                     * 声明类指令的槽位绑定必须【就地】记录。
+                     *
+                     * 不能在下面的通用记录块里做：hasScope 分支会把 topInsSet 切成子作用域，
+                     * 而 FUNC / FUNI / TP_DEF 本身要落进【父】作用域——
+                     * 在链之后记录会把它们的 owner 错认成自己的函数体作用域。
+                     */
+                    if (env::isInitialized()) {
+                        scopedArgRecords.push_back(
+                                {declaringScopeIndex, 0, args[0].getValue(), &ins_ptr->args[0]});
+                    }
+                }
                 if (ri->hasScope) {
                     topInsSet->addIns(ins_ptr);
                     insSetStack.push(ins_ptr->scopeInsSet);
@@ -364,6 +828,50 @@ namespace parser {
                     insSetStack.top()->is_delayed_release_scope = ri->isDelayedReleaseScope;
                     insSetStack.top()->setScopeLeader(ins_ptr->raw_code);
                     insSetStack.top()->setScopeLeaderPos(ins_ptr->pos);
+                    // 同步进入新的解析期作用域：起始偏移取父作用域当前的槽位水位线
+                    const size_t parentScopeIndex = parseScopeStack.back();
+                    memory::RVM_ParseScope *parentParseScope = parseScopes[parentScopeIndex].get();
+                    // 帧根（FUNC / FUNI）开启独立帧，槽位空间从 0 重新开始，
+                    // 与外部帧的槽位完全解耦（调用时是各自独立的执行上下文）
+                    const size_t newScopeStartIndex = isFrameBoundary
+                                                              ? 0
+                                                              : parseScopeNextSlot[parentScopeIndex];
+                    parseScopes.push_back(std::make_unique<memory::RVM_ParseScope>(
+                            newScopeStartIndex, parentParseScope));
+                    parseScopeNextSlot.push_back(newScopeStartIndex);
+                    /*
+                     * 记录开启本作用域的指令名。
+                     *
+                     * 帧根（FUNC / FUNI）必须带上函数名：否则同一个文件里所有函数都会得到
+                     * 相同的路径（root/FUNC），运行期帧表里只剩一个帧，多个函数互相覆盖槽位。
+                     * 同一函数的多次调用仍然共用同一个帧——这正是我们要的。
+                     */
+                    if (isFrameBoundary && !args.empty()) {
+                        parseScopes.back()->setOpeningInsName(instruction + "@" + args[0].getValue());
+                    } else {
+                        parseScopes.back()->setOpeningInsName(instruction);
+                    }
+                    // 桥接：本作用域 ↔ 它对应的 InsSet
+                    parseScopes.back()->setInsSetId(insSetStack.top()->getInstID().toString());
+                    // FUNC / FUNI 的体是帧根；REPEAT/UNTIL/ITER_TRAV 等块作用域与外层同属一个帧
+                    if (isFrameBoundary) {
+                        insSetStack.top()->frameRootScope = true;
+                    }
+                    if (isFrameBoundary) {
+                        parseScopes.back()->markAsFrameRoot();
+                        // 函数形参是该帧的第一批名字。运行期由 executeFunctionCall 在调用时
+                        // 通过 addDataByName(function->args[i]) 绑定，因此解析期必须按声明顺序
+                        // 把它们排在帧槽位的最前面（局部[0..k-1]），函数体里的 ALLOT 会命中同名而幂等。
+                        for (size_t paramIndex = 1; paramIndex < args.size(); ++paramIndex) {
+                            if (args[paramIndex].getType() != utils::ArgType::identifier) {
+                                continue;
+                            }
+                            parseScopes.back()->registerSlot(args[paramIndex].getValue());
+                        }
+                        parseScopeNextSlot.back() = parseScopes.back()->getStartIndex()
+                                                    + parseScopes.back()->getSlotCount();
+                    }
+                    parseScopeStack.push_back(parseScopes.size() - 1);
                 } else if (instruction == "END") {
                     if (args.size() > 1) {
                         std::cerr << "Error: END instruction with more than one parameter in line: "
@@ -381,6 +889,30 @@ namespace parser {
                         topInsSet->setLabel(topInsSet->scope_prefix + end_label + suf_END, topInsSet->end_pointer);
                         topInsSet->addIns(ins_ptr);
                         insSetStack.pop();
+                        if (parseScopeStack.size() > 1) {
+                            const size_t closedScopeIndex = parseScopeStack.back();
+                            const auto &closedScope = *parseScopes[closedScopeIndex];
+                            // 总是记录分配结果（供后续按名字查槽位使用），与诊断开关无关
+                            last_parse_scope_record.closedScopes.emplace_back(
+                                    closedScope.getStartIndex(), closedScope.getSlotNames());
+                            std::unordered_map<std::string, size_t> visibleSymbols{};
+                            closedScope.collectFrameVisibleSlots(visibleSymbols);
+                            last_parse_scope_record.visibleSymbols.emplace_back(
+                                    closedScope.getStartIndex(), std::move(visibleSymbols));
+                            // 词法解析结果刻意不在这里生成：此刻外层作用域还没解析完，
+                            // 名字的槽位号会取到过期值。统一在解析结束后计算（见下方 closedScopeOrder）。
+                            closedScopeOrder.push_back(closedScopeIndex);
+                            parseScopeStack.pop_back();
+                            // 只有非帧根的子作用域才把父作用域的水位线推进到自己的区间之后；
+                            // 帧根（FUNC / FUNI）内部的槽位空间与外部完全独立，不参与父作用域的槽位分配
+                            if (!closedScope.isFrameRoot()) {
+                                const size_t parentScopeIndex = parseScopeStack.back();
+                                const size_t closedScopeEnd = parseScopeNextSlot[closedScopeIndex];
+                                if (closedScopeEnd > parseScopeNextSlot[parentScopeIndex]) {
+                                    parseScopeNextSlot[parentScopeIndex] = closedScopeEnd;
+                                }
+                            }
+                        }
                     } else {
                         std::cerr << "Error: END instruction without matching scope in line: " << lineNumber
                                   << std::endl;
@@ -425,6 +957,20 @@ namespace parser {
                                                            " requires an argument to specify the path of the file to be linked. ",
                                                            "Only 'RA' and 'RSI' files are supported."});
                     }
+                } else if (instruction == "ALLOT") {
+                    // 解析期只登记名称 → 槽位，不触碰运行时内存；运行行为仍由 ri_allot 决定
+                    const size_t scopeIndex = parseScopeStack.back();
+                    for (const utils::Arg &allotArg: args) {
+                        if (allotArg.getType() != utils::ArgType::identifier) {
+                            continue;
+                        }
+                        parseScopes[scopeIndex]->registerSlot(allotArg.getValue());
+                        // 水位线 = 起始偏移 + 已分配槽位数，单调不减
+                        parseScopeNextSlot[scopeIndex] =
+                                parseScopes[scopeIndex]->getStartIndex()
+                                + parseScopes[scopeIndex]->getSlotCount();
+                    }
+                    topInsSet->addIns(ins_ptr);
                 } else {
                     topInsSet->addIns(ins_ptr);
                 }
@@ -436,11 +982,194 @@ namespace parser {
                     }
                     std::cout << std::endl;
                 }
+                // 槽位替换的前置条件：每个会按名字解析的标识符都必须能翻成 (帧, 槽位)。
+                // 这里把解析不到的名字记录下来——运行期切换到槽位寻址之前，这张表必须为空，
+                // 否则那些名字会在运行期静默落到错误的槽位上。
+                if (env::isInitialized()) {
+                    for (size_t argOrdinal = 0; argOrdinal < args.size(); ++argOrdinal) {
+                        const utils::Arg &param = args[argOrdinal];
+                        /*
+                         * 哪些参数需要槽位？
+                         *
+                         * 运行期按名字解析数据的是 identifier 与 keyword 两类
+                         * （见 getArgOriginDataNoError）。但 keyword 里绝大多数是操作数关键字
+                         * （s-l / RE / RG / AND / fl-r …），它们不查数据表。
+                         *
+                         * 判据：只有能沿词法链解析到槽位的参数才记录绑定。
+                         * 典型例子是 tp-int / tp-list 这类 DType 全局名——它们
+                         * 被 getArgType 判成 identifier（不在关键字集合里），却是真正的数据引用，
+                         * 运行期会去读它们。若不给它们绑定槽位，运行期就查不到。
+                         */
+                        const auto &name = param.getValue();
+                        // 指令名本身是全局可见的 RI 名，不需要槽位
+                        if (RI::getRIByStr(name) != nullptr) {
+                            continue;
+                        }
+                        // 标签（JMP/JF/JT/EXIT 的操作数）不是数据实体，由 SET: 登记进 InsSet::set_labels
+                        if (utils::looksLikeLabelName(name)) {
+                            continue;
+                        }
+                        /*
+                         * 只跳过【声明出来的那个名字】（arg[0]）。
+                         *
+                         * 不能整条指令跳过：TP_DEF 可以带第二个参数（父类型），
+                         * 它是一个真实的变量引用，必须照常记录绑定。
+                         */
+                        if (declaresNameHere && argOrdinal == 0) {
+                            continue;
+                        }
+                        // hasScope 指令自身的参数已就地记录
+                        if (ri->hasScope) {
+                            continue;
+                        }
+                        if (parseScopes[parseScopeStack.back()]->resolveLexically(name) == nullptr) {
+                            if (param.getType() == utils::ArgType::keyword) {
+                                continue; // 操作数关键字，不参与数据解析
+                            }
+                            last_parse_scope_record.unresolvedIdentifiers.emplace_back(
+                                    name, ins_ptr->raw_code);
+                            continue;
+                        }
+                        scopedArgRecords.push_back(
+                                {parseScopeStack.back(), argOrdinal, name,
+                                 &ins_ptr->args[argOrdinal]});
+                    }
+                }
                 lineNumber++;
             }
             if (insSetStack.size() != 1) {
                 throw std::runtime_error("Unclosed scope.");
             }
+            // 根作用域的分配结果与可见符号（解析正常结束后一定可用）
+            last_parse_scope_record.rootStartIndex = parseScopes.front()->getStartIndex();
+            last_parse_scope_record.rootFrameNextSlot = parseScopeNextSlot.front();
+            last_parse_scope_record.rootSlotNames = parseScopes.front()->getSlotNames();
+            parseScopes.front()->collectFrameVisibleSlots(last_parse_scope_record.rootVisibleSymbols);
+            // 词法解析结果必须在解析全部结束后统一生成：
+            // 解析中途外层作用域的槽位表尚未定型，此时算出的槽位号是过期的。
+            last_parse_scope_record.lexicalResolutions.clear();
+            last_parse_scope_record.lexicalResolutions.reserve(closedScopeOrder.size());
+            for (const size_t closedScopeIndex: closedScopeOrder) {
+                last_parse_scope_record.lexicalResolutions.push_back(
+                        captureLexicalResolution(*parseScopes[closedScopeIndex]));
+            }
+            last_parse_scope_record.rootLexicalResolution =
+                    captureLexicalResolution(*parseScopes.front());
+
+            /*
+             * 作用域路径留存（仅诊断输出用）。
+             *
+             * 注意：这里【不再】换算任何绑定表。名字到地址的换算在下面直接
+             * 写进每个参数的 (frameIndex, slotIndex)，运行期不做任何查找。
+             */
+            last_parse_scope_record.rootScopePath = parseScopes.front()->getScopePath();
+            last_parse_scope_record.closedScopePaths.clear();
+            last_parse_scope_record.closedScopePaths.reserve(closedScopeOrder.size());
+            for (const size_t closedScopeIndex: closedScopeOrder) {
+                last_parse_scope_record.closedScopePaths.push_back(
+                        parseScopes[closedScopeIndex]->getScopePath());
+            }
+
+            /*
+             * 帧清单：每个帧的槽位规模、以及它的词法父帧。
+             *
+             * 必须遍历【所有帧根作用域】，不能只从槽位引用反推——反推会漏掉
+             * 「函数体里没有任何变量引用」的帧（例如一个只做 SOUT 的函数）。
+             */
+            last_parse_scope_record.frames.clear();
+            for (const auto &scopePtr: parseScopes) {
+                if (scopePtr == nullptr || !scopePtr->isFrameRoot()) {
+                    continue;
+                }
+                const std::string framePathKey = scopePtr->getScopePath();
+                auto &frameInfo = last_parse_scope_record.frames[framePathKey];
+                frameInfo.framePath = framePathKey;
+                frameInfo.slotSpan = std::max(frameInfo.slotSpan, scopePtr->getFrameSlotSpan());
+            }
+            for (auto &[framePathKey, frameInfo]: last_parse_scope_record.frames) {
+                const memory::RVM_ParseScope *frameRootScope =
+                        parseScopes.front()->findScopeByPath(framePathKey);
+                if (frameRootScope == nullptr) {
+                    continue;
+                }
+                // 参数与局部变量可能没有被任何引用用到，也要计入规模
+                frameInfo.slotSpan = std::max(frameInfo.slotSpan, frameRootScope->getFrameSlotSpan());
+                if (const memory::RVM_ParseScope *parentScope = frameRootScope->getParentScope();
+                    parentScope != nullptr) {
+                    frameInfo.parentFramePath = parentScope->getFrameRootScope()->getScopePath();
+                }
+            }
+
+            /*
+             * 建立运行期帧表，并把每个帧根作用域的 InsSet 认到下标记。
+             *
+             * 帧的身份是【下标】：运行期取值只需 frames[idx]->slots[n]，不做任何查找。
+             * 下标在此一次性分配，'execute' 时通过 InsSet::frameIndex 直接使用。
+             */
+            prepareRuntimeFrames(last_parse_scope_record);
+            // 建立 InsSet 索引：收尾时按 InstID 把帧下标写回对应的指令集
+            insSetById.clear();
+            indexInsSets(insSetStack.top());
+            // 帧根作用域 → 它对应的 InsSet 也要记住帧下标，运行期据此切换当前帧
+            for (const auto &scopePtr: parseScopes) {
+                if (scopePtr == nullptr || !scopePtr->isFrameRoot()) {
+                    continue;
+                }
+                const auto it = runtimeFrameIndexByPath.find(scopePtr->getScopePath());
+                if (it != runtimeFrameIndexByPath.end()) {
+                    scopePtr->setFrameIndex(it->second);
+                }
+            }
+            for (const size_t scopeIndex: closedScopeOrder) {
+                const auto &scope = *parseScopes[scopeIndex];
+                if (!scope.isFrameRoot()) {
+                    continue;
+                }
+                const auto insSet = findInsSetByInstId(scope.getInsSetId());
+                if (insSet) {
+                    insSet->frameIndex = scope.getFrameIndex();
+                    insSet->frameRootScope = true;
+                }
+            }
+            if (const auto rootInsSet = findInsSetByInstId(parseScopes.front()->getInsSetId())) {
+                rootInsSet->frameIndex = parseScopes.front()->getFrameIndex();
+                rootInsSet->frameRootScope = true;
+            }
+            core::memory::RVM_RUNTIME_MEMORY.markFrameTableReady();
+
+            /*
+             * 把解析出的 (帧下标, 槽位号) 直接挂到每个参数上。
+             *
+             * 这是静态槽位架构的核心：名字在解析期就消失了，运行期只顺着参数读地址。
+             */
+            for (const auto &record: scopedArgRecords) {
+                if (record.arg == nullptr) {
+                    continue;
+                }
+                const memory::RVM_ParseScope *ownerScope = parseScopes[record.scopeIndex].get();
+                const memory::RVM_ParseScope *declaringScope = ownerScope->resolveLexically(record.name);
+                if (declaringScope == nullptr) {
+                    continue;
+                }
+                const memory::RVM_ParseScope *frameRoot = declaringScope->getFrameRootScope();
+                const auto localSlot = declaringScope->findSlotItself(record.name);
+                if (!localSlot.has_value() || frameRoot->getFrameIndex() == memory::INVALID_INDEX) {
+                    continue;
+                }
+                record.arg->setSlotRef(frameRoot->getFrameIndex(),
+                                       static_cast<uint32_t>(
+                                               declaringScope->getFrameSlotIndex(*localSlot)));
+            }
+            /*
+             * 这里【不】开启槽位模式。
+             *
+             * 解析期只负责把地址挂到参数上；是否真的走新架构由调用方决定
+             * （CLI 的 --slot-mode / --legacy-mode）。解析器自己置位会让开关失去意义。
+             */
+
+            // 解析期指令级输出（逐条指令与其参数），由 output_info 控制
+            // 槽位注册结果的打印交给调用方（printParseScopeRecord），避免与 main 的输出来重复
+
             return insSetStack.top();
         }
 

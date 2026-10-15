@@ -1,6 +1,0 @@
-var a: int = 10
-
-if true {
-    var a = "Hello world!"
-}
-

@@ -8,8 +8,8 @@
 #include <ranges>
 
 #ifdef __linux__
-#include <unistd.h>   // ÓÃÓÚ gethostname()
-#include <sys/utsname.h>  // ÓÃÓÚ uname() »ñÈ¡ÏµÍ³ĞÅÏ¢
+#include <unistd.h>   // ç”¨äº gethostname()
+#include <sys/utsname.h>  // ç”¨äº uname() è·å–ç³»ç»Ÿä¿¡æ¯
 #endif
 #ifdef _WIN32
 #include <windows.h>
@@ -59,7 +59,7 @@ namespace base
         constexpr uint8_t expected_magic[] = {'R', 'S', 'I', 0x1A};
         if (memcmp(magic, expected_magic, sizeof(expected_magic)) != 0)
         {
-            // ¹Ì¶¨Ê¹ÓÃ expected_magic µÄ³¤¶È
+            // å›ºå®šä½¿ç”¨ expected_magic çš„é•¿åº¦
             throw std::runtime_error("Invalid file format!");
         }
         if (major_ver > VERSION_MAJOR || minor_ver > VERSION_MINOR || patch_ver > VERSION_PATCH)
@@ -87,10 +87,10 @@ namespace base
         std::string arch;
         std::string compiler;
 
-        // 1. Ìî³äÆ½Ì¨ĞÅÏ¢
+        // 1. å¡«å……å¹³å°ä¿¡æ¯
 #ifdef _WIN32
         platform = "Windows";
-        // »ñÈ¡ Windows ÏµÍ³°æ±¾£¨¼ò»¯°æ£¬ÈçĞèÏêÏ¸¿ÉÀ©Õ¹£©
+        // è·å– Windows ç³»ç»Ÿç‰ˆæœ¬ï¼ˆç®€åŒ–ç‰ˆï¼Œå¦‚éœ€è¯¦ç»†å¯æ‰©å±•ï¼‰
         OSVERSIONINFOEX osvi = {0};
         osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
         if (GetVersionEx((OSVERSIONINFO*)&osvi))
@@ -99,9 +99,9 @@ namespace base
             if (osvi.wProductType == VER_NT_WORKSTATION) oss << " (Workstation)";
             else if (osvi.wProductType == VER_NT_SERVER) oss << " (Server)";
             platform = oss.str();
-            oss.str(""); // Çå¿ÕÁ÷
+            oss.str(""); // æ¸…ç©ºæµ
         }
-        // »ñÈ¡¼Ü¹¹£¨32/64Î»£©
+        // è·å–æ¶æ„ï¼ˆ32/64ä½ï¼‰
 #ifdef _WIN64
         arch = "x86_64";
 #else
@@ -113,12 +113,12 @@ namespace base
         struct utsname uts;
         if (uname(&uts) == 0)
         {
-            // ÏµÍ³Ãû³Æ + ÄÚºË°æ±¾ + Ö÷»úÃû
+            // ç³»ç»Ÿåç§° + å†…æ ¸ç‰ˆæœ¬ + ä¸»æœºå
             oss << platform << " [" << uts.sysname << "] " << uts.release;
             platform = oss.str();
             oss.str("");
         }
-        // »ñÈ¡¼Ü¹¹
+        // è·å–æ¶æ„
 #ifdef __x86_64__
         arch = "x86_64";
 #elif __i386__
@@ -136,7 +136,7 @@ namespace base
         arch = "Unknown Architecture";
 #endif
 
-        // 2. Ìî³ä±àÒëÆ÷ĞÅÏ¢£¨ÔöÇ¿¿É¶ÁĞÔ£©
+        // 2. å¡«å……ç¼–è¯‘å™¨ä¿¡æ¯ï¼ˆå¢å¼ºå¯è¯»æ€§ï¼‰
 #ifdef __GNUC__
         compiler = "GCC " + std::to_string(__GNUC__) + "." + std::to_string(__GNUC_MINOR__) + "." + std::to_string(
             __GNUC_PATCHLEVEL__);
@@ -149,7 +149,7 @@ namespace base
         compiler = "Unknown Compiler";
 #endif
 
-        // 3. ¹¹½¨ÍêÕû°æ±¾ĞÅÏ¢×Ö·û´®
+        // 3. æ„å»ºå®Œæ•´ç‰ˆæœ¬ä¿¡æ¯å­—ç¬¦ä¸²
         oss << "======================================================\n";
         oss << "RVM (Rio Virtual Machine) Version Info\n";
         oss << "======================================================\n";
@@ -261,10 +261,10 @@ namespace base
 
     std::string RVM_ID::getIDString() const
     {
-        std::string str = std::to_string(uid); // ½«ÕûÊı×ª»»Îª×Ö·û´®
+        std::string str = std::to_string(uid); // å°†æ•´æ•°è½¬æ¢ä¸ºå­—ç¬¦ä¸²
         if (str.length() < 6)
         {
-            str.insert(0, 6 - str.length(), '0'); // ÔÚÇ°Ãæ²¹Áã
+            str.insert(0, 6 - str.length(), '0'); // åœ¨å‰é¢è¡¥é›¶
         }
         const std::string& s{sign};
         return s + "x" + str;
@@ -345,7 +345,7 @@ namespace base
 
     RVM_ThreadPool& RVM_ThreadPool::getInstance(size_t numThreads)
     {
-        static RVM_ThreadPool instance(numThreads); // ¾²Ì¬¾Ö²¿±äÁ¿£¬È·±£Î¨Ò»ÊµÀı
+        static RVM_ThreadPool instance(numThreads); // é™æ€å±€éƒ¨å˜é‡ï¼Œç¡®ä¿å”¯ä¸€å®ä¾‹
         return instance;
     }
 
@@ -410,7 +410,7 @@ namespace base
     RVM_IO* RVM_IO::instance = nullptr;
 
     RVM_IO::RVM_IO(int threshold_size) : toConsole(true), toFile(false),
-                                         inputFromFile(false), // Ä¬ÈÏ´Ó¿ØÖÆÌ¨ÊäÈë
+                                         inputFromFile(false), // é»˜è®¤ä»æ§åˆ¶å°è¾“å…¥
                                          bufferThreshold(1024 * threshold_size),
                                          currentSize(0)
     {
@@ -426,7 +426,7 @@ namespace base
         return instance;
     }
 
-    // ÉèÖÃÊäÈëÀ´×ÔÎÄ¼ş
+    // è®¾ç½®è¾“å…¥æ¥è‡ªæ–‡ä»¶
     void RVM_IO::setInputFromFile(const std::string& filename)
     {
         std::lock_guard lock(inputMutex);
@@ -454,7 +454,7 @@ namespace base
         }
     }
 
-    // ÉèÖÃÊäÈëÀ´×Ô¿ØÖÆÌ¨
+    // è®¾ç½®è¾“å…¥æ¥è‡ªæ§åˆ¶å°
     void RVM_IO::setInputFromConsole()
     {
         std::lock_guard lock(inputMutex);
@@ -472,7 +472,7 @@ namespace base
         return inputFromFile;
     }
 
-    // »ñÈ¡ÊäÈëÁ÷µÄÍ¨ÓÃ·½·¨
+    // è·å–è¾“å…¥æµçš„é€šç”¨æ–¹æ³•
     std::istream& RVM_IO::getInputStream()
     {
         if (inputFromFile && inputFileStream.is_open())
@@ -488,7 +488,7 @@ namespace base
         {
             return inputFileStream.peek() != EOF;
         }
-        // ¶ÔÓÚ¿ØÖÆÌ¨ÊäÈë£¬ÎÒÃÇÎŞ·¨ÌáÇ°ÖªµÀÊÇ·ñ»¹ÓĞÊäÈë
+        // å¯¹äºæ§åˆ¶å°è¾“å…¥ï¼Œæˆ‘ä»¬æ— æ³•æå‰çŸ¥é“æ˜¯å¦è¿˜æœ‰è¾“å…¥
         return true;
     }
 
@@ -596,14 +596,14 @@ namespace base
         {
             if (inputFromFile)
             {
-                // ÎÄ¼şÊäÈë½áÊø
+                // æ–‡ä»¶è¾“å…¥ç»“æŸ
                 throw RVM_Error(ErrorType::IOError, unknown_, unknown_,
                                 {"End of input file reached."},
                                 {"Check if the input file has sufficient data."});
             }
             else
             {
-                // ¿ØÖÆÌ¨ÊäÈë½áÊø£¨Í¨³£ÊÇEOF£©
+                // æ§åˆ¶å°è¾“å…¥ç»“æŸï¼ˆé€šå¸¸æ˜¯EOFï¼‰
                 throw RVM_Error(ErrorType::IOError, unknown_, unknown_,
                                 {"End of input stream reached."},
                                 {"This may be due to EOF (Ctrl+D on Unix, Ctrl+Z on Windows)."});
@@ -632,14 +632,14 @@ namespace base
     {
         if (inputCache.empty())
         {
-            // ³¢ÊÔ¶ÁÈ¡Ò»ĞĞÊı¾İµ½»º´æ
+            // å°è¯•è¯»å–ä¸€è¡Œæ•°æ®åˆ°ç¼“å­˜
             try
             {
                 readLineAndSplit();
             }
             catch (const RVM_Error&)
             {
-                // Èç¹û¶ÁÈ¡Ê§°ÜÇÒ»º´æÈÔÈ»Îª¿Õ£¬Å×³ö´íÎó
+                // å¦‚æœè¯»å–å¤±è´¥ä¸”ç¼“å­˜ä»ç„¶ä¸ºç©ºï¼ŒæŠ›å‡ºé”™è¯¯
                 if (inputCache.empty())
                 {
                     throw RVM_Error(ErrorType::IOError, unknown_, unknown_,
@@ -877,13 +877,13 @@ namespace base
 
     bool containsKeywordInCategory(const KeywordType& category, const std::string& keyword)
     {
-        // »ñÈ¡·ÖÀàÃû³Æ
+        // è·å–åˆ†ç±»åç§°
         const std::string& categoryName = getKeywordTypeName(category);
 
-        // »ñÈ¡·ÖÀàµÄ¹Ø¼ü×Ö¼¯ºÏ
+        // è·å–åˆ†ç±»çš„å…³é”®å­—é›†åˆ
         const auto& keywords = categorizedKeywords[categoryName];
 
-        // ²éÕÒ¹Ø¼ü×Ö
+        // æŸ¥æ‰¾å…³é”®å­—
         return keywords.contains(keyword);
     }
 
